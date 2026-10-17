@@ -5,3 +5,9 @@
 *.csv
 *.pdf
 node_modules/
+# Access のファイル（実データ）はリポジトリに入れない
+*.accdb
+*.mdb
+*.laccdb
+kikan/migrate/data/
+移し替え結果.md
