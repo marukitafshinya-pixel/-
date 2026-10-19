@@ -1,0 +1,42 @@
+{
+ "TD_ロボットPrgNo_製造別": {
+  "file": "包装場管理System.accdb",
+  "table": "TD_ロボットPrgNo_製造別"
+ },
+ "TD_在庫": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_新規生産計画": {
+  "file": "共有Accessテーブル.accdb",
+  "table": "TD_新規生産計画"
+ },
+ "TD_入庫": {
+  "file": "製造管理 丸北.accdb",
+  "table": "TD_入庫"
+ },
+ "TD_輸送計画": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_予定": {
+  "file": "包装場管理System.accdb",
+  "table": "TD_予定"
+ },
+ "TM_ロボット積み付けマスタ": {
+  "file": "包装場管理System.accdb",
+  "table": "TM_ロボット積み付けマスタ"
+ },
+ "TD_出荷": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_輸送計画_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_輸送計画"
+ }
+}

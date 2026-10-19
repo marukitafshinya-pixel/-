@@ -1,0 +1,70 @@
+{
+ "TD_USER": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_USER"
+ },
+ "TD_在庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_在庫_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_在庫更新前": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_在庫費用月別集計": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫費用月別集計"
+ },
+ "TD_在庫変更": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫変更"
+ },
+ "TD_受注": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注_受注登録": {
+  "file": "受注登録.accdb",
+  "table": "TD_受注"
+ },
+ "TD_出荷": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_諸経費": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_諸経費"
+ },
+ "TD_倉庫詳細設定": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_倉庫詳細設定"
+ },
+ "TD_輸送計画": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_輸送計画_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TM_丸め計算マスタ": {
+  "file": "倉庫管理System.accdb",
+  "table": "TM_丸め計算マスタ"
+ },
+ "TM_経費項目マスタ": {
+  "file": "倉庫管理System.accdb",
+  "table": "TM_経費項目マスタ"
+ },
+ "TD_出荷_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_入庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_入庫"
+ }
+}

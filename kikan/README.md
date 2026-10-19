@@ -26,3 +26,16 @@ PGURL=postgresql://ユーザー@ホスト/データベース python3 accdb_to_pg
 - 何度でもやり直せる（実行のたびに、そのスキーマを作り直す）。
 - 結果は `移し替え結果.md` に出る（表ごとに Access の件数と移した件数を比べる）。
 - 必要なもの：mdbtools（`mdb-tables`・`mdb-schema`・`mdb-export`）、psql、Python 3。
+
+## 書き出した CSV からの取り込み（csv_to_pg）
+
+Access の画面側ファイルで `ExportTables`（表を CSV と fields.txt に書き出すプログラム）を動かして作ったフォルダを取り込む。
+
+```
+cd kikan/migrate
+PGURL=... python3 csv_to_pg.py --fe 受注登録FE --dir 書き出したフォルダ
+```
+
+- fields.txt の型で表を作り、同じ名前の CSV を入れる。
+- リンクしている表は、本来の持ち主のスキーマに入れる（例：受注登録FE の「TD_出庫」→ `soko."TD_出荷"`）。対応は `links/画面側ファイル名.json`（画面側ファイルの中の情報から作ったもの）。
+- 画面側ファイルの中の表は、`sources.json` でその画面側ファイルに割り当てたスキーマ（例：`juchu_fe`）に入れる。

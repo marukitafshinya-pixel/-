@@ -1,24 +1,85 @@
 {
   "説明": "Access のデータ側ファイル（BE）と、移し先のスキーマの対応。ファイルは data/ フォルダに置く（リポジトリには入れない）。",
   "sources": [
-    {"file": "data/受注登録.accdb",          "schema": "juchu"},
-    {"file": "data/丸北WorkStation.accdb",   "schema": "ws"},
-    {"file": "data/倉庫管理System.accdb",    "schema": "soko"},
-    {"file": "data/製造管理 丸北.accdb",     "schema": "seizo"},
-    {"file": "data/製造計画.accdb",          "schema": "keikaku"},
-    {"file": "data/共有Accessテーブル.accdb", "schema": "kyoyu"},
-    {"file": "data/包装場管理System.accdb",  "schema": "housou"},
-    {"file": "data/転売品管理.accdb",        "schema": "tenbai"},
-    {"file": "data/原料管理2.accdb",         "schema": "genryo"},
-    {"file": "data/仕掛原料管理.accdb",      "schema": "shikake"},
-    {"file": "data/丸北商品推移.accdb",      "schema": "suii"},
-    {"file": "data/受注登録FE.accdb",        "schema": "juchu_fe"},
-    {"file": "data/丸北WorkStationFE.accdb", "schema": "ws_fe"},
-    {"file": "data/倉庫管理SystemFE.accdb",  "schema": "soko_fe"},
-    {"file": "data/製造管理 丸北FE.accdb",   "schema": "seizo_fe"},
-    {"file": "data/製造計画FE.accdb",        "schema": "keikaku_fe"},
-    {"file": "data/包装場管理SystemFE.accdb","schema": "housou_fe"},
-    {"file": "data/WEB連携FE.accdb",         "schema": "web_fe"},
-    {"file": "data/手配出力用カレンダー.accdb","schema": "tehai_fe"}
+    {
+      "file": "data/受注登録.accdb",
+      "schema": "juchu"
+    },
+    {
+      "file": "data/丸北WorkStation.accdb",
+      "schema": "ws"
+    },
+    {
+      "file": "data/倉庫管理System.accdb",
+      "schema": "soko"
+    },
+    {
+      "file": "data/製造管理 丸北.accdb",
+      "schema": "seizo"
+    },
+    {
+      "file": "data/製造計画.accdb",
+      "schema": "keikaku"
+    },
+    {
+      "file": "data/共有Accessテーブル.accdb",
+      "schema": "kyoyu"
+    },
+    {
+      "file": "data/包装場管理System.accdb",
+      "schema": "housou"
+    },
+    {
+      "file": "data/転売品管理.accdb",
+      "schema": "tenbai"
+    },
+    {
+      "file": "data/原料管理2.accdb",
+      "schema": "genryo"
+    },
+    {
+      "file": "data/仕掛原料管理.accdb",
+      "schema": "shikake"
+    },
+    {
+      "file": "data/丸北商品推移.accdb",
+      "schema": "suii"
+    },
+    {
+      "file": "data/㈱丸北　輸送管理.accdb",
+      "schema": "yuso"
+    },
+    {
+      "file": "data/受注登録FE.accdb",
+      "schema": "juchu_fe"
+    },
+    {
+      "file": "data/丸北WorkStationFE.accdb",
+      "schema": "ws_fe"
+    },
+    {
+      "file": "data/倉庫管理SystemFE.accdb",
+      "schema": "soko_fe"
+    },
+    {
+      "file": "data/製造管理 丸北FE.accdb",
+      "schema": "seizo_fe"
+    },
+    {
+      "file": "data/製造計画FE.accdb",
+      "schema": "keikaku_fe"
+    },
+    {
+      "file": "data/包装場管理SystemFE.accdb",
+      "schema": "housou_fe"
+    },
+    {
+      "file": "data/WEB連携FE.accdb",
+      "schema": "web_fe"
+    },
+    {
+      "file": "data/手配出力用カレンダー.accdb",
+      "schema": "tehai_fe"
+    }
   ]
 }

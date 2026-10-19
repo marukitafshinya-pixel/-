@@ -1,0 +1,98 @@
+{
+ "TD_在庫変更": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫変更"
+ },
+ "TD_受注": {
+  "file": "受注登録.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注受付": {
+  "file": "受注登録.accdb",
+  "table": "TD_受注受付"
+ },
+ "TD_出荷": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_輸送計画_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TM_商品マスタ_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_計画": {
+  "file": "製造計画.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_受注": {
+  "file": "受注登録.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_製造": {
+  "file": "製造管理 丸北.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_商品マスタ_輸送": {
+  "file": "㈱丸北　輸送管理.accdb",
+  "table": "TM_商品マスタ"
+ },
+ "TM_相手先商品マスタ": {
+  "file": "受注登録.accdb",
+  "table": "TM_相手先商品マスタ"
+ },
+ "TM_得意先マスタ_丸北": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TM_得意先マスタ"
+ },
+ "TM_得意先マスタ_受注": {
+  "file": "受注登録.accdb",
+  "table": "TM_得意先マスタ"
+ },
+ "TM_得意先マスタ_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TM_得意先マスタ"
+ },
+ "TM_得意先マスタ_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TM_得意先マスタ"
+ },
+ "TM_得意先マスタ_輸送": {
+  "file": "㈱丸北　輸送管理.accdb",
+  "table": "TM_得意先マスタ"
+ },
+ "TD_在庫変更_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫変更"
+ },
+ "TD_出荷_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TD_出荷"
+ }
+}

@@ -1,0 +1,114 @@
+{
+ "TD_架空在庫_IN": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_架空在庫_IN"
+ },
+ "TD_月末在庫_保管場所商品別": {
+  "file": "丸北商品推移.accdb",
+  "table": "TD_月末在庫_保管場所商品別"
+ },
+ "TD_在庫": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_在庫BackUp": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫"
+ },
+ "TD_在庫商品数パレット": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫商品数パレット"
+ },
+ "TD_在庫変更": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_在庫変更"
+ },
+ "TD_在庫変更_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_在庫変更"
+ },
+ "TD_受注": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_受注"
+ },
+ "TD_受注_受注登録": {
+  "file": "受注登録.accdb",
+  "table": "TD_受注"
+ },
+ "TD_出荷": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_出荷_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_新規生産計画": {
+  "file": "製造計画.accdb",
+  "table": "TD_新規生産計画"
+ },
+ "TD_生産計画変更案内": {
+  "file": "製造計画.accdb",
+  "table": "TD_生産計画変更案内"
+ },
+ "TD_積込順": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_積込順"
+ },
+ "TD_入庫": {
+  "file": "製造管理 丸北.accdb",
+  "table": "TD_入庫"
+ },
+ "TD_輸送計画": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_輸送計画_原料": {
+  "file": "原料管理2.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_輸送計画_倉庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_輸送計画_転売": {
+  "file": "転売品管理.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TM_ロボット積み付けマスタ": {
+  "file": "包装場管理System.accdb",
+  "table": "TM_ロボット積み付けマスタ"
+ },
+ "TM_商品在庫ストックマスタ": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TM_商品在庫ストックマスタ"
+ },
+ "TM_備考欄": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TM_備考欄"
+ },
+ "TD_ロボットPrgNo_製造別": {
+  "file": "包装場管理System.accdb",
+  "table": "TD_ロボットPrgNo_製造別"
+ },
+ "TD_仕掛在庫": {
+  "file": "仕掛原料管理.accdb",
+  "table": "TD_入庫"
+ },
+ "TD_出荷_原料": {
+  "file": "原料管理2.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_前回生産計画": {
+  "file": "製造計画.accdb",
+  "table": "TD_前回生産計画"
+ },
+ "TMS_本社依頼受注_製造": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TMS_本社依頼受注_製造"
+ }
+}

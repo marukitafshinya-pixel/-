@@ -1,0 +1,26 @@
+{
+ "T_入庫依頼書確認用": {
+  "file": "丸北WorkStation.accdb",
+  "table": "T_入庫依頼書確認用"
+ },
+ "TD_受注": {
+  "file": "受注登録.accdb",
+  "table": "TD_受注"
+ },
+ "TD_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_輸送計画_出庫": {
+  "file": "倉庫管理System.accdb",
+  "table": "TD_輸送計画"
+ },
+ "TD_出荷": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_輸送計画": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_輸送計画"
+ }
+}

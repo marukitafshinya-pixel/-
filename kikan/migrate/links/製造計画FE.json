@@ -1,0 +1,18 @@
+{
+ "TD_出荷": {
+  "file": "丸北WorkStation.accdb",
+  "table": "TD_出荷"
+ },
+ "TD_新規生産計画": {
+  "file": "共有Accessテーブル.accdb",
+  "table": "TD_新規生産計画"
+ },
+ "TD_入庫": {
+  "file": "製造管理 丸北.accdb",
+  "table": "TD_入庫"
+ },
+ "大阪丸北生産計画": {
+  "file": "共有Accessテーブル.accdb",
+  "table": "大阪丸北生産計画"
+ }
+}
