@@ -94,15 +94,29 @@ def main():
     lines = [f"# 移し替え結果（{a.fe} から書き出した CSV）", "",
              "| 表（画面側の名前） | 入れた先 | CSV の件数 | 入れた件数 | 結果 |", "|---|---|---|---|---|"]
     bad = 0
+    # 行き先を決める。リンクの印がなくても（表を貼り付けて書き出した場合など）、名前がリンクの表なら持ち主へ入れる。
+    # 2 つの名前が同じ表を指すとき（例：TD_在庫 と TD_在庫BackUp）は、元の名前と同じものだけを持ち主へ入れ、
+    # ほかは上書きしないように画面側のスキーマへ自分の名前で入れる。
+    dest_of = {}
+    for name in tables:
+        if name in links:
+            dest_of[name] = (schema_of.get(links[name]["file"], "_" + links[name]["file"].replace(".accdb", "")),
+                             links[name]["table"])
+        else:
+            dest_of[name] = (local_schema, name)
+    targets = {}
+    for name, d in dest_of.items():
+        targets.setdefault(d, []).append(name)
+    for d, names in targets.items():
+        if len(names) > 1:
+            for name in names:
+                if name != d[1]:
+                    dest_of[name] = (local_schema, name)
     for name, info in tables.items():
         if name.startswith("MSys") or name in ("貼り付けエラー", "名前の自動修正保存エラー"):
             continue
         path = os.path.join(a.dir, name + ".csv")
-        if info["link"] and name in links:
-            schema = schema_of.get(links[name]["file"], "_" + links[name]["file"].replace(".accdb", ""))
-            table = links[name]["table"]
-        else:
-            schema, table = local_schema, name
+        schema, table = dest_of[name]
         dest = f'"{schema}"."{table}"'
         if not os.path.exists(path):
             lines.append(f"| {name} | {schema}.{table} | | | CSV なし（とばした） |")
