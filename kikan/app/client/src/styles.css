@@ -1,0 +1,99 @@
+/* Access の画面に近い見た目にする */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Meiryo UI", "Meiryo", "Yu Gothic UI", sans-serif; font-size: 13px; background: #fff; color: #000; }
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+input, select { font: inherit; }
+
+.tabs { display: flex; align-items: center; gap: 2px; background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 2px 4px 0; }
+.tabs span { padding: 3px 10px; border: 1px solid #ccc; border-bottom: none; background: #e8e8e8; }
+.tabs span.active { background: #fff; }
+.tabs .close { margin-left: auto; }
+
+/* ログイン */
+.login { display: flex; align-items: center; justify-content: center; height: 100vh; background: #dedcc4; }
+.login form { background: #fff; padding: 24px 32px; border: 1px solid #999; display: flex; flex-direction: column; gap: 10px; min-width: 300px; }
+.login h1 { font-size: 18px; margin: 0 0 8px; }
+.login label { display: flex; flex-direction: column; gap: 4px; }
+.login input { padding: 6px; }
+.login .err { color: #c00; margin: 0; }
+.login button { padding: 8px; }
+
+/* メニュー */
+.menu header { display: flex; align-items: center; justify-content: space-between; background: #5b4b8a; color: #fff; padding: 8px 16px; }
+.menu h1 { font-size: 18px; margin: 0; }
+.menu .who button { margin-left: 12px; }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 16px; }
+.menu-grid button { padding: 14px; background: #f0f0f0; border: 2px outset #ddd; font-size: 14px; }
+.notyet { padding: 24px; }
+
+/* 受注先選択画面 */
+.sakisel { background: #c0c0c0; min-height: 100vh; }
+.sakisel-head { background: #dedcc4; padding: 4px 18px 10px; border-bottom: 1px solid #999; }
+.sakisel-head > div:first-child { display: flex; gap: 8px; align-items: center; }
+.btn-red { color: #c00; font-weight: bold; width: 140px; padding: 4px; background: #f0f0f0; border: 2px outset #ddd; }
+.cyan { background: #ccffff; border: 1px solid #999; width: 490px; padding: 3px; }
+.toggle2 { display: inline-flex; margin-top: 18px; border: 2px solid #000; background: #fff; }
+.toggle2 button { background: #f0f0f0; border: 1px solid #999; padding: 2px 12px; font-size: 15px; }
+.toggle2 button.on { background: #fff; border: 2px inset #999; }
+.toggle2.boxed { margin-top: 0; border-color: #000; }
+.sakisel-body { display: flex; gap: 46px; }
+.sakisel .left { width: 386px; }
+.sakisel .title-row { display: flex; align-items: center; gap: 20px; padding: 4px 8px; background: #fff; white-space: nowrap; }
+.sakisel .title-row .toggle2 button { padding: 1px 6px; }
+.sakisel .title { font-size: 17px; }
+.groups { background: #222; padding: 10px 8px 14px; }
+.grow { display: grid; grid-template-columns: repeat(3, 1fr); }
+.grow button { height: 30px; background: #f0f0f0; border: 1px solid #aaa; font-size: 12px; }
+.grow button.on { background: #fff; border: 2px inset #888; font-weight: bold; }
+.grow button:disabled { background: #f0f0f0; }
+.sakisel .right { padding-top: 4px; }
+.sakisel .right .title { display: block; margin-bottom: 4px; }
+.sakisel .list { width: 442px; height: 410px; background: #fff; border: 2px solid #fff; outline: 1px solid #999; overflow: auto; }
+.sakisel .list table { width: 100%; border-collapse: collapse; }
+.sakisel .list td { border-bottom: 1px solid #e4e4e4; padding: 3px 6px; cursor: pointer; }
+.sakisel .list td.num { width: 76px; text-align: right; border-right: 1px solid #ccc; }
+.sakisel .list tr:hover td { background: #cde6ff; }
+.sakisel .list tr.empty td { cursor: default; height: 18px; }
+
+/* 受注検索 */
+.search { background: #fff; }
+.search-head, .search-head2 { display: flex; align-items: flex-start; gap: 10px; padding: 4px 6px; }
+.search .moto { display: grid; grid-template-columns: repeat(6, 70px); border: 2px solid #3333aa; }
+.search .moto button { height: 22px; font-size: 12px; font-weight: bold; color: #c00; background: #fff; border: 1px solid #aaa; }
+.search .moto button:nth-child(n+7) { color: #c00; }
+.search .moto button.on { background: #ffff99; border: 2px inset #888; }
+.search .moto button.unsure { text-decoration: underline dotted; }
+.search .plain { background: #f0f0f0; border: 2px outset #ddd; padding: 2px 8px; font-size: 12px; }
+.search .field { display: flex; flex-direction: column; }
+.search .field > span { font-size: 12px; text-align: center; }
+.search .field.purple > span { background: #993399; color: #fff; font-weight: bold; padding: 1px 6px; }
+.search .field input { width: 120px; }
+.search .field.wide select { width: 70px; }
+.search .field.wide > div { display: flex; }
+.search .shohin-name { background: #3333aa; color: #fff; width: 160px; padding: 1px 4px; }
+.search .actions { display: flex; gap: 2px; border: 2px solid #333; padding: 2px; }
+.search .actions button { width: 64px; background: #fff; border: 2px outset #ddd; color: #3333aa; font-weight: bold; }
+.search .saki { display: grid; grid-template-columns: repeat(6, 80px); min-height: 40px; border: 2px solid #3333aa; min-width: 486px; align-content: start; }
+.search .saki button { height: 20px; font-size: 11px; background: #fff; border: 1px solid #ccc; overflow: hidden; white-space: nowrap; }
+.search .saki button.on { background: #ffff99; }
+.search .range .title { display: block; background: #993366; color: #fff; text-align: center; font-weight: bold; }
+.search .range input { width: 128px; }
+.search .months { display: flex; gap: 1px; margin-top: 2px; border: 2px solid #333; }
+.search .months button { width: 26px; background: #fff; border: 1px solid #ccc; }
+.search .months button.on { border: 2px inset #888; background: #ffff99; }
+.grid-wrap { overflow: auto; height: calc(100vh - 130px); }
+.grid { border-collapse: collapse; font-size: 12px; }
+.grid th { position: sticky; top: 0; background: #993399; color: #fff; font-weight: normal; border: 1px solid #fff; padding: 1px 3px; white-space: pre-line; z-index: 1; }
+.grid th.red { background: #cc3333; }
+.grid th.chk { width: 30px; font-size: 11px; }
+.grid td { border: 1px solid #c8c8c8; padding: 1px 3px; vertical-align: top; }
+.grid tbody tr { background: #fff; }
+.grid tbody tr:hover td { background: #eef4ff; }
+.grid td.num { text-align: right; }
+.grid td.center { text-align: center; vertical-align: middle; background: #8b78c8; }
+.grid td.red, .grid small.red { color: #c00; }
+.grid td.note { max-width: 130px; font-size: 11px; }
+.grid td.dark { background: #1f3a68; color: #fff; }
+.grid small { color: #555; }
+.count { padding: 4px 8px; color: #555; }

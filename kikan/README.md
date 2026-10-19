@@ -40,3 +40,26 @@ PGURL=... python3 csv_to_pg.py --fe 受注登録FE --dir 書き出したフォ�
 - リンクしている表は、本来の持ち主のスキーマに入れる（例：受注登録FE の「TD_出庫」→ `soko."TD_出荷"`）。対応は `links/画面側ファイル名.json`（画面側ファイルの中の情報から作ったもの）。
 - 画面側ファイルの中の表は、`sources.json` でその画面側ファイルに割り当てたスキーマ（例：`juchu_fe`）に入れる。
 - ほかのシステムの表がいっしょに書き出されていて、すでに取り込んだものを上書きしたくないときは `--skip-schemas ws,soko` のように指定する。
+
+## Web アプリ（app）
+
+| フォルダ | 中身 |
+|---|---|
+| `app/server/` | サーバー（Fastify・PostgreSQL）。ログイン、受注の API |
+| `app/client/` | 画面（React）。Access の画面に近い見た目にしている |
+
+```
+cd kikan/app
+npm install
+npm run build                      # 画面を作る（dist/）
+PGURL=... npm run create-user -- ログインID 名前 パスワード [admin]
+PGURL=... npm start                # http://localhost:3000 で開く
+```
+
+- 表は Access と同じ名前のものを使う（例：`juchu."TD_受注"`）。Web 版だけで使う表（利用者・ログイン・設定）は `app` スキーマに置く（`server/schema.sql`）。
+- 開発中は `npm run dev`（画面は http://localhost:5173）。
+
+### できている画面
+- ログイン、メニュー（受注管理）
+- 受注先選択画面（FM_受注先選択画面）
+- 受注検索（F_受注検索）：見るだけ（チェックの付け外し・訂正・出力はこれから）

@@ -11,3 +11,4 @@ node_modules/
 *.laccdb
 kikan/migrate/data/
 移し替え結果.md
+kikan/app/dist/
