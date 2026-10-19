@@ -1,5 +1,5 @@
 {
-  "説明": "Access のデータ側ファイル（BE）と、移し先のスキーマの対応。ファイルは data/ フォルダに置く（リポジトリには入れない）。",
+  "説明": "Access のデータ側ファイル（BE）と、移し先のスキーマの対応。ファイルは data/ フォルダに置く（リポジトリには入れない）。 製造計画は画面とデータが 1 つのファイルなので、製造計画.accdb と製造計画FE.accdb は同じスキーマ（keikaku）にする。",
   "sources": [
     {
       "file": "data/受注登録.accdb",
@@ -67,7 +67,7 @@
     },
     {
       "file": "data/製造計画FE.accdb",
-      "schema": "keikaku_fe"
+      "schema": "keikaku"
     },
     {
       "file": "data/包装場管理SystemFE.accdb",
