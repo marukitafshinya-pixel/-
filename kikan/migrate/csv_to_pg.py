@@ -82,6 +82,7 @@ def main():
     ap.add_argument("--fe", required=True, help="書き出した画面側ファイルの名前（links/ のファイル名）")
     ap.add_argument("--dir", required=True, help="fields.txt と CSV があるフォルダ")
     ap.add_argument("--report", default="移し替え結果.md")
+    ap.add_argument("--skip-schemas", default="", help="上書きしないスキーマ（カンマ区切り。例：ws,soko）")
     a = ap.parse_args()
     pgurl = os.environ.get("PGURL") or sys.exit("PGURL（PostgreSQL の接続先）を指定してください")
 
@@ -90,6 +91,7 @@ def main():
     links = json.load(open(os.path.join(HERE, "links", a.fe + ".json"), encoding="utf-8"))
     local_schema = schema_of.get(a.fe + ".accdb") or sys.exit(f"sources.json に {a.fe}.accdb がありません")
 
+    skip = {x.strip() for x in a.skip_schemas.split(",") if x.strip()}
     tables = parse_fields(os.path.join(a.dir, "fields.txt"))
     lines = [f"# 移し替え結果（{a.fe} から書き出した CSV）", "",
              "| 表（画面側の名前） | 入れた先 | CSV の件数 | 入れた件数 | 結果 |", "|---|---|---|---|---|"]
@@ -118,6 +120,9 @@ def main():
         path = os.path.join(a.dir, name + ".csv")
         schema, table = dest_of[name]
         dest = f'"{schema}"."{table}"'
+        if schema in skip:
+            lines.append(f"| {name} | {schema}.{table} | | | 上書きしない指定のため、とばした |")
+            continue
         if not os.path.exists(path):
             lines.append(f"| {name} | {schema}.{table} | | | CSV なし（とばした） |")
             continue
