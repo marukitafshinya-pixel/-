@@ -91,14 +91,23 @@ export function juchuFormRoutes(app: FastifyInstance) {
   });
 
   // 届け先コードの選択肢（QS_受注先グループマスタVer2）
-  app.get<{ Querystring: { moto: string; saki: string } }>("/api/juchu/form/todoke", async (req) =>
-    q(
+  // 取引先ごとの画面をこの画面にまとめたため、ここに無い受注先（日本食研の一部など）は、
+  // その受注先で今までに受けた届け先（多い順）を出す
+  app.get<{ Querystring: { moto: string; saki: string } }>("/api/juchu/form/todoke", async (req) => {
+    const rows = await q(
       `SELECT "届け先コード", "届け先" FROM ${名義条件}
        WHERE "取引先グループID" = $1 AND "受注先ID" = $2
        GROUP BY "届け先コード", "届け先" ORDER BY "届け先コード"`,
       [Number(req.query.moto), Number(req.query.saki)],
-    ),
-  );
+    );
+    if (rows.length) return rows;
+    return q(
+      `SELECT "届け先コード", MIN("届け先") AS "届け先" FROM ${受注}
+       WHERE "受注先ID" = $1 AND "届け先コード" IS NOT NULL
+       GROUP BY "届け先コード" ORDER BY COUNT(*) DESC, "届け先コード"`,
+      [Number(req.query.saki)],
+    );
+  });
 
   // 届け先を選んだときの値（短縮名・正式名）
   app.get<{ Params: { code: string } }>("/api/juchu/form/tokui/:code", async (req) => {

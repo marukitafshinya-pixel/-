@@ -17,28 +17,12 @@ const 付け外しできる項目 = new Set([
 ]);
 
 /**
- * 受注先選択画面で行を選んだときに開く入力画面（Access の FM_受注先選択画面.list_受注選択_Click と同じ振り分け）。
- * 和弘食品（1237）は Access では列の位置がずれていて、いつも「指定届け先」の画面が開く（不具合も今のまま再現する）。
+ * 受注先選択画面で行を選んだときに開く入力画面。
+ * Access では取引先ごとに別の画面（日本食研・丸大・SB食品・和弘食品・ふらのソース）を開いていたが、
+ * Web 版では「受注登録（届け先指定）」の画面にまとめる（2026/10/20 利用者の決定）。
  */
-export function 入力画面(row: { 受注先ID: number; 取引先ID: number; 取扱い区分: number | null }): string {
-  if (row.取扱い区分 === 1) return "FM_受注登録伝票_ふらのソース";
-  switch (row.取引先ID) {
-    case 357:
-      return "FM_受注登録伝票_SB食品";
-    case 360:
-      if ([341, 811, 812, 818, 824, 3087, 3153].includes(row.受注先ID)) return "FM_受注登録伝票_日本食研";
-      if (row.受注先ID === 3165) return "FM_受注登録伝票_日本食研_滝沢ハム";
-      return "FM_受注登録_届け先指定";
-    case 1088:
-      return "FM_受注登録伝票_和弘食品";
-    case 1237:
-      return "FM_受注登録伝票_和弘食品_指定届け先";
-    case 6672:
-    case 629:
-      return "FM_受注登録伝票_丸大";
-    default:
-      return "FM_受注登録_届け先指定";
-  }
+export function 入力画面(_row: { 受注先ID: number; 取引先ID: number; 取扱い区分: number | null }): string {
+  return "FM_受注登録_届け先指定";
 }
 
 // 「その他」＝受注元のボタンに載っていない受注元（本社受注は「大阪」に入るので除く）
