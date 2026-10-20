@@ -349,7 +349,7 @@ function 数(v: unknown): number | null {
 }
 /** 日付は日だけで比べる（"2026-10-28 00:00:00" と "2026-10-28" を同じにする） */
 function 比べ用(v: unknown): string {
-  const s = String(v);
+  const s = String(v).replace(/^(\d{4}-\d{2}-\d{2})T/, "$1 ");
   return /^\d{4}-\d{2}-\d{2}( 00:00:00)?$/.test(s) ? s.slice(0, 10) : typeof v === "number" ? String(v) : s;
 }
 function 文字(v: unknown): string {
@@ -358,7 +358,7 @@ function 文字(v: unknown): string {
 /** Access の日付を文字にしたときの形（2025/07/05） */
 function 日付(v: unknown): string {
   if (空(v)) return "";
-  const s = String(v);
+  const s = String(v).replace(/^(\d{4}-\d{2}-\d{2})T/, "$1 ");
   return s.endsWith(" 00:00:00") || s.length === 10 ? s.slice(0, 10).replace(/-/g, "/") : s.replace(/-/g, "/");
 }
 function 真偽(v: unknown): string {
