@@ -33,6 +33,10 @@ export function 入力画面(row: { 受注先ID: number; 取引先ID: number; �
   }
 }
 
+// 「その他」＝受注元のボタンに載っていない受注元（本社受注は「大阪」に入るので除く）
+const その他の受注元 = `j."本社受注" = false AND j."受注元ID" NOT IN
+  (SELECT "値" FROM app."受注検索_受注元ボタン" WHERE "値" > 0 AND "値" <> 629)`;
+
 function like(v: string): string {
   // Access の Like（* と ?）を PostgreSQL の LIKE に読み替える。記号がなければ完全一致と同じになる。
   return v.replace(/[%_\\]/g, (c) => "\\" + c).replace(/\*/g, "%").replace(/\?/g, "_");
@@ -53,7 +57,7 @@ export function juchuRoutes(app: FastifyInstance) {
   });
 
   // 受注先の一覧（Q_受注先グループマスタ）
-  app.get<{ Querystring: { torihiki: string; honsha?: string; shiire?: string } }>("/api/juchu/saki", async (req) => {
+  app.get<{ Querystring: { torihiki: string; honsha?: string } }>("/api/juchu/saki", async (req) => {
     const rows = await q<any>(
       `SELECT MIN("ID") AS "ID", "受注先ID", "受注先名", "取引先ID", "取引先名", "本社受注", "取扱い区分", "使用不可"
        FROM ${受注先マスタ}
@@ -62,9 +66,7 @@ export function juchuRoutes(app: FastifyInstance) {
        ORDER BY "受注先ID"`,
       [Number(req.query.torihiki), req.query.honsha === "1"],
     );
-    // 「仕入」を選んでいるときは仕入用の入力画面を開く（要確認：Access の画面の設計から読み取れないため推定）
-    const shiire = req.query.shiire === "1";
-    return rows.map((r) => ({ ...r, 入力画面: shiire ? "FM_受注登録_仕入" : 入力画面(r) }));
+    return rows.map((r) => ({ ...r, 入力画面: 入力画面(r) }));
   });
 
   // 受注検索の受注元ボタン
@@ -75,11 +77,12 @@ export function juchuRoutes(app: FastifyInstance) {
   // 受注元を選んだときの受注先ボタン（F_受注検索.Flm_受注元選択_AfterUpdate）
   app.get<{ Querystring: { moto: string } }>("/api/juchu/search/saki-buttons", async (req) => {
     const moto = Number(req.query.moto);
+    const cond = moto === -2 ? その他の受注元 : moto === 629 ? `j."本社受注" = true` : `j."受注元ID" = $1`;
     const rows = await q<{ 受注先ID: number; 短縮名: string | null }>(
       `SELECT j."受注先ID", m."短縮名" FROM (
-         SELECT DISTINCT "受注先ID" FROM ${受注} WHERE "受注先ID" <> 1123 AND "受注元ID" = $1
+         SELECT DISTINCT j."受注先ID" FROM ${受注} j WHERE j."受注先ID" <> 1123 AND ${cond}
        ) j LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = j."受注先ID" ORDER BY j."受注先ID"`,
-      [moto],
+      moto === -2 || moto === 629 ? [] : [moto],
     );
     // 日本食研は短縮名の先頭 4 文字を省いて表示する（Access と同じ）
     return rows.map((r) => ({ 受注先ID: r.受注先ID, 表示名: moto === 360 ? (r.短縮名 ?? "").slice(4) : r.短縮名 ?? "" }));
@@ -102,7 +105,8 @@ export function juchuRoutes(app: FastifyInstance) {
     } else {
       if (p.moto !== undefined && p.moto !== "") {
         const moto = Number(p.moto);
-        if (moto === -1) where.push(`j."入庫名義ID" <> 1`);
+        if (moto === -2) where.push(`${その他の受注元}`);
+        else if (moto === -1) where.push(`j."入庫名義ID" <> 1`);
         else if (moto === 0) where.push(`j."受注元ID" <> 0`);
         else if (moto === 629) where.push(`j."本社受注" = true`);
         else add(`j."受注元ID" = ?`, moto);

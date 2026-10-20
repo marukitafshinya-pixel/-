@@ -16,8 +16,9 @@ CREATE TABLE IF NOT EXISTS app.sessions (
   expires_at  TIMESTAMPTZ NOT NULL
 );
 
--- 受注検索の「受注元」ボタン。Access の画面の設計に入っている値なので、ここで直せるようにする。
--- 値の意味は Access の F_受注検索 と同じ：-1＝入庫名義ID<>1、0＝全部、629＝本社受注、それ以外＝受注元ID。
+-- 受注検索の「受注元」ボタン。Access の画面の設計に入っている値なので、ここで持つ。
+-- 値の意味：0＝全部、629＝本社受注（大阪）、-2＝その他（ほかのボタンに載っていない受注元。本社受注は除く）、それ以外＝受注元ID。
+-- ※ 直す画面ができるまでは、起動のたびにこの内容に戻す。
 CREATE TABLE IF NOT EXISTS app."受注検索_受注元ボタン" (
   並び     INTEGER PRIMARY KEY,
   表示名   TEXT NOT NULL,
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS app."受注検索_受注元ボタン" (
   要確認   BOOLEAN NOT NULL DEFAULT false
 );
 
+DELETE FROM app."受注検索_受注元ボタン";
 INSERT INTO app."受注検索_受注元ボタン" (並び, 表示名, 値, 要確認) VALUES
   (1, '日本食研', 360, false),
   (2, '日洋', 350, false),
@@ -32,10 +34,7 @@ INSERT INTO app."受注検索_受注元ボタン" (並び, 表示名, 値, 要�
   (4, 'SB食品', 357, false),
   (5, '和弘食品', 1237, false),
   (6, 'ふらの', 150, false),
-  (7, '北海道ﾌｰｽﾞ', 1255, true),
-  (8, '美瑛ﾌｰｽﾞ', 133, true),
-  (9, '冷凍原料', 1095, true),
-  (10, '丸北デポ', 1254, false),
-  (11, '大阪', 629, false),
-  (12, 'その他', -1, true)
-ON CONFLICT (並び) DO NOTHING;
+  (7, '冷凍原料', 1095, false),
+  (8, '丸北デポ', 1254, false),
+  (9, '大阪', 629, false),
+  (10, 'その他', -2, false);

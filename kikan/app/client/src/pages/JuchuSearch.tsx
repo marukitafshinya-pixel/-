@@ -137,7 +137,7 @@ export default function JuchuSearch() {
       </div>
       <div className="search-head2">
         <div className="saki">
-          {sakiBtns.map((b) => (
+          {sakiBtns.filter((b) => b.表示名).map((b) => (
             <button key={b.受注先ID} className={f.saki === String(b.受注先ID) ? "on" : ""} onClick={() => set({ saki: String(b.受注先ID) })}>
               {b.表示名}
             </button>

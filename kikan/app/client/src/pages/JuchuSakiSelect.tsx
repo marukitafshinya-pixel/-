@@ -8,7 +8,6 @@ type Saki = { ID: number; 受注先ID: number; 受注先名: string; 取引先ID
 /** 受注先選択画面（Access の FM_受注先選択画面） */
 export default function JuchuSakiSelect() {
   const nav = useNavigate();
-  const [shiire, setShiire] = useState(false); // 通常／仕入
   const [honsha, setHonsha] = useState(false); // 丸北 北海道／大阪丸北
   const [groups, setGroups] = useState<Group[]>([]);
   const [torihiki, setTorihiki] = useState<number | null>(null);
@@ -23,9 +22,9 @@ export default function JuchuSakiSelect() {
   useEffect(() => {
     if (torihiki === null) return;
     api
-      .get<Saki[]>("/api/juchu/saki", { torihiki, honsha: honsha ? 1 : 0, shiire: shiire ? 1 : 0 })
+      .get<Saki[]>("/api/juchu/saki", { torihiki, honsha: honsha ? 1 : 0 })
       .then(setSaki);
-  }, [torihiki, honsha, shiire]);
+  }, [torihiki, honsha]);
 
   // ボタンは 3 列 × 10 段。Access と同じく、上から下へ、左の列から順に並べる。
   const cells: (Group | null)[] = Array.from({ length: 30 }, (_, i) => groups[i] ?? null);
@@ -46,14 +45,6 @@ export default function JuchuSakiSelect() {
             新規追加
           </button>
           <input className="cyan" readOnly />
-        </div>
-        <div className="toggle2">
-          <button className={!shiire ? "on" : ""} onClick={() => setShiire(false)}>
-            通常
-          </button>
-          <button className={shiire ? "on" : ""} onClick={() => setShiire(true)}>
-            仕入
-          </button>
         </div>
       </div>
       <div className="sakisel-body">
