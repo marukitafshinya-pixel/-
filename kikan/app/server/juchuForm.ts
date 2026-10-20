@@ -221,4 +221,140 @@ export function juchuFormRoutes(app: FastifyInstance) {
     await q(`DELETE FROM ${受注} WHERE "受注ID" = $1`, [Number(req.body.受注ID)]);
     return { 削除: true };
   });
+
+  // ---------------- 受注訂正（Access の FM_受注訂正） ----------------
+
+  // 処理コード（受注検索の「処理コード」＝枝番1）を変える。1〜3 なら画面で受注訂正を開く
+  app.post<{ Body: { 受注ID: number; 値: string | null } }>("/api/juchu/form/shori", async (req, reply) => {
+    const r = await q(`UPDATE ${受注} SET "枝番1" = $2 WHERE "受注ID" = $1 RETURNING "受注ID"`, [
+      Number(req.body.受注ID),
+      req.body.値 === "" ? null : req.body.値,
+    ]);
+    if (!r.length) return reply.code(404).send({ error: "この受注はありません" });
+    return { ok: true };
+  });
+
+  // 訂正を確定する（Access の「閉じる」ボタン。変えていなくても、押すと訂正として記録される）
+  app.post<{ Params: { jid: string }; Body: Record<string, any> }>("/api/juchu/form/teisei/:jid", async (req, reply) => {
+    const jid = Number(req.params.jid);
+    const t = req.body ?? {};
+    const c = await pool.connect();
+    try {
+      await c.query("BEGIN");
+      const { rows } = await c.query(`SELECT * FROM ${受注} WHERE "受注ID" = $1 FOR UPDATE`, [jid]);
+      const cur = rows[0];
+      if (!cur) throw Object.assign(new Error("この受注はありません"), { status: 404 });
+      const 名前 = async (code: unknown) => {
+        if (code === null || code === undefined || code === "") return "";
+        const r = await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [Number(code)]);
+        return r.rows[0]?.短縮名 ?? "";
+      };
+
+      // どこを直したか（Access と同じく、違いが見つかるたびに上書きするので、最後の 1 つだけが残る）
+      let 箇所 = "";
+      const 違う = (a: unknown, b: unknown) => !空(a) && !空(b) && 比べ用(a) !== 比べ用(b);
+      if (違う(t.受注元ID, cur.受注元ID)) 箇所 = `受注元 ${文字(cur.受注元名)} → ${await 名前(t.受注元ID)}`;
+      if (違う(t.受注先ID, cur.受注先ID)) 箇所 = `受注先  → ${await 名前(t.受注先ID)}`;
+      if (違う(t.統一受注ID, cur.統一受注ID)) 箇所 = `年間ID ${文字(t.統一受注ID)} → ${文字(cur.統一受注ID)}`;
+      if (違う(t.受注番号, cur.受注番号)) 箇所 = `受注No${文字(cur.受注番号)} → ${文字(t.受注番号)}`;
+      if (違う(t.商品コード, cur.商品コード)) 箇所 = `商品コード${文字(cur.商品コード)} → ${文字(t.商品コード)}`;
+      if (違う(t.商品名, cur.商品名)) 箇所 = `商品名${文字(cur.商品名)} → ${文字(t.商品名)}`;
+      if (違う(t.ケース, cur.ケース)) 箇所 = `ケース${文字(cur.ケース)} → ${文字(t.ケース)}`;
+      if (違う(t.商品kg, cur.商品kg)) 箇所 = `商品kg${文字(cur.商品kg)} → ${文字(t.商品kg)}`;
+      if (違う(t.届け先コード, cur.届け先コード)) 箇所 = `届け先コード${文字(cur.届け先コード)} → ${文字(t.届け先コード)}`;
+      if (違う(t.届け先, cur.届け先)) 箇所 = `届け先${文字(cur.届け先)} → ${文字(t.届け先)}`;
+      if (違う(t.納品日, cur.納品日)) 箇所 = `納品日${日付(cur.納品日)} → ${日付(t.納品日)}`;
+      if (違う(t.送り状No, cur.送り状No)) 箇所 = `送り状No${文字(cur.送り状No)} → ${文字(t.送り状No)}`;
+      if (違う(t.隠語, cur.隠語)) 箇所 = `隠語${文字(cur.隠語)} → ${文字(t.隠語)}`;
+      if (違う(t.蔵前区分, cur.蔵前区分)) 箇所 = `引き取り区分${真偽(cur.蔵前区分)} → ${真偽(t.蔵前区分)}`;
+
+      // 書き込む値（Access と同じく、訂正の欄の値をそのまま入れる。隠語は空欄なら空になる）
+      const 値: Record<string, unknown> = {
+        受注日: 空(t.発注日) ? null : t.発注日,
+        受注元ID: 数(t.受注元ID), 受注元名: 空(t.受注元名) ? null : t.受注元名,
+        受注先ID: 数(t.受注先ID), 受注先名: 空(t.受注先名) ? null : t.受注先名,
+        統一受注ID: 空(t.統一受注ID) ? null : t.統一受注ID,
+        受注番号: 空(t.受注番号) ? null : t.受注番号,
+        商品コード: 数(t.商品コード), 商品名: 空(t.商品名) ? null : t.商品名,
+        ケース: 数(t.ケース), 商品kg: 数(t.商品kg),
+        届け先コード: 数(t.届け先コード), 届け先: 空(t.届け先) ? null : t.届け先,
+        納品日: 空(t.納品日) ? null : t.納品日,
+        送り状No: 空(t.送り状No) ? null : t.送り状No,
+        隠語: 空(t.隠語) ? null : t.隠語,
+      };
+      // 引き取り区分は、空欄のときは Access でも書き込めずに今のまま
+      if (!空(t.蔵前区分)) 値.蔵前区分 = !!t.蔵前区分;
+      const 備考を足す = 箇所 + "に訂正 ";
+
+      const 書く = async (table: string, extra: Record<string, unknown>, firstOnly: boolean) => {
+        const v = { ...値, ...extra };
+        const cols = Object.keys(v);
+        const set = cols.map((k, i) => `"${k}" = $${i + 2}`).join(", ");
+        const where = firstOnly
+          ? `ctid = (SELECT ctid FROM ${table} WHERE "受注ID" = $1 LIMIT 1)`
+          : `"受注ID" = $1`;
+        await c.query(
+          `UPDATE ${table} SET ${set}, "備考" = $${cols.length + 2} || COALESCE("備考", '') WHERE ${where}`,
+          [jid, ...cols.map((k) => v[k]), 備考を足す],
+        );
+      };
+      const 知らせる = async (table: string) => {
+        const r = await c.query(
+          `UPDATE ${table} SET "計画変更chk" = true, "通知" = '受注訂正', "変更通知" = $2 WHERE chk = false AND "受注ID" = $1`,
+          [jid, 箇所],
+        );
+        return r.rowCount ?? 0;
+      };
+      const ある = async (schema: string, table: string) =>
+        (await c.query(`SELECT to_regclass($1) AS r`, [`"${schema}"."${table}"`])).rows[0].r !== null;
+
+      // 1. この受注
+      await 書く(受注, {}, false);
+      let 件数 = 0;
+      const 写し: Record<string, unknown> = { 入数: 数(t.入数) };
+      // 2. 倉庫管理の受注の写しと、出庫に知らせ
+      if (await ある("soko", "TD_受注")) await 書く(表名("soko", "TD_受注"), 写し, true);
+      if (await ある("soko", "TD_出荷")) 件数 += await 知らせる(表名("soko", "TD_出荷"));
+      // 3. 転売品管理の受注の写しと、出荷に知らせ
+      if (await ある("tenbai", "TD_受注")) await 書く(表名("tenbai", "TD_受注"), 写し, true);
+      if (await ある("tenbai", "TD_出荷")) 件数 += await 知らせる(表名("tenbai", "TD_出荷"));
+      // 4. WorkStation の受注の写しと、出荷に知らせ
+      if (await ある("ws", "TD_受注")) await 書く(表名("ws", "TD_受注"), 写し, true);
+      if (await ある("ws", "TD_出荷")) 件数 += await 知らせる(表名("ws", "TD_出荷"));
+
+      await c.query("COMMIT");
+      return { 通知件数: 件数, 訂正箇所: 箇所 };
+    } catch (e: any) {
+      await c.query("ROLLBACK");
+      return reply.code(e.status ?? 500).send({ error: e.status ? e.message : "訂正できませんでした：" + e.message });
+    } finally {
+      c.release();
+    }
+  });
+}
+
+// 処理の中では t を訂正の値に使っているので、表の名前を作る関数は別の名前で呼ぶ
+const 表名 = t;
+function 空(v: unknown): boolean {
+  return v === null || v === undefined || v === "";
+}
+function 数(v: unknown): number | null {
+  return 空(v) ? null : Number(v);
+}
+/** 日付は日だけで比べる（"2026-10-28 00:00:00" と "2026-10-28" を同じにする） */
+function 比べ用(v: unknown): string {
+  const s = String(v);
+  return /^\d{4}-\d{2}-\d{2}( 00:00:00)?$/.test(s) ? s.slice(0, 10) : typeof v === "number" ? String(v) : s;
+}
+function 文字(v: unknown): string {
+  return v === null || v === undefined ? "" : String(v);
+}
+/** Access の日付を文字にしたときの形（2025/07/05） */
+function 日付(v: unknown): string {
+  if (空(v)) return "";
+  const s = String(v);
+  return s.endsWith(" 00:00:00") || s.length === 10 ? s.slice(0, 10).replace(/-/g, "/") : s.replace(/-/g, "/");
+}
+function 真偽(v: unknown): string {
+  return 空(v) ? "" : v ? "True" : "False";
 }

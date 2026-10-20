@@ -155,3 +155,19 @@ input, select { font: inherit; }
 .find-list td.num { width: 70px; text-align: right; }
 .find-list td.sub { color: #666; font-size: 12px; }
 .find-list tr:hover td { background: #cde6ff; }
+.grid select.shori { font-size: 11px; width: 44px; }
+
+/* 受注訂正 */
+.jf-top.wide { width: 760px; }
+.teisei-table { border-collapse: collapse; margin: 6px 4px; width: 760px; background: #7b6fc0; }
+.teisei-table th { background: #800080; color: #fff; padding: 4px 8px; width: 110px; border: 3px solid #7b6fc0; font-weight: bold; }
+.teisei-table thead th { background: #7b6fc0; text-align: left; }
+.teisei-table td { padding: 3px 6px; border: 3px solid #7b6fc0; }
+.teisei-table td.now { background: #f0f0f0; width: 280px; }
+.teisei-table td.note { white-space: pre-wrap; }
+.teisei-table input { width: 100%; }
+.teisei-table .pair { display: flex; gap: 4px; }
+.teisei-table .pair .code { width: 70px; flex: none; }
+.teisei-table .pair .code2 { width: 100px; flex: none; }
+.teisei-table .pair > input:last-child { flex: 1; }
+.teisei-note { width: 760px; margin: 4px; color: #333; font-size: 12px; }

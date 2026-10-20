@@ -81,6 +81,18 @@ export default function JuchuSearch() {
     }
   }
 
+  // 処理コードを選ぶ。1〜3 なら受注訂正を開く（Access の 枝番1_AfterUpdate）
+  async function 処理コード(r: Row, v: string) {
+    try {
+      await api.post("/api/juchu/form/shori", { 受注ID: r.受注ID, 値: v });
+      setRows((rs) => rs.map((x) => (x.受注ID === r.受注ID ? { ...x, 枝番1: v || null } : x)));
+      const k = Number(v.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)));
+      if (k >= 1 && k <= 3) nav(`/juchu/teisei/${r.受注ID}`);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+  }
+
   const shohinName = useMemo(
     () => shohinList.find((s) => String(s.商品コード) === f.shohin)?.商品名 ?? "",
     [shohinList, f.shohin],
@@ -248,7 +260,15 @@ export default function JuchuSearch() {
                   <br />
                   <small className="red">{r.統一受注ID}</small>
                 </td>
-                <td>{r.枝番1}</td>
+                <td>
+                  <select className="shori" value={r.枝番1 ?? ""} onChange={(e) => 処理コード(r, e.target.value)}>
+                    {Array.from(new Set(["", "00", "01", "02", "03", r.枝番1 ?? ""])).map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </td>
                 <td className="num">{r.届け先コード}</td>
                 <td>{r.届け先}</td>
                 <td className="num">{r.商品コード}</td>
