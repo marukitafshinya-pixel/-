@@ -8,6 +8,7 @@ import { pool } from "./db.js";
 import { authRoutes } from "./auth.js";
 import { juchuRoutes } from "./juchu.js";
 import { juchuFormRoutes } from "./juchuForm.js";
+import { hanmoriRoutes } from "./hanmori.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -18,6 +19,7 @@ await app.register(cookie);
 authRoutes(app);
 await app.register(async (a) => juchuRoutes(a));
 await app.register(async (a) => juchuFormRoutes(a));
+await app.register(async (a) => hanmoriRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");

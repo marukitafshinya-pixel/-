@@ -26,6 +26,19 @@ export const api = {
   post: <T,>(url: string, body?: unknown) => call<T>("POST", url, body ?? {}),
 };
 
+/** ファイルをそのままサーバーに送る */
+export async function upload<T = any>(url: string, file: File): Promise<T> {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: await file.arrayBuffer(),
+    credentials: "same-origin",
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new ApiError(r.status, data.error ?? "エラーが起きました");
+  return data as T;
+}
+
 /** "2026-10-01 00:00:00" → "10/01（木）" のように、Access の画面と同じ書き方にする */
 export function mdw(v: string | null | undefined): string {
   if (!v) return "";

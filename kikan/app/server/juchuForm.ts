@@ -23,8 +23,9 @@ const 書ける項目 = [
 /**
  * 新しく登録するときに入る値。Access の表の「既定値」にあたるもの。
  * 今の受注データで、どの画面から入れた受注でも同じ値になっている項目を並べた。
+ * 初回登録chk は「入力確認」を押したときに入るもので、初めは入らない。
  */
-const 新規の既定値: Record<string, unknown> = {
+export const 新規の既定値: Record<string, unknown> = {
   残kg: 0, 請求先コード: 0, 支払区分: 0, 受注区分: 0, 手配元ID: 0, 手配帳合ID: 0,
   丸北出荷数: 0, 倉庫出荷数: 0, 転売出荷数: 0, 年間受注ID: 0, 月間カウンタ: 0, 月間No: 0,
   運賃振分区分: 0, 変更前ケース: 0, 変更前商品kg: 0, 指定最終届け先コード: 0,
@@ -32,7 +33,7 @@ const 新規の既定値: Record<string, unknown> = {
   出庫返信FAX確認: false, 輸送手配返信確認: false, 受領書確認: false, 受注返信FAX: false,
   賞味期限送信: false, 送品案内: false, 出力用chk: false, 伝票作成: false, 伝票送付: false,
   伝票FAX: false, 完了消込: false, 少量残連絡chk: false, 蔵前区分: false, OneDriveChk: false,
-  初回登録chk: true,
+  初回登録chk: false, 入庫名義ID: 1, 受注グループID: 0, ケース1: 0, 商品kg1: 0, 残ケース: 0, 本社受注: false,
 };
 
 async function 短縮名(code: unknown): Promise<string | null> {

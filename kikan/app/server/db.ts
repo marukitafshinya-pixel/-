@@ -21,5 +21,6 @@ export function t(schema: string, table: string): string {
 /** 日本の日時（サーバーの時計が世界標準時でもずれないように） */
 export function 日本の今(): { 日付: string; 日時: string } {
   const d = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
-  return { 日付: d.slice(0, 10), 日時: `${d.slice(0, 10).replace(/-/g, "/")} ${d.slice(11, 19)}` };
+  // 時刻は Access の Now() と同じく、時の頭に 0 を付けない（例：2026/10/09 9:02:01）
+  return { 日付: d.slice(0, 10), 日時: `${d.slice(0, 10).replace(/-/g, "/")} ${Number(d.slice(11, 13))}${d.slice(13, 19)}` };
 }

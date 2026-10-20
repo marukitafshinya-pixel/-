@@ -8,6 +8,8 @@ import JuchuSakiSelect from "./pages/JuchuSakiSelect";
 import JuchuSearch from "./pages/JuchuSearch";
 import JuchuTodokeForm from "./pages/JuchuTodokeForm";
 import JuchuTeisei from "./pages/JuchuTeisei";
+import HanmoriJuchu from "./pages/HanmoriJuchu";
+import HanmoriUriage from "./pages/HanmoriUriage";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -27,6 +29,8 @@ function App() {
       <Route path="/juchu/search" element={<JuchuSearch />} />
       <Route path="/form/FM_受注登録_届け先指定" element={<JuchuTodokeForm />} />
       <Route path="/juchu/teisei/:jid" element={<JuchuTeisei />} />
+      <Route path="/form/F_販盛インポート" element={<HanmoriJuchu />} />
+      <Route path="/form/F_販盛インポート売上" element={<HanmoriUriage />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
