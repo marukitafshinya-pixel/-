@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
+import { 受注検索のExcel } from "./excel.js";
 
 // Access の受注登録で使っている表の置き場所
 const 受注 = t("juchu", "TD_受注");
@@ -47,6 +48,43 @@ const その他の受注元 = `j."本社受注" = false AND j."受注元ID" NOT 
 function like(v: string): string {
   // Access の Like（* と ?）を PostgreSQL の LIKE に読み替える。記号がなければ完全一致と同じになる。
   return v.replace(/[%_\\]/g, (c) => "\\" + c).replace(/\*/g, "%").replace(/\?/g, "_");
+}
+
+/** 受注検索の条件（画面の検索と Excel 出力で同じものを使う） */
+function 検索条件(p: Record<string, string | undefined>) {
+  const where: string[] = [`j.chk = false`];
+  const args: unknown[] = [];
+  const add = (cond: string, v: unknown) => {
+    args.push(v);
+    where.push(cond.replace("?", `$${args.length}`));
+  };
+
+  if (p.mode === "today") {
+    add(`j."入力日"::date = ?::date`, 日本の今().日付);
+  } else if (p.mode === "cancel") {
+    where.push(`j."枝番1" = '03' AND COALESCE(j."完了消込", false) = false`);
+  } else {
+    if (p.moto !== undefined && p.moto !== "") {
+      const moto = Number(p.moto);
+      if (moto === -2) where.push(`${その他の受注元}`);
+      else if (moto === -1) where.push(`j."入庫名義ID" <> 1`);
+      else if (moto === 0) where.push(`j."受注元ID" <> 0`);
+      else if (moto === 629) where.push(`j."本社受注" = true`);
+      else add(`j."受注元ID" = ?`, moto);
+    }
+    if (p.from && p.to) {
+      add(`j."納品日" >= ?::date`, p.from);
+      add(`j."納品日" < (?::date + 1)`, p.to);
+    }
+    if (p.saki) add(`j."受注先ID" = ?`, Number(p.saki));
+    if (p.jid) add(`j."受注ID"::text LIKE ?`, like(p.jid));
+    else if (p.bango) add(`j."受注番号" LIKE ?`, like(p.bango));
+    if (p.toitsu) add(`j."統一受注ID" LIKE ?`, like(p.toitsu));
+    if (p.shohin)
+      add(`s."グループ商品コード" = (SELECT "グループ商品コード" FROM ${商品マスタ} WHERE "商品コード" = ?)`, Number(p.shohin));
+  }
+
+  return { where: where.join(" AND "), args };
 }
 
 export function juchuRoutes(app: FastifyInstance) {
@@ -98,38 +136,7 @@ export function juchuRoutes(app: FastifyInstance) {
   // 受注検索（F_受注検索）
   app.get<{ Querystring: Record<string, string | undefined> }>("/api/juchu/search", async (req) => {
     const p = req.query;
-    const where: string[] = [`j.chk = false`];
-    const args: unknown[] = [];
-    const add = (cond: string, v: unknown) => {
-      args.push(v);
-      where.push(cond.replace("?", `$${args.length}`));
-    };
-
-    if (p.mode === "today") {
-      add(`j."入力日"::date = ?::date`, 日本の今().日付);
-    } else if (p.mode === "cancel") {
-      where.push(`j."枝番1" = '03' AND COALESCE(j."完了消込", false) = false`);
-    } else {
-      if (p.moto !== undefined && p.moto !== "") {
-        const moto = Number(p.moto);
-        if (moto === -2) where.push(`${その他の受注元}`);
-        else if (moto === -1) where.push(`j."入庫名義ID" <> 1`);
-        else if (moto === 0) where.push(`j."受注元ID" <> 0`);
-        else if (moto === 629) where.push(`j."本社受注" = true`);
-        else add(`j."受注元ID" = ?`, moto);
-      }
-      if (p.from && p.to) {
-        add(`j."納品日" >= ?::date`, p.from);
-        add(`j."納品日" < (?::date + 1)`, p.to);
-      }
-      if (p.saki) add(`j."受注先ID" = ?`, Number(p.saki));
-      if (p.jid) add(`j."受注ID"::text LIKE ?`, like(p.jid));
-      else if (p.bango) add(`j."受注番号" LIKE ?`, like(p.bango));
-      if (p.toitsu) add(`j."統一受注ID" LIKE ?`, like(p.toitsu));
-      if (p.shohin)
-        add(`s."グループ商品コード" = (SELECT "グループ商品コード" FROM ${商品マスタ} WHERE "商品コード" = ?)`, Number(p.shohin));
-    }
-
+    const { where, args } = 検索条件(p);
     const order =
       p.sort === "shohin" ? `j."商品コード", j."納品日"` : `j."納品日", j."取引元ID", j."届け先コード", j."受注ID"`;
     const rows = await q(
@@ -139,12 +146,29 @@ export function juchuRoutes(app: FastifyInstance) {
               j."受領書確認", j."伝票作成", j."伝票送付", j."伝票FAX", j."送品案内",
               j."出荷予定日", j."受注ユーザー名" AS "運送会社", j."手配輸送番号", j."倉庫名", j."手配出庫番号"
        FROM ${受注} j LEFT JOIN ${商品マスタ} s ON s."商品コード" = j."商品コード"
-       WHERE ${where.join(" AND ")}
+       WHERE ${where}
        ORDER BY ${order}
        LIMIT 3000`,
       args,
     );
     return rows;
+  });
+
+  // Excel に出力（F_受注検索の「出力」。Access と同じ 15 列・同じ見た目で、受注ID の順）
+  app.get<{ Querystring: Record<string, string | undefined> }>("/api/juchu/search/export", async (req, reply) => {
+    const { where, args } = 検索条件(req.query);
+    const rows = await q(
+      `SELECT j."受注ID", j."受注日", j."受注番号", j."受注元ID", j."受注元名", j."届け先コード", j."届け先",
+              j."商品コード", j."商品名", j."ケース", j."商品kg", j."納品日", j."出荷予定日", j."倉庫名", j."受注ユーザー名" AS "運送会社名"
+       FROM ${受注} j LEFT JOIN ${商品マスタ} s ON s."商品コード" = j."商品コード"
+       WHERE ${where} ORDER BY j."受注ID"`,
+      args,
+    );
+    const buf = await 受注検索のExcel(rows);
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent("受注検索.xlsx")}`);
+    return reply.send(buf);
   });
 
   // 商品の選択肢（商品で検索）

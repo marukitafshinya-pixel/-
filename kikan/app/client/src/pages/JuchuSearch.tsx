@@ -147,7 +147,13 @@ export default function JuchuSearch() {
           <input onKeyDown={(e) => e.key === "Enter" && set({ toitsu: e.currentTarget.value })} />
         </div>
         <div className="actions">
-          <button title="Excel への出力は準備中です" disabled>
+          <button
+            title="いま表示している条件で Excel に出力します"
+            onClick={() => {
+              // 今の検索条件のまま、Excel のファイルを受け取る
+              window.location.href = "/api/juchu/search/export?" + new URLSearchParams(f).toString();
+            }}
+          >
             出力
           </button>
           <button
