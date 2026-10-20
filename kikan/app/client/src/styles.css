@@ -209,3 +209,4 @@ input, select { font: inherit; }
 .hm-grid tr.ng td { background: #ffd6d6; }
 .hm-grid td.ref { position: relative; cursor: pointer; background: #ebffeb; white-space: nowrap; }
 .hm-grid td.ref .combo-list { top: 20px; right: 0; left: auto; width: 200px; }
+.hanmori.sb { background: #fdf0d0; }

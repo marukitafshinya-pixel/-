@@ -20,7 +20,7 @@ const 番号を探す受注ID = 37359;
 // ---------------- CSV ----------------
 
 /** 販盛の CSV（Shift_JIS か UTF-8）を文字にする */
-function 文字にする(buf: Buffer): string {
+export function 文字にする(buf: Buffer): string {
   const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(buf);
   if (!utf8.includes("�")) return utf8.replace(/^﻿/, "");
   return new TextDecoder("shift_jis").decode(buf);
@@ -59,7 +59,7 @@ function csvを読む(text: string): string[][] {
 }
 
 /** "2026/10/09" や "20261009" を "2026-10-09" に。読めなければ null */
-function 日付(v: unknown): string | null {
+export function 日付(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   let m = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
@@ -72,7 +72,7 @@ function 日付(v: unknown): string | null {
 }
 
 /** "1,000" → 1000。数でなければ null */
-function 数(v: unknown): number | null {
+export function 数(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   const s = String(v).replace(/[,¥\s]/g, "");
   if (s === "") return null;
@@ -81,7 +81,7 @@ function 数(v: unknown): number | null {
 }
 
 /** Access で小数を整数の項目に入れたときと同じ丸め方（.5 は偶数の方へ） */
-function cint(v: number): number {
+export function cint(v: number): number {
   const f = Math.floor(v);
   const d = v - f;
   if (d > 0.5) return f + 1;
@@ -93,7 +93,7 @@ function cint(v: number): number {
  * CSV を取り込み用の表に入れる（Access の C_CSV取込み：見出しが表の項目名と同じ前提）。
  * 表を空にしてから入れる。ID は Access のオートナンバーと同じく続きの番号。
  */
-async function csvを表に入れる(c: PoolClient, table: string, schema: string, name: string, buf: Buffer, extra: Record<string, unknown>) {
+export async function csvを表に入れる(c: PoolClient, table: string, schema: string, name: string, buf: Buffer, extra: Record<string, unknown>) {
   const rows = csvを読む(文字にする(buf));
   if (rows.length < 1) throw Object.assign(new Error("ファイルが空です"), { status: 400 });
   const head = rows[0].map((h) => h.trim());
@@ -328,7 +328,7 @@ async function 単価違算チェック(c: PoolClient, day: string) {
   return { 件数: list.length, 違う };
 }
 
-async function 一連で(fn: (c: PoolClient) => Promise<unknown>) {
+export async function 一連で(fn: (c: PoolClient) => Promise<unknown>) {
   const c = await pool.connect();
   try {
     await c.query("BEGIN");

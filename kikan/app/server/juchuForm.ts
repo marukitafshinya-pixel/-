@@ -34,6 +34,7 @@ export const 新規の既定値: Record<string, unknown> = {
   賞味期限送信: false, 送品案内: false, 出力用chk: false, 伝票作成: false, 伝票送付: false,
   伝票FAX: false, 完了消込: false, 少量残連絡chk: false, 蔵前区分: false, OneDriveChk: false,
   初回登録chk: false, 入庫名義ID: 1, 受注グループID: 0, ケース1: 0, 商品kg1: 0, 残ケース: 0, 本社受注: false,
+  商品コード1: 0, 届け先コード1: 0,
 };
 
 async function 短縮名(code: unknown): Promise<string | null> {

@@ -11,6 +11,7 @@ import JuchuTeisei from "./pages/JuchuTeisei";
 import HanmoriJuchu from "./pages/HanmoriJuchu";
 import HanmoriUriage from "./pages/HanmoriUriage";
 import HanmoriTanka from "./pages/HanmoriTanka";
+import SbImport from "./pages/SbImport";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -33,6 +34,7 @@ function App() {
       <Route path="/form/F_販盛インポート" element={<HanmoriJuchu />} />
       <Route path="/form/F_販盛インポート売上" element={<HanmoriUriage />} />
       <Route path="/form/F_販盛単価確認" element={<HanmoriTanka />} />
+      <Route path="/form/F_エスビー受注インポート" element={<SbImport />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
