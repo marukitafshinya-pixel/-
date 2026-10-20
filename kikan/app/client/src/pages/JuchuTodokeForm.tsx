@@ -177,7 +177,6 @@ export default function JuchuTodokeForm() {
   const [todokeOpts, setTodokeOpts] = useState<Opt[]>([]);
   const [shohinOpts, setShohinOpts] = useState<Opt[]>([]);
   const [meigiOpts, setMeigiOpts] = useState<Opt[]>([]);
-  const [aiteOpts, setAiteOpts] = useState<Opt[]>([]);
   const [meigiName, setMeigiName] = useState("");
   const [find, setFind] = useState<null | { kind: "tokui" | "shohin"; pick: (code: number) => void }>(null);
   const [msg, setMsg] = useState("");
@@ -232,9 +231,6 @@ export default function JuchuTodokeForm() {
   }
 
   useEffect(() => {
-    api.get<any[]>("/api/juchu/form/aite").then((rows) =>
-      setAiteOpts(rows.map((x) => ({ code: x.相手方届け先コード, name: x.届け先 }))),
-    );
     if (jidParam) {
       openRecord(Number(jidParam));
     } else if (groupId) {
@@ -551,10 +547,6 @@ export default function JuchuTodokeForm() {
           <span className="lbl">入庫名義</span>
           <Combo value={rec.入庫名義ID} options={meigiOpts} onCommit={(v) => patch({ 入庫名義ID: numOrNull(v) })} className="w1" />
           <input className="w1 gray" value={meigiName} readOnly tabIndex={-1} />
-        </div>
-        <div className="jf-line">
-          <span className="lbl">しらいコード</span>
-          <Combo value={rec.相手届け先コード} options={aiteOpts} onCommit={(v) => patch({ 相手届け先コード: numOrNull(v) })} className="w3" wide />
         </div>
         <div className="jf-line">
           <span className="lbl">納品予定日</span>

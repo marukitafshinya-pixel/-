@@ -126,7 +126,6 @@ input, select { font: inherit; }
 .jf-line.tall .lbl { padding-top: 6px; }
 .jf-line .w1 { width: 188px; }
 .jf-line .w2 { width: 378px; }
-.jf-line .w3 { width: 378px; }
 .jf-line .yellow:focus { background: #ffff00; }
 .jf-line .center { text-align: center; }
 .jf-line .big { font-size: 16px; }

@@ -8,7 +8,6 @@ const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
 const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
 const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
 const 名義条件 = t("juchu_fe", "TM_入庫先商品別名義条件");
-const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
 
 /** 画面から書き込んでよい項目（これ以外は受け付けない） */
 const 書ける項目 = [
@@ -17,7 +16,7 @@ const 書ける項目 = [
   "届け先コード", "届け先コード1", "届け先", "正式届け先名",
   "商品コード", "商品コード1", "商品名", "規格", "入数",
   "ケース", "ケース1", "残ケース", "商品kg", "商品kg1",
-  "納品日", "納品日1", "入庫名義ID", "相手届け先コード", "送り状No", "備考",
+  "納品日", "納品日1", "入庫名義ID", "送り状No", "備考",
   "統一受注ID", "受注グループID", "本社受注", "蔵前区分", "chk",
 ] as const;
 
@@ -158,11 +157,6 @@ export function juchuFormRoutes(app: FastifyInstance) {
     );
     return { 入庫名義ID: r?.入庫名義ID ?? null };
   });
-
-  // しらいコードの選択肢
-  app.get("/api/juchu/form/aite", async () =>
-    q(`SELECT "相手方届け先コード", "届け先", "自社コード" FROM ${相手先届け先} ORDER BY "ID"`),
-  );
 
   // 名前で探す画面（Access の FSD_得意先選択・FSD_商品名選択）
   app.get<{ Querystring: { kind: string; w?: string } }>("/api/juchu/form/find", async (req) => {
