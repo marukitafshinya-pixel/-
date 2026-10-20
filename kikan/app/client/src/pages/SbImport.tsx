@@ -4,7 +4,7 @@ import { api, ApiError, num, upload } from "../api";
 import { showDate } from "../formParts";
 
 type Row = Record<string, any>;
-type 結果 = { 行数: number; 成功: number; 止まった?: string };
+type 結果 = { 行数: number; 成功: number; 済み: number; 止まった?: string };
 
 /** SB受注取り込み（Access の F_エスビー受注インポート） */
 export default function SbImport() {
@@ -25,7 +25,7 @@ export default function SbImport() {
     try {
       const r = await api.post<結果>("/api/sb/import", { 選択ID });
       await load();
-      alert(r.止まった ? `${r.止まった}\n（それまでに ${r.成功} 件を取り込みました）` : `取り込み終了（${r.行数} 行のうち ${r.成功} 件を受注に取り込みました）`);
+      alert(r.止まった ? `${r.止まった}\n（それまでに ${r.成功} 件を取り込みました）` : `取り込み終了（${r.行数} 行のうち ${r.成功} 件を受注に取り込みました。取り込み済みで飛ばしたもの ${r.済み} 件）`);
     } catch (e) {
       alert(e instanceof ApiError ? e.message : String(e));
     } finally {
@@ -48,7 +48,7 @@ export default function SbImport() {
         <div className="hm-mid">
           <div className="hm-info">
             ① ファイル参照で、SB の受注（Windows アプリのテキスト CSV）を読み込みます。
-            <br />② ［番号認識］を押すと、読み込んだ全部の行を受注に取り込みます。
+            <br />② ［番号認識］を押すと、読み込んだ行を受注に取り込みます。すでに取り込んだ受注は飛ばします。
           </div>
           <button className="hm-file" onClick={() => fileRef.current?.click()} disabled={busy}>
             ファイル参照

@@ -40,6 +40,18 @@ async function 一行(c: PoolClient, s: any): Promise<void> {
   const 商品コード =
     (await 一つ(`SELECT "商品コード" FROM ${相手先商品} WHERE "受注元コード" = 357 AND "相手先商品コード" = $1 LIMIT 1`, [品目]))
       ?.商品コード ?? 0;
+  // すでに取り込んだ受注か（オーダーNo＝年間ID・商品コード・数量回答＝商品kg が同じもの）。
+  // Access ではこの確かめが働いておらず二重に取り込めたが、重ならないように直した（2026/10/20 利用者の依頼）
+  const 済み = await 一つ(
+    `SELECT "受注ID" FROM ${受注} WHERE "統一受注ID" = $1 AND "商品コード" = $2 AND "商品kg" = $3 ORDER BY "受注ID" LIMIT 1`,
+    [数の文字(s.オーダーNo), 商品コード, 数(s.数量回答) ?? 0],
+  );
+  if (済み) {
+    await c.query(`UPDATE ${SB受注} SET "丸北受注ID" = $2, "取込みチェック" = true, "取込み備考" = '●:取込み済み' WHERE "ID" = $1`, [
+      s.ID, 済み.受注ID,
+    ]);
+    return;
+  }
   const 商品 = await 一つ(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品コード]);
   const 入数: number = 商品?.入数 ?? 0;
 
@@ -94,23 +106,25 @@ async function 一行(c: PoolClient, s: any): Promise<void> {
 
 /**
  * 読み込んだ全部の行を受注に入れる。
- * ※ Access では「すでに取り込んだか」を確かめる部分が働いておらず、押すたびに全部の行を新しく入れる（今のまま）。
+ * すでに取り込んだ行（「●:取込み済み」）は入れない（Access では二重に入っていたのを直した）。
  * ※ Access と同じく、途中で止まっても、それまでに入れた行は残る。
  */
 async function SB受注インポート() {
   const list = await q(`SELECT * FROM ${SB受注} ORDER BY "ID"`);
   let 成功 = 0;
+  let 済み = 0;
   for (const s of list) {
     try {
       await 一連で((c) => 一行(c, s));
-      const [r] = await q<{ 取込みチェック: boolean }>(`SELECT "取込みチェック" FROM ${SB受注} WHERE "ID" = $1`, [s.ID]);
-      if (r?.取込みチェック) 成功++;
+      const [r] = await q<{ 取込み備考: string }>(`SELECT "取込み備考" FROM ${SB受注} WHERE "ID" = $1`, [s.ID]);
+      if (r?.取込み備考 === "〇:成功！") 成功++;
+      if (r?.取込み備考 === "●:取込み済み") 済み++;
     } catch (e) {
-      if (e instanceof 止まった) return { 行数: list.length, 成功, 止まった: `${s.ID} 行目で止まりました：${e.message}` };
+      if (e instanceof 止まった) return { 行数: list.length, 成功, 済み, 止まった: `${s.ID} 行目で止まりました：${e.message}` };
       throw e;
     }
   }
-  return { 行数: list.length, 成功 };
+  return { 行数: list.length, 成功, 済み };
 }
 
 export function sbRoutes(app: FastifyInstance) {
