@@ -11,6 +11,8 @@ const 販盛売上 = t("juchu_fe", "T_販盛売上");
 const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
 const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
 const 受注特定項目 = t("juchu_fe", "TM_受注特定項目");
+const 販盛単価マスタ = t("juchu_fe", "T_販盛単価マスタ");
+const ユーザー設定 = t("juchu_fe", "TD_USER");
 
 /** 販盛の番号を探すときに見る受注の範囲（Access と同じ） */
 const 番号を探す受注ID = 37359;
@@ -278,6 +280,54 @@ async function 販盛売上番号取得(c: PoolClient) {
   return n;
 }
 
+// ---------------- 単価チェック ----------------
+
+/** 品目コード "02143400" → 2143400（Access の CLng と同じ。数でなければ null） */
+function 長整数(v: unknown): number | null {
+  const n = 数(v);
+  return n === null ? null : cint(n);
+}
+
+/** 指定した日の売上の Kg 単価を、販盛の単価マスタと見比べる（Access の C_販盛売上単価アンマッチ） */
+async function 単価違算チェック(c: PoolClient, day: string) {
+  // Access と同じく、見比べるのは「納品予定日」がその日の売上（画面に出すのは「売上日」がその日のもの）
+  const { rows: list } = await c.query(`SELECT * FROM ${販盛売上} WHERE "納品予定日" = $1::date ORDER BY "ID"`, [day]);
+  let 違う = 0;
+  for (const s of list) {
+    const 納入先 = 長整数(s.納入先コード ?? 0);
+    const 商品 = 長整数(s.品目コード);
+    if (商品 === null) continue;
+    // AQ_販盛単価_最新期間開始日：単位コード 1 の、取引先・納入先・商品ごとの一番新しい期間開始日（取引先コードの順で最初のもの）
+    const m = (
+      await c.query(
+        `SELECT "納入先コード", MAX("期間開始日") AS "最大" FROM ${販盛単価マスタ}
+         WHERE "単位コード" = 1 AND "納入先コード" = $1 AND "商品コード" = $2
+         GROUP BY "取引先コード", "納入先コード", "商品コード" ORDER BY "取引先コード" LIMIT 1`,
+        [納入先, 商品],
+      )
+    ).rows[0];
+    if (!m) continue;
+    const p = (
+      await c.query(
+        `SELECT "単価" FROM ${販盛単価マスタ}
+         WHERE "単位コード" = 1 AND "期間開始日" = $1 AND "納入先コード" = $2 AND "商品コード" = $3 ORDER BY "ID" LIMIT 1`,
+        [m.最大, m.納入先コード, 商品],
+      )
+    ).rows[0];
+    const 参照 = p?.単価 ?? null;
+    const d = String(m.最大);
+    const メモ = `${d.slice(2, 4)}/${d.slice(5, 7)}/${d.slice(8, 10)} 開始単価`;
+    // Access と同じく、違っていれば印を付ける（同じでも、前に付いた印は消さない）
+    const ng = 参照 !== null && s.Kg単価 !== null && Number(参照) !== Number(s.Kg単価);
+    await c.query(
+      `UPDATE ${販盛売上} SET "参照Kg単価" = $2, "メモ３" = $3 ${ng ? `, "アンマッチフラグ" = true` : ""} WHERE "ID" = $1`,
+      [s.ID, 参照, メモ],
+    );
+    if (ng) 違う++;
+  }
+  return { 件数: list.length, 違う };
+}
+
 async function 一連で(fn: (c: PoolClient) => Promise<unknown>) {
   const c = await pool.connect();
   try {
@@ -381,4 +431,51 @@ export function hanmoriRoutes(app: FastifyInstance) {
 
   // 番号認識（前に読み込んだ売上で、もう一度結びつける）
   app.post("/api/hanmori/uriage/recognize", async () => 一連で(async (c) => ({ 結んだ: await 販盛売上番号取得(c) })));
+
+  // ---- 単価チェック（F_販盛単価確認） ----
+
+  app.get("/api/hanmori/tanka/info", async () => {
+    const [u] = await q(`SELECT "販盛単価マスタ取得日" FROM ${ユーザー設定} LIMIT 1`);
+    return { 取得日: u?.販盛単価マスタ取得日 ?? null };
+  });
+
+  // 単価マスタ（PRICE_INQUIRY）のファイルを読み込む
+  app.post("/api/hanmori/tanka/master-upload", async (req) => {
+    const buf = req.body as Buffer;
+    return 一連で(async (c) => {
+      const n = await csvを表に入れる(c, 販盛単価マスタ, "juchu_fe", "T_販盛単価マスタ", buf, {});
+      await c.query(`UPDATE ${ユーザー設定} SET "販盛単価マスタ取得日" = $1`, [日本の今().日時]);
+      return { 件数: n };
+    });
+  });
+
+  // 日を選んで、単価の違いを調べる
+  app.post<{ Body: { day: string } }>("/api/hanmori/tanka/check", async (req) =>
+    一連で((c) => 単価違算チェック(c, req.body.day)),
+  );
+
+  // 一覧（売上日がその日のもの。日がなければ全部）
+  app.get<{ Querystring: { day?: string } }>("/api/hanmori/tanka/list", async (req) =>
+    q(
+      `SELECT "ID", "売上日", "伝票番号", "行", "丸北受注ID", "納入先コード", "納入先名", "品目コード", "品名",
+              "重量(kg)", "単価", "Kg単価", "参照Kg単価", "メモ３", "アンマッチフラグ", "納品予定日"
+       FROM ${販盛売上} ${req.query.day ? `WHERE "売上日" = $1::date` : ""}
+       ORDER BY "売上日", "伝票番号", "行"`,
+      req.query.day ? [req.query.day] : [],
+    ),
+  );
+
+  // 参照Kg単価の選択肢（その納入先・商品の単価マスタ）
+  app.get<{ Querystring: { nounyu: string; hinmoku: string } }>("/api/hanmori/tanka/prices", async (req) =>
+    q(
+      `SELECT "単価", "期間開始日" FROM ${販盛単価マスタ}
+       WHERE "単位コード" = 1 AND "納入先コード" = $1 AND "商品コード" = $2 ORDER BY "期間開始日" DESC`,
+      [長整数(req.query.nounyu ?? 0), 長整数(req.query.hinmoku)],
+    ),
+  );
+
+  app.post<{ Body: { ID: number; 参照Kg単価: number | null } }>("/api/hanmori/tanka/set", async (req) => {
+    await q(`UPDATE ${販盛売上} SET "参照Kg単価" = $2 WHERE "ID" = $1`, [req.body.ID, req.body.参照Kg単価]);
+    return { ok: true };
+  });
 }

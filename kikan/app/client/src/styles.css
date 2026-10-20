@@ -201,3 +201,11 @@ input, select { font: inherit; }
 .hm-grid small { color: #666; }
 .hm-grid .hm-code { width: 90px; text-align: right; }
 .hm-empty { padding: 8px; color: #333; }
+.hanmori.tanka { background: #f4e9c8; }
+.hm-info.pre { white-space: pre-line; }
+.hm-date { display: flex; flex-direction: column; margin-top: 8px; }
+.hm-date span { background: #800080; color: #fff; text-align: center; font-weight: bold; }
+.hm-right button.all { font-weight: normal; font-size: 12px; }
+.hm-grid tr.ng td { background: #ffd6d6; }
+.hm-grid td.ref { position: relative; cursor: pointer; background: #ebffeb; white-space: nowrap; }
+.hm-grid td.ref .combo-list { top: 20px; right: 0; left: auto; width: 200px; }
