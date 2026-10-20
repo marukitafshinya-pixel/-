@@ -10,6 +10,7 @@ import { juchuRoutes } from "./juchu.js";
 import { juchuFormRoutes } from "./juchuForm.js";
 import { hanmoriRoutes } from "./hanmori.js";
 import { sbRoutes } from "./sb.js";
+import { hacchuRoutes } from "./hacchu.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -22,6 +23,7 @@ await app.register(async (a) => juchuRoutes(a));
 await app.register(async (a) => juchuFormRoutes(a));
 await app.register(async (a) => hanmoriRoutes(a));
 await app.register(async (a) => sbRoutes(a));
+await app.register(async (a) => hacchuRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");

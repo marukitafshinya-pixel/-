@@ -12,6 +12,10 @@ import HanmoriJuchu from "./pages/HanmoriJuchu";
 import HanmoriUriage from "./pages/HanmoriUriage";
 import HanmoriTanka from "./pages/HanmoriTanka";
 import SbImport from "./pages/SbImport";
+import HacchuMoto from "./pages/HacchuMoto";
+import HacchuForm from "./pages/HacchuForm";
+import HacchuPrint from "./pages/HacchuPrint";
+import Tokutei from "./pages/Tokutei";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -35,6 +39,10 @@ function App() {
       <Route path="/form/F_販盛インポート売上" element={<HanmoriUriage />} />
       <Route path="/form/F_販盛単価確認" element={<HanmoriTanka />} />
       <Route path="/form/F_エスビー受注インポート" element={<SbImport />} />
+      <Route path="/form/F_受注元選択" element={<HacchuMoto />} />
+      <Route path="/hacchu/:moto" element={<HacchuForm />} />
+      <Route path="/print/hacchu" element={<HacchuPrint />} />
+      <Route path="/form/FM_特定商品表示" element={<Tokutei />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

@@ -210,3 +210,57 @@ input, select { font: inherit; }
 .hm-grid td.ref { position: relative; cursor: pointer; background: #ebffeb; white-space: nowrap; }
 .hm-grid td.ref .combo-list { top: 20px; right: 0; left: auto; width: 200px; }
 .hanmori.sb { background: #fdf0d0; }
+
+/* 発注依頼 */
+.hacchu-moto { background: #fff; min-height: 100vh; }
+.hm-btns { display: flex; gap: 14px; padding: 6px 18px; align-items: center; }
+.hm-btns button { font-size: 15px; font-weight: bold; padding: 3px 10px; background: #f0f0f0; border: 2px outset #ddd; }
+.hm-btns .add { color: #369; }
+.hm-btns .del { color: #c00; }
+.hm-btns .del.on { border-style: inset; background: #ffe0e0; }
+.hm-btns .note { color: #c00; }
+.groups.moto3 { width: 386px; margin-left: 8px; }
+.groups.moto3 .grow button { font-size: 12px; }
+.hc-top { display: flex; align-items: center; justify-content: space-between; padding: 0 8px; width: 692px; }
+.hc-top h2 { margin: 0; font-size: 24px; font-weight: normal; }
+.hc-body { width: 692px; padding-top: 50px; }
+.jf-line.gap { margin-top: 26px; }
+.jf-line.tight { margin-bottom: 1px; }
+.jf-line .w2s { width: 252px; }
+.jf-line .dark { background: #707070; color: #fff; border-color: #333; }
+.jf-line .yellow-bg { background: #ffff00; }
+/* 発注依頼書（印刷） */
+.print-page { background: #eee; min-height: 100vh; padding: 10px; }
+.print-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.print-bar span { color: #c00; font-size: 12px; }
+.sheet { background: #fff; width: 190mm; min-height: 270mm; margin: 0 auto 10px; padding: 14mm; font-size: 14px; page-break-after: always; }
+.sheet h1 { text-align: center; letter-spacing: 6px; font-size: 26px; border-bottom: 3px double #000; padding-bottom: 6px; }
+.sheet-top { display: flex; justify-content: space-between; margin: 16px 0; }
+.sheet-top .to { font-size: 18px; border-bottom: 1px solid #000; }
+.sheet-top .from { text-align: right; }
+.sheet-table { width: 100%; border-collapse: collapse; }
+.sheet-table th, .sheet-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+.sheet-table th { background: #eee; width: 90px; }
+.sheet-foot { margin-top: 18px; }
+.atesaki { background: #fff; padding: 8px; margin-bottom: 10px; }
+.atesaki input { width: 160px; }
+@media print { .no-print { display: none; } .print-page { background: #fff; padding: 0; } .sheet { margin: 0; } }
+/* 特定商品表示 */
+.tokutei { background: #dedcc4; min-height: 100vh; }
+.tk-head { display: flex; align-items: center; gap: 10px; padding: 4px 16px; }
+.tk-head h2 { margin: 0 auto 0 0; font-size: 24px; font-weight: normal; }
+.tk-head button { width: 100px; padding: 6px; background: #f0f0f0; border: 1px solid #999; }
+.tk-head .note { color: #c00; font-size: 12px; }
+.tk-grid { border-collapse: collapse; margin: 4px 16px; background: #fff; font-size: 14px; }
+.tk-grid th { background: #333399; color: #ffff66; font-weight: normal; padding: 1px 6px; border: 1px solid #fff; }
+.tk-grid td { border: 1px solid #aaa; padding: 2px 4px; vertical-align: top; }
+.tk-grid td.c1 { background: #ccffff; text-align: right; width: 80px; font-weight: bold; }
+.tk-grid td.c2 { background: #e6e6ff; text-align: right; width: 70px; }
+.tk-grid td.gray { background: #f0f0f0; }
+.tk-grid td:nth-child(2) { width: 220px; }
+.tk-grid td:nth-child(4) { width: 220px; }
+.tk-grid td:nth-child(5) { width: 370px; }
+.tk-grid td:nth-child(6) { width: 140px; white-space: pre-line; }
+.tk-grid input { width: 100%; }
+.tk-grid tr.new td { background: #ffffe0; }
+.tk-grid .del { font-size: 11px; margin-left: 4px; color: #c00; }
