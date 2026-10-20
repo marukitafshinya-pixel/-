@@ -31,6 +31,7 @@ export default function JuchuSearch() {
   const nav = useNavigate();
   const [motoBtns, setMotoBtns] = useState<MotoBtn[]>([]);
   const [sakiBtns, setSakiBtns] = useState<SakiBtn[]>([]);
+  const [shoriList, setShoriList] = useState<{ 枝番: string; 枝処理名: string }[]>([]);
   const [shohinList, setShohinList] = useState<{ 商品コード: number; 商品名: string }[]>([]);
   const thisMonth = new Date().getMonth() + 1;
   const [f, setF] = useState<Record<string, string>>(() => {
@@ -44,6 +45,7 @@ export default function JuchuSearch() {
   useEffect(() => {
     api.get<MotoBtn[]>("/api/juchu/search/moto-buttons").then(setMotoBtns);
     api.get<any[]>("/api/master/shohin").then(setShohinList);
+    api.get<any[]>("/api/juchu/form/shori-list").then(setShoriList);
   }, []);
 
   useEffect(() => {
@@ -261,12 +263,14 @@ export default function JuchuSearch() {
                   <small className="red">{r.統一受注ID}</small>
                 </td>
                 <td>
-                  <select className="shori" value={r.枝番1 ?? ""} onChange={(e) => 処理コード(r, e.target.value)}>
-                    {Array.from(new Set(["", "00", "01", "02", "03", r.枝番1 ?? ""])).map((v) => (
-                      <option key={v} value={v}>
-                        {v}
+                  <select className="shori" title={shoriList.find((o) => o.枝番 === r.枝番1)?.枝処理名 ?? ""} value={r.枝番1 ?? ""} onChange={(e) => 処理コード(r, e.target.value)}>
+                    <option value=""></option>
+                    {shoriList.map((o) => (
+                      <option key={o.枝番} value={o.枝番}>
+                        {o.枝番} {o.枝処理名}
                       </option>
                     ))}
+                    {r.枝番1 && !shoriList.some((o) => o.枝番 === r.枝番1) && <option value={r.枝番1}>{r.枝番1}</option>}
                   </select>
                 </td>
                 <td className="num">{r.届け先コード}</td>

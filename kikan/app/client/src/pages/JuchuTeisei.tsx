@@ -18,12 +18,13 @@ export default function JuchuTeisei() {
   useEffect(() => {
     api.get<Rec>(`/api/juchu/form/record/${jid}`).then((r) => {
       setCur(r);
-      // 画面を開いたときに、今の値を訂正の欄に写す（Access の Form_Open と同じ。隠語・引き取り区分は写さない）
+      // 画面を開いたときに、今の値を訂正の欄に写す（Access の Form_Open と同じ。引き取り区分は写さない）
+      // 隠語は Access では写さず訂正で消えていたが、残すことにした（2026/10/20 利用者確認）
       setT({
         発注日: r.受注日, 受注元ID: r.受注元ID, 受注元名: r.受注元名, 受注先ID: r.受注先ID, 受注先名: r.受注先名,
         統一受注ID: r.統一受注ID, 受注番号: r.受注番号, 商品コード: r.商品コード, 商品名: r.商品名, 入数: r.入数,
         ケース: r.ケース, 商品kg: r.商品kg, 届け先コード: r.届け先コード, 届け先: r.届け先, 納品日: r.納品日,
-        送り状No: r.送り状No, 隠語: null, 蔵前区分: null,
+        送り状No: r.送り状No, 隠語: r.隠語, 蔵前区分: null,
       });
       api.get<any[]>("/api/juchu/form/shohin", { saki: r.受注先ID }).then((rows) =>
         setShohinOpts(rows.map((x) => ({ code: x.商品コード, name: x.商品名 }))),

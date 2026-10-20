@@ -155,7 +155,7 @@ input, select { font: inherit; }
 .find-list td.num { width: 70px; text-align: right; }
 .find-list td.sub { color: #666; font-size: 12px; }
 .find-list tr:hover td { background: #cde6ff; }
-.grid select.shori { font-size: 11px; width: 44px; }
+.grid select.shori { font-size: 11px; width: 52px; }
 
 /* 受注訂正 */
 .jf-top.wide { width: 760px; }

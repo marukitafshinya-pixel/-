@@ -224,6 +224,11 @@ export function juchuFormRoutes(app: FastifyInstance) {
 
   // ---------------- 受注訂正（Access の FM_受注訂正） ----------------
 
+  // 処理コードの選択肢（TM_枝処理マスタ）
+  app.get("/api/juchu/form/shori-list", async () =>
+    q(`SELECT "枝番", "枝処理名" FROM ${t("juchu_fe", "TM_枝処理マスタ")} ORDER BY "枝番"`),
+  );
+
   // 処理コード（受注検索の「処理コード」＝枝番1）を変える。1〜3 なら画面で受注訂正を開く
   app.post<{ Body: { 受注ID: number; 値: string | null } }>("/api/juchu/form/shori", async (req, reply) => {
     const r = await q(`UPDATE ${受注} SET "枝番1" = $2 WHERE "受注ID" = $1 RETURNING "受注ID"`, [
@@ -268,7 +273,7 @@ export function juchuFormRoutes(app: FastifyInstance) {
       if (違う(t.隠語, cur.隠語)) 箇所 = `隠語${文字(cur.隠語)} → ${文字(t.隠語)}`;
       if (違う(t.蔵前区分, cur.蔵前区分)) 箇所 = `引き取り区分${真偽(cur.蔵前区分)} → ${真偽(t.蔵前区分)}`;
 
-      // 書き込む値（Access と同じく、訂正の欄の値をそのまま入れる。隠語は空欄なら空になる）
+      // 書き込む値（Access と同じく、訂正の欄の値をそのまま入れる）
       const 値: Record<string, unknown> = {
         受注日: 空(t.発注日) ? null : t.発注日,
         受注元ID: 数(t.受注元ID), 受注元名: 空(t.受注元名) ? null : t.受注元名,
@@ -280,7 +285,8 @@ export function juchuFormRoutes(app: FastifyInstance) {
         届け先コード: 数(t.届け先コード), 届け先: 空(t.届け先) ? null : t.届け先,
         納品日: 空(t.納品日) ? null : t.納品日,
         送り状No: 空(t.送り状No) ? null : t.送り状No,
-        隠語: 空(t.隠語) ? null : t.隠語,
+        // 隠語は、Access では訂正のたびに消えていたが、残すことにした（2026/10/20 利用者確認）。画面で書き換えたときだけ変える
+        隠語: "隠語" in t ? (空(t.隠語) ? null : t.隠語) : cur.隠語,
       };
       // 引き取り区分は、空欄のときは Access でも書き込めずに今のまま
       if (!空(t.蔵前区分)) 値.蔵前区分 = !!t.蔵前区分;
