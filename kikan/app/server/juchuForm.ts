@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { pool, q, t } from "./db.js";
+import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 
 // 受注の入力画面（Access の FM_受注登録_届け先指定）で使う表
@@ -34,12 +34,6 @@ const 新規の既定値: Record<string, unknown> = {
   伝票FAX: false, 完了消込: false, 少量残連絡chk: false, 蔵前区分: false, OneDriveChk: false,
   初回登録chk: true,
 };
-
-/** 日本の日時（サーバーの時計が世界標準時でもずれないように） */
-function 日本の今(): { 日付: string; 日時: string } {
-  const d = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
-  return { 日付: d.slice(0, 10), 日時: `${d.slice(0, 10).replace(/-/g, "/")} ${d.slice(11, 19)}` };
-}
 
 async function 短縮名(code: unknown): Promise<string | null> {
   if (code === null || code === undefined || code === "") return null;

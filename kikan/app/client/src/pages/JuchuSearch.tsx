@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, mdw, num, ymd } from "../api";
+import { api, ApiError, mdw, num, ymd } from "../api";
 
 type MotoBtn = { 並び: number; 表示名: string; 値: number; 要確認: boolean };
 type SakiBtn = { 受注先ID: number; 表示名: string };
@@ -66,6 +66,19 @@ export default function JuchuSearch() {
   async function chooseMoto(v: number) {
     set({ moto: String(v), saki: undefined });
     setSakiBtns(await api.get<SakiBtn[]>("/api/juchu/search/saki-buttons", { moto: v }));
+  }
+
+  // チェックを押したらすぐ保存する（Access の表と同じ）
+  async function toggle(r: Row, col: string) {
+    const v = !r[col];
+    setRows((rs) => rs.map((x) => (x.受注ID === r.受注ID ? { ...x, [col]: v } : x)));
+    try {
+      const u = await api.post<Row>("/api/juchu/search/check", { 受注ID: r.受注ID, 項目: col, 値: v });
+      setRows((rs) => rs.map((x) => (x.受注ID === r.受注ID ? { ...x, ...u } : x)));
+    } catch (e) {
+      setRows((rs) => rs.map((x) => (x.受注ID === r.受注ID ? { ...x, [col]: !v } : x)));
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
   }
 
   const shohinName = useMemo(
@@ -227,7 +240,7 @@ export default function JuchuSearch() {
                 </td>
                 <td className="num">{r.販盛売上番号}</td>
                 <td className="center">
-                  <input type="checkbox" checked={!!r.完了消込} readOnly />
+                  <input type="checkbox" checked={!!r.完了消込} onChange={() => toggle(r, "完了消込")} />
                 </td>
                 <td className="red">{mdw(r.受注日)}</td>
                 <td>
@@ -249,7 +262,7 @@ export default function JuchuSearch() {
                 <td className="note">{r.備考}</td>
                 {CHECKS.map(([label, col]) => (
                   <td key={label} className="center">
-                    <input type="checkbox" checked={!!r[col]} readOnly />
+                    <input type="checkbox" checked={!!r[col]} onChange={() => toggle(r, col)} />
                   </td>
                 ))}
                 <td className="dark">{mdw(r.出荷予定日)}</td>

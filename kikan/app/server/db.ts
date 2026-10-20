@@ -17,3 +17,9 @@ export async function q<T = any>(sql: string, params: unknown[] = []): Promise<T
 export function t(schema: string, table: string): string {
   return `"${schema}"."${table}"`;
 }
+
+/** 日本の日時（サーバーの時計が世界標準時でもずれないように） */
+export function 日本の今(): { 日付: string; 日時: string } {
+  const d = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
+  return { 日付: d.slice(0, 10), 日時: `${d.slice(0, 10).replace(/-/g, "/")} ${d.slice(11, 19)}` };
+}
