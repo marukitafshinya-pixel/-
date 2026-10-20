@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Menu from "./pages/Menu";
 import JuchuSakiSelect from "./pages/JuchuSakiSelect";
 import JuchuSearch from "./pages/JuchuSearch";
+import JuchuTodokeForm from "./pages/JuchuTodokeForm";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -23,6 +24,7 @@ function App() {
       <Route path="/" element={<Menu user={user} onLogout={() => setUser(null)} />} />
       <Route path="/juchu/select" element={<JuchuSakiSelect />} />
       <Route path="/juchu/search" element={<JuchuSearch />} />
+      <Route path="/form/FM_受注登録_届け先指定" element={<JuchuTodokeForm />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

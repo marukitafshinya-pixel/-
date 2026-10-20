@@ -97,3 +97,62 @@ input, select { font: inherit; }
 .grid td.dark { background: #1f3a68; color: #fff; }
 .grid small { color: #555; }
 .count { padding: 4px 8px; color: #555; }
+
+/* 受注登録（届け先指定） */
+.jform { background: #fff; min-height: 100vh; }
+.jform input { border: 1px solid #aaa; padding: 2px 4px; height: 24px; }
+.jform input.r { text-align: right; }
+.jform input[readonly] { background: #f0f0f0; }
+.jf-top { background: #c0c0c0; padding: 3px 4px; width: 562px; }
+.jf-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.jf-row .lbl { background: #800080; color: #fff; font-weight: bold; padding: 2px 8px; min-width: 100px; text-align: center; }
+.jf-row .lbl.small { min-width: 60px; }
+.jf-row .jid { color: #00c; font-size: 18px; font-weight: bold; width: 80px; text-align: center; }
+.jf-row.big .lbl { font-size: 18px; min-width: 72px; padding: 0 6px; }
+.jf-row.big input { font-size: 17px; height: 26px; background: #fff; }
+.jf-row.big input[readonly] { background: #fff; }
+.jf-row .code { width: 72px; text-align: right; }
+.jf-row .name { width: 320px; }
+.jf-btns { display: flex; gap: 3px; margin-left: auto; background: #333; padding: 2px; }
+.jf-btns button { width: 76px; background: #f0f0f0; border: 2px outset #ddd; font-weight: bold; }
+.jf-btns button.blue { color: #36c; }
+.jf-toggle { margin-top: 0; border: 2px solid #777; }
+.jf-toggle button { font-size: 12px; }
+.jform .toitsu { width: 118px; }
+.jf-body { background: #7b6fc0; padding: 6px 4px 10px; width: 562px; }
+.jf-line { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.jf-line .lbl { background: #800080; color: #fff; font-weight: bold; width: 106px; text-align: center; padding: 3px 0; }
+.jf-line.tall { align-items: stretch; }
+.jf-line.tall .lbl { padding-top: 6px; }
+.jf-line .w1 { width: 188px; }
+.jf-line .w2 { width: 378px; }
+.jf-line .w3 { width: 378px; }
+.jf-line .yellow:focus { background: #ffff00; }
+.jf-line .center { text-align: center; }
+.jf-line .big { font-size: 16px; }
+.jf-line .gray { background: #f0f0f0; }
+.jf-line textarea { height: 76px; font: inherit; border: 1px solid #aaa; }
+.jf-line .chk { width: 14px; height: 14px; }
+.combo { position: relative; display: flex; }
+.combo input { flex: 1; min-width: 0; background: #ebffeb; }
+.combo > button { width: 18px; border: 1px solid #aaa; border-left: none; background: #fff; padding: 0; font-size: 11px; }
+.combo-list { position: absolute; top: 25px; left: 0; z-index: 5; background: #fff; border: 1px solid #666; max-height: 260px; overflow: auto; min-width: 100%; width: 300px; box-shadow: 2px 2px 6px rgba(0,0,0,.3); }
+.combo-list.wide { width: 100%; }
+.combo-list > div { display: flex; gap: 8px; padding: 2px 6px; cursor: pointer; white-space: nowrap; }
+.combo-list > div:hover { background: #cde6ff; }
+.combo-list .c { width: 64px; text-align: right; color: #333; flex: none; }
+.combo-list .empty { color: #777; cursor: default; }
+.jf-foot { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.jf-foot button { background: #f0f0f0; border: 2px outset #ddd; padding: 3px 10px; }
+.jf-foot button.save { font-weight: bold; color: #800080; padding: 3px 18px; }
+.jf-foot .msg { color: #fff; margin-left: 6px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.3); display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; z-index: 10; }
+.find { background: #fff; border: 1px solid #666; width: 560px; }
+.find-head { display: flex; gap: 8px; align-items: center; padding: 6px; background: #800080; color: #fff; font-weight: bold; }
+.find-head input { flex: 1; }
+.find-list { max-height: 420px; overflow: auto; }
+.find-list table { width: 100%; border-collapse: collapse; }
+.find-list td { border-bottom: 1px solid #e4e4e4; padding: 3px 6px; cursor: pointer; }
+.find-list td.num { width: 70px; text-align: right; }
+.find-list td.sub { color: #666; font-size: 12px; }
+.find-list tr:hover td { background: #cde6ff; }
