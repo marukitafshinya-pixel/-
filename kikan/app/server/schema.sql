@@ -66,3 +66,11 @@ CREATE TABLE IF NOT EXISTS app."発注依頼書_発行元" (
   "FAX"    TEXT NOT NULL DEFAULT ''
 );
 INSERT INTO app."発注依頼書_発行元" ("番号") VALUES (1) ON CONFLICT DO NOTHING;
+
+-- 画面の動きで使う決めごと（文言など）。プログラムに書かず、ここに入れる。起動のたびに消さない。
+-- 寿預かりの備考：入庫後名義を 658 にしたとき、備考に足す一文（Access ではプログラムに書かれていた。人の名前を含むので、ここで入れる）
+CREATE TABLE IF NOT EXISTS app."設定" (
+  "名前" TEXT PRIMARY KEY,
+  "値"   TEXT NOT NULL DEFAULT ''
+);
+INSERT INTO app."設定" ("名前", "値") VALUES ('寿預かりの備考', '') ON CONFLICT DO NOTHING;

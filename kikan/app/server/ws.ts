@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { pool, q, t } from "./db.js";
+import type { PoolClient } from "pg";
+import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
+import { cint } from "./hanmori.js";
 
 // 丸北WorkStation の出荷明細票（Access の FM_出荷明細票・FS_出荷明細）で使う表
 const 輸送計画 = t("ws", "TD_輸送計画");
@@ -8,6 +10,131 @@ const 出荷 = t("ws", "TD_出荷");
 const 積込順 = t("ws", "TD_積込順");
 const 運送会社マスタ = t("ws_fe", "TM_運送会社マスタ");
 const 得意先マスタ = t("ws_fe", "TM_得意先マスタ");
+const 商品マスタ = t("ws_fe", "TM_商品マスタ");
+const 名義条件 = t("ws_fe", "TM_入庫先商品別名義条件");
+const 出荷場所条件 = t("ws_fe", "TM_出荷場所条件");
+const 運賃振分区分マスタ = t("ws_fe", "TM_運賃振分区分マスタ");
+const 訂正履歴 = t("ws_fe", "TD_訂正履歴管理");
+const WS受注 = t("ws", "TD_受注"); // Access の QD_受注（WorkStation の受注の写し）
+
+/** 明細（TD_出荷）で、画面から書き込んでよい項目 */
+const 明細の書ける項目 = new Set([
+  "届け先コード", "届け先", "倉庫ID", "倉庫名", "ケース", "商品kg", "製造日", "賞味期限", "納品日", "タグ", "商品区分", "商品状態隠語",
+  "本社受注", "運賃請求ID", "サンプル区分", "サービス区分", "蔵前区分", "運賃振分区分", "運賃振分区分名", "産地コード", "製造工場ID", "製造工場名",
+  "取引元ID", "取引元", "取引帳合ID", "取引帳合", "手配元ID", "手配元", "手配帳合ID", "手配帳合", "入庫前名義ID", "入庫後名義ID",
+  "請求先コード", "請求先", "送り状No", "ユーザー伝票No", "他工場伝票No", "参照受注番号", "受注表題", "備考", "社内連絡", "入庫備考",
+  "商品積込順", "規格", "入数",
+]);
+/** 得意先コードと名前の組（コードを変えたら名前も入れる） */
+const 名前の組: Record<string, string> = {
+  届け先コード: "届け先", 倉庫ID: "倉庫名", 取引元ID: "取引元", 取引帳合ID: "取引帳合", 手配元ID: "手配元", 手配帳合ID: "手配帳合", 請求先コード: "請求先", 製造工場ID: "製造工場名",
+};
+
+async function 短縮名(c: PoolClient, code: unknown): Promise<string | null> {
+  if (code === null || code === undefined || code === "") return null;
+  const r = await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [Number(code)]);
+  return r.rows[0]?.短縮名 ?? null;
+}
+
+/** 商品・届け先の特記事項を備考に足す（Access の C_特別項目。0＝商品の特記事項、1＝届け先の受付時間） */
+async function 特別項目(c: PoolClient, 区分: 0 | 1, 備考: string, code: unknown): Promise<string> {
+  const r =
+    区分 === 0
+      ? await c.query(`SELECT "特記事項" AS v FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [Number(code ?? 0)])
+      : await c.query(`SELECT "受付時間" AS v FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [Number(code ?? 0)]);
+  const add = r.rows[0]?.v ?? "";
+  if (("ads" + 備考).includes(add)) return 備考; // すでに入っている（空のときもここ）
+  return add.length + 備考.length < 50 ? add + 備考 : add;
+}
+
+/** 製造日から賞味期限を出す（Access の KigenSum） */
+async function 賞味期限計算(c: PoolClient, 製造日: string | null, 商品コード: unknown): Promise<string | null> {
+  if (!製造日) return null;
+  const r = await c.query(`SELECT "品質保持期間", "賞味期限日付差" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [Number(商品コード ?? 0)]);
+  const 期間 = Number(r.rows[0]?.品質保持期間 ?? 0);
+  if (!期間) return null;
+  let 差 = Number(r.rows[0]?.賞味期限日付差 ?? 0);
+  const d0 = new Date(製造日.slice(0, 10) + "T00:00:00Z");
+  if (d0.getUTCMonth() === 1 && d0.getUTCDate() === 29) 差 = 0;
+  // DateAdd("m") と同じく、月末を超えるときはその月の最後の日にする
+  const months = Math.round(期間 * 12);
+  const y = d0.getUTCFullYear() + Math.floor((d0.getUTCMonth() + months) / 12);
+  const m = (d0.getUTCMonth() + months) % 12;
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  let d = new Date(Date.UTC(y, m, Math.min(d0.getUTCDate(), last)));
+  d = new Date(d.getTime() + 差 * 86400000);
+  if (d.getUTCMonth() === 1 && d.getUTCDate() === 29) d = new Date(d.getTime() - 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+/** 1 行の運賃振分け（Access の C_レコード別条件運賃振分け を 1 件について） */
+async function 運賃振分け(c: PoolClient, 出庫ID: number, 名義表示: boolean, 本社受注: boolean) {
+  const { rows } = await c.query(
+    `SELECT s.*, m."グループ商品コード" FROM ${出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード" WHERE s."出庫ID" = $1`,
+    [出庫ID],
+  );
+  const r = rows[0];
+  if (!r) return;
+  const v: Record<string, unknown> = {};
+  const [tk] = (await c.query(`SELECT "倉庫区分" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [r.届け先コード ?? 0])).rows;
+  v.届け先区分 = tk?.倉庫区分 === true ? 3 : 0;
+  const 条件 = (await c.query(`SELECT * FROM ${名義条件} WHERE "届け先コード" = $1 ORDER BY "ID"`, [r.届け先コード ?? 0])).rows;
+  const g = r.グループ商品コード ?? 0;
+  const 本社 = (x: any) => (本社受注 ? x.運賃振分区分 === 629 : x.運賃振分区分 !== 629);
+  const hit =
+    条件.find((x) => x.倉庫ID === (r.倉庫ID ?? 0) && x.商品コード === g && 本社(x)) ??
+    条件.find((x) => x.商品コード === g && 本社(x)) ??
+    条件.find((x) => x.商品コード === g);
+  let 入庫後名義ID = r.入庫後名義ID;
+  if (hit) {
+    v.運賃請求ID = hit.運賃請求ID;
+    v.運賃振分区分 = hit.運賃振分区分;
+    v.運賃振分区分名 = (await c.query(`SELECT "運賃振分区分名" FROM ${運賃振分区分マスタ} WHERE "運賃振分区分" = $1`, [hit.運賃振分区分 ?? 0])).rows[0]?.運賃振分区分名 ?? null;
+    if (名義表示) {
+      入庫後名義ID = hit.入庫名義ID ?? 0;
+      v.入庫後名義ID = 入庫後名義ID;
+      if (入庫後名義ID === 629) v.本社受注 = true;
+    }
+    if (v.届け先区分 === 3) {
+      if (入庫後名義ID === 629) Object.assign(v, { 取引元ID: 645, 取引元: "大阪デポ", 取引帳合ID: 629, 取引帳合: "大阪丸北" });
+      else if (入庫後名義ID === 11 || 入庫後名義ID === 150)
+        Object.assign(v, { 取引元ID: 1254, 取引元: "丸北　北海道デポ", 取引帳合ID: 11, 取引帳合: "丸北　北海道" });
+      else
+        Object.assign(v, { 取引元ID: hit.取引先ID, 取引元: await 短縮名(c, hit.取引先ID), 取引帳合ID: hit.受注先ID, 取引帳合: await 短縮名(c, hit.受注先ID) });
+    }
+  }
+  if (本社受注 || r.本社受注 === true || v.本社受注 === true) {
+    v.運賃振分区分 = 629;
+    v.運賃振分区分名 = (await c.query(`SELECT "運賃振分区分名" FROM ${運賃振分区分マスタ} WHERE "運賃振分区分" = 629`)).rows[0]?.運賃振分区分名 ?? null;
+    v.本社受注 = true;
+  }
+  const cols = Object.keys(v);
+  await c.query(`UPDATE ${出荷} SET ${cols.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "出庫ID" = $1`, [出庫ID, ...cols.map((k) => v[k])]);
+}
+
+/** 受注の残ケースを出し直す（Access の C_受注残数変更。QD_受注＝WorkStation の受注の写し） */
+async function 受注残数(c: PoolClient, 受注ID: number) {
+  if (!受注ID) return;
+  await c.query(
+    `UPDATE ${WS受注} SET "残ケース" = COALESCE("ケース", 0) - (SELECT COALESCE(SUM("ケース"), 0) FROM ${出荷} WHERE "受注ID" = $1) WHERE "受注ID" = $1`,
+    [受注ID],
+  );
+}
+
+async function 一連で<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  const c = await pool.connect();
+  try {
+    await c.query("BEGIN");
+    const r = await fn(c);
+    await c.query("COMMIT");
+    return r;
+  } catch (e) {
+    await c.query("ROLLBACK");
+    throw e;
+  } finally {
+    c.release();
+  }
+}
 
 /** 上の欄の選択肢（表と、コード・名前の項目） */
 const 選択肢の表: Record<string, [string, string, string]> = {
@@ -177,5 +304,122 @@ export function wsRoutes(app: FastifyInstance) {
   app.get<{ Params: { code: string } }>("/api/ws/unso/:code", async (req) => {
     const [m] = await q(`SELECT "短縮名" FROM ${運送会社マスタ} WHERE "運送会社ID" = $1 LIMIT 1`, [Number(req.params.code)]);
     return { 短縮名: m?.短縮名 ?? null };
+  });
+
+  // ---------------- 明細の詳細（Access の FSD_出荷明細2） ----------------
+
+  // 選択肢（商品区分・運賃振分区分・産地・訂正の理由）
+  app.get("/api/ws/detail-choices", async () => ({
+    商品区分: await q(`SELECT "区分ID" AS "id", "区分名" AS "name" FROM ${t("ws_fe", "TM_商品区分")} ORDER BY "区分ID"`),
+    運賃振分区分: await q(`SELECT "運賃振分区分" AS "id", "運賃振分区分名" AS "name" FROM ${運賃振分区分マスタ} ORDER BY "運賃振分区分"`),
+    産地: await q(`SELECT "産地コード" AS "id", "通称" AS "name" FROM ${t("ws_fe", "TM_産地マスタ")} ORDER BY "産地コード"`),
+    訂正科目: await q(`SELECT "訂正科目ID" AS "id", "訂正科目名" AS "name" FROM ${t("ws_fe", "TM_訂正科目マスタ")} ORDER BY "訂正科目ID"`),
+    備考欄: await q(`SELECT "ID" AS "id", "備考欄" AS "name", "分類", "作業分類" FROM ${t("ws", "TM_備考欄")} ORDER BY "分類", "作業分類", "備考欄"`),
+  }));
+
+  // 1 行（同じ便のほかの行の出庫ID も、一覧と同じ順で）
+  app.get<{ Params: { id: string } }>("/api/ws/detail/:id", async (req, reply) => {
+    const [r] = await q(
+      `SELECT s.*, p."運送会社名" AS "便の運送会社名", p."車番" AS "便の車番", p."出荷計画日" AS "便の出荷日",
+              n1."短縮名" AS "入庫後名義名", n2."短縮名" AS "入庫前名義名"
+       FROM ${出荷} s LEFT JOIN ${輸送計画} p ON p."輸送ID" = s."輸送ID"
+       LEFT JOIN ${得意先マスタ} n1 ON n1."短縮コード" = s."入庫後名義ID"
+       LEFT JOIN ${得意先マスタ} n2 ON n2."短縮コード" = s."入庫前名義ID"
+       WHERE s."出庫ID" = $1`,
+      [Number(req.params.id)],
+    );
+    if (!r) return reply.code(404).send({ error: "この明細はありません" });
+    const ids = await q<{ 出庫ID: number }>(
+      `SELECT "出庫ID" FROM ${出荷} WHERE "輸送ID" = $1 ORDER BY "商品積込順", "商品コード", "賞味期限", "タグ", "出庫ID"`,
+      [r.輸送ID],
+    );
+    return { row: r, ids: ids.map((x) => x.出庫ID) };
+  });
+
+  // 1 行を直す（Access の各欄の「更新後処理」と同じ動き）。登録済み（chk）の行は訂正からだけ直せる
+  app.post<{ Body: Record<string, any> }>("/api/ws/detail/save", async (req, reply) => {
+    const b = req.body;
+    const id = Number(b.出庫ID);
+    return 一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [id])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      if (cur.chk) return reply.code(403).send({ error: "登録済みのデータを訂正する場合、訂正ボタンをクリックしてください。" });
+      const v: Record<string, unknown> = {};
+      for (const [k, x] of Object.entries(b)) if (明細の書ける項目.has(k)) v[k] = x === "" ? null : x;
+      for (const [code, name] of Object.entries(名前の組)) if (code in v && !(name in v)) v[name] = await 短縮名(c, v[code]);
+      // 届け先：届け先の受付時間を備考に足す
+      if ("届け先コード" in v) v.備考 = await 特別項目(c, 1, String(v.備考 ?? cur.備考 ?? ""), v.届け先コード);
+      // 出荷場所：在庫を読み込んでいない行は、入庫前名義を出荷場所条件の名義にする
+      if ("倉庫ID" in v && (cur.認識ID ?? "0") === "0") {
+        const m = (await c.query(`SELECT "名義ID" FROM ${出荷場所条件} WHERE "倉庫ID" = $1 LIMIT 1`, [v.倉庫ID])).rows[0];
+        v.入庫前名義ID = m?.名義ID ?? v.倉庫ID;
+      }
+      // ケース・商品kg（入数で計算）
+      const 入数 = Number(cur.入数 ?? 0);
+      if ("ケース" in v && !("商品kg" in v)) v.商品kg = v.ケース === null ? null : Number(v.ケース) * 入数;
+      else if ("商品kg" in v && !("ケース" in v) && 入数) v.ケース = v.商品kg === null ? null : cint(Number(v.商品kg) / 入数);
+      // 製造日を入れたら賞味期限を出す
+      if ("製造日" in v && !("賞味期限" in v)) v.賞味期限 = await 賞味期限計算(c, v.製造日 as string | null, cur.商品コード);
+      // 入庫後名義が 658（寿預かり）のときは、入庫依頼書に出す印と、決めてある一文を備考に足す
+      if (v.入庫後名義ID === 658 || v.入庫後名義ID === "658") {
+        v.入庫備考 = true;
+        const [s] = (await c.query(`SELECT "値" FROM app."設定" WHERE "名前" = '寿預かりの備考'`)).rows;
+        if (s?.値) v.備考 = `${v.備考 ?? cur.備考 ?? ""} ${s.値}`;
+      }
+      const cols = Object.keys(v);
+      if (cols.length)
+        await c.query(`UPDATE ${出荷} SET ${cols.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "出庫ID" = $1`, [id, ...cols.map((k) => v[k])]);
+      // 届け先を変えたら運賃振分け（名義も入れる）
+      if ("届け先コード" in v) await 運賃振分け(c, id, true, Boolean(v.本社受注 ?? cur.本社受注));
+      // ケースを変えたら受注の残数を出し直す
+      if ("ケース" in v && cur.受注ID) await 受注残数(c, cur.受注ID);
+      return { ok: true };
+    });
+  });
+
+  // 訂正（Access の F_訂正画面。理由を選び、値を変えて、訂正履歴に残す）
+  app.post<{ Body: { 出庫ID: number; 項目: string; 値: any; 科目ID: number; 特記事項?: string; 別名?: string } }>("/api/ws/detail/correct", async (req, reply) => {
+    const b = req.body;
+    if (!明細の書ける項目.has(b.項目) && !["chk", "商品コード", "商品名"].includes(b.項目))
+      return reply.code(400).send({ error: "この項目は訂正できません" });
+    if (!b.科目ID) return reply.code(400).send({ error: "訂正理由を選択して下さい。" });
+    return 一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [Number(b.出庫ID)])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      const 値 = b.値 === "" ? null : b.値;
+      await c.query(`UPDATE ${出荷} SET "${b.項目}" = $2 WHERE "出庫ID" = $1`, [Number(b.出庫ID), 値]);
+      const 科目 = (await c.query(`SELECT "訂正科目名" FROM ${t("ws_fe", "TM_訂正科目マスタ")} WHERE "訂正科目ID" = $1`, [b.科目ID])).rows[0];
+      const next = Number((await c.query(`SELECT COALESCE(MAX("訂正ID"), 0) + 1 AS n FROM ${訂正履歴}`)).rows[0].n);
+      await c.query(
+        `INSERT INTO ${訂正履歴} ("訂正ID", "訂正科目ID", "訂正科目名", "訂正フォーム名", "訂正テーブル名", "訂正IndexField名", "訂正Index",
+           "訂正フィールド", "訂正フィールド別名", "訂正前フィールド値", "訂正後フィールド値", "訂正時間", "訂正IndexFieldType", "訂正フィールドType", "特記事項")
+         VALUES ($1, $2, $3, 'FSD_出荷明細2', 'TD_出荷', '出庫ID', $4, $5, $6, $7, $8, $9, '数値', $10, $11)`,
+        [
+          next, b.科目ID, 科目?.訂正科目名 ?? null, String(b.出庫ID), b.項目, b.別名 ?? b.項目,
+          cur[b.項目] === null || cur[b.項目] === undefined ? null : String(cur[b.項目]), 値 === null ? null : String(値),
+          日本の今().日時, typeof 値 === "number" ? "数値" : "文字列", b.特記事項 ?? null,
+        ],
+      );
+      if (b.項目 === "ケース" && cur.受注ID) await 受注残数(c, cur.受注ID);
+      return { ok: true };
+    });
+  });
+
+  // 行を消す・便からはずす（Access の Form_Delete。登録済みの行は消せない）
+  app.post<{ Body: { 出庫ID: number; 消す: boolean } }>("/api/ws/detail/delete", async (req, reply) => {
+    return 一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [Number(req.body.出庫ID)])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      if (!req.body.消す) {
+        // キャンセル：消さずに便からはずす（あとで読み込み直せる）
+        await c.query(`UPDATE ${出荷} SET "輸送ID" = 0 WHERE "出庫ID" = $1`, [cur.出庫ID]);
+        return { はずした: true };
+      }
+      if (cur.chk)
+        return reply.code(400).send({ error: "更新済みのﾚｺｰﾄﾞは在庫に影響する為、削除出来ません！\n(変更は可能ですが在庫には反映されません)" });
+      await c.query(`DELETE FROM ${出荷} WHERE "出庫ID" = $1`, [cur.出庫ID]);
+      if (cur.受注ID) await 受注残数(c, cur.受注ID);
+      return { 消した: true };
+    });
   });
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate } from "../formParts";
 
@@ -27,7 +27,9 @@ const 時刻 = (v: string | null | undefined) => (v ? String(Number(v.slice(11, 
 /** 丸北WorkStation 出荷明細票（Access の FM_出荷明細票）。出荷日ごとの便（輸送計画）と、その便の出荷の明細 */
 export default function WsMain() {
   const nav = useNavigate();
-  const [date, setDate] = useState(今日());
+  // 出荷日と便は画面の住所（URL）にも持つ。詳細の画面から戻ったときに、同じ日・同じ便に戻れるように
+  const [sp, setSp] = useSearchParams();
+  const [date, setDate] = useState(sp.get("date") ?? 今日());
   const [ids, setIds] = useState<number[]>([]);
   const [pos, setPos] = useState(0);
   const [data, setData] = useState<{ plan: Rec; rows: Rec[]; 積込: Rec[] } | null>(null);
@@ -52,10 +54,15 @@ export default function WsMain() {
     if (!r.輸送ID.length) setData(null);
   }
   useEffect(() => {
-    日付を移す(今日());
+    日付を移す(sp.get("date") ?? 今日(), sp.get("id") ? Number(sp.get("id")) : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const 輸送ID = ids[pos];
+  useEffect(() => {
+    if (輸送ID) setSp({ date, id: String(輸送ID) }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [輸送ID, date]);
   const load = () => (輸送ID ? api.get<any>(`/api/ws/plan/${輸送ID}`).then(setData) : Promise.resolve(setData(null)));
   useEffect(() => {
     load();
@@ -329,7 +336,7 @@ export default function WsMain() {
                     <div className="r">{r.変更通知}</div>
                   </td>
                   <td>
-                    <button className="small" disabled title="明細の詳細（②で作ります）">詳細</button>
+                    <button className="small" onClick={() => nav(`/ws/detail/${r.出庫ID}`)}>詳細</button>
                   </td>
                   <td className="jun">{r.商品積込順}</td>
                   <td className="r kc">{r.届け先コード}</td>

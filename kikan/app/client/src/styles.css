@@ -432,3 +432,41 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .ws-foot { display: flex; gap: 2px; padding: 6px; justify-content: flex-end; }
 .ws-foot .k { background: #333399; color: #fff; padding: 1px 8px; }
 .ws-foot .v { background: #fff; padding: 1px 8px; min-width: 70px; text-align: right; }
+/* 出荷明細の詳細（FSD_出荷明細2） */
+.wd { background: #6c5fa8; min-height: 100vh; font-size: 13px; }
+.wd .lbl { background: #800080; color: #fff; font-weight: bold; padding: 2px 8px; white-space: nowrap; min-width: 112px; text-align: center; }
+.wd .box { background: #fff; border: 1px solid #aaa; padding: 2px 6px; min-width: 60px; display: inline-block; }
+.wd .box.w2 { min-width: 190px; }
+.wd-top { display: flex; gap: 6px; align-items: center; padding: 6px; background: #c8a8e8; flex-wrap: wrap; }
+.wd-nav { display: flex; gap: 4px; margin-left: auto; align-items: center; }
+.wd-nav button { background: #fff; border: 2px outset #ddd; padding: 2px 10px; }
+.wd-nav .teisei { color: #00f; font-weight: bold; }
+.wd-nav .teisei.on { background: #ffd0d0; color: #c00; border-style: inset; }
+.wd-nav .del { color: #c00; }
+.wd-note { background: #ffe0e0; padding: 4px 10px; color: #900; }
+.wd-body, .wd-codes { display: flex; gap: 30px; padding: 8px; }
+.wd-codes { background: #333; margin: 0 6px; }
+.wd-col { display: flex; flex-direction: column; gap: 3px; }
+.wd-line { display: flex; gap: 6px; align-items: center; }
+.wd-pair { display: flex; gap: 4px; align-items: center; }
+.wd-pair .code { width: 70px; text-align: right; }
+.wd-pair .name { background: #fff; min-width: 180px; padding: 2px 6px; border: 1px solid #aaa; }
+.wd-pair .name.wide { min-width: 240px; font-weight: bold; }
+.wd input.w1 { width: 180px; }
+.wd input.w1s { width: 70px; }
+.wd input.w2 { width: 220px; }
+.wd input.blue { color: #00c; font-weight: bold; }
+.wd input.redt { color: #e00; font-weight: bold; }
+.wd input.c { text-align: center; }
+.wd-codes .wd-pair .name { min-width: 200px; }
+.wd-ninshiki { color: #fff; margin-top: 10px; }
+.wd-memo { display: flex; gap: 20px; padding: 8px; }
+.wd-mcol { display: flex; flex-direction: column; gap: 3px; }
+.wd-mcol textarea { width: 360px; height: 70px; font: inherit; }
+.wd-btns { display: flex; gap: 10px; align-items: center; color: #fff; }
+.wd-btns button { background: #fff; border: 2px outset #ddd; }
+.teisei-dlg { width: 420px; }
+.td-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+.td-body label { display: flex; flex-direction: column; font-size: 12px; }
+.td-btns { display: flex; gap: 8px; justify-content: flex-end; padding: 8px; }
+.td-btns button { background: #f0f0f0; border: 2px outset #ddd; padding: 3px 14px; }
