@@ -6,8 +6,8 @@ import { 受注検索のExcel } from "./excel.js";
 // Access の受注登録で使っている表の置き場所
 const 受注 = t("juchu", "TD_受注");
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
-const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
+const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 受注特定項目 = t("juchu_fe", "TM_受注特定項目");
 
 /** 受注検索の表で、押して付け外しできるチェック */

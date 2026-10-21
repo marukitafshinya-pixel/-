@@ -5,7 +5,7 @@ import { requireUser } from "./auth.js";
 // 発注依頼（F_受注元選択・F_発注書印刷・F_日本食研発注書印刷・R_発注依頼）と特定商品表示（FM_特定商品表示）で使う表
 const 受注 = t("juchu", "TD_受注");
 const 依頼先 = t("juchu_fe", "TM_出荷依頼先選択");
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
 const 相手先商品 = t("juchu", "TM_相手先商品マスタ");
 const 受注特定項目 = t("juchu_fe", "TM_受注特定項目");

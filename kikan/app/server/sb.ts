@@ -10,8 +10,8 @@ const 受注 = t("juchu", "TD_受注");
 const SB受注 = t("juchu_fe", "T_エスビーweb受注");
 const 相手先商品 = t("juchu", "TM_相手先商品マスタ");
 const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
-const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
+const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
 
 /** 数を文字にするとき、Access と同じく小数点以下が 0 なら付けない（12345.0 → "12345"） */

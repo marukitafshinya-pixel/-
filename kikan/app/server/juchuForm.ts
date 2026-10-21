@@ -5,8 +5,8 @@ import { requireUser } from "./auth.js";
 // 受注の入力画面（Access の FM_受注登録_届け先指定）で使う表
 const 受注 = t("juchu", "TD_受注");
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
-const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
+const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 名義条件 = t("juchu_fe", "TM_入庫先商品別名義条件");
 
 /** 画面から書き込んでよい項目（これ以外は受け付けない） */

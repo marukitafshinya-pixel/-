@@ -3,8 +3,8 @@ import { q, t } from "./db.js";
 import { requireUser } from "./auth.js";
 
 // 共通の探す画面（Access の FSD_得意先選択・FSD_商品名選択）
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
-const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
+const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 商品分類 = t("juchu_fe", "TD_商品分類");
 const 原料マスタ = t("juchu_fe", "TM_原料マスタ");
 const 地区コード = t("juchu_fe", "TM_地区コード");

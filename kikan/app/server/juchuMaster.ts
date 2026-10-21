@@ -4,7 +4,7 @@ import { requireUser } from "./auth.js";
 
 // 受注グループマスタ（Access の FM_受注先マスタ登録）。受注先選択画面のボタン・受注先の一覧のもとになる表
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
-const 得意先マスタ = t("juchu_fe", "TM_得意先マスタ");
+const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 得意先区分 = t("juchu_fe", "TM_得意先区分");
 
 /** 画面から書き込んでよい項目 */

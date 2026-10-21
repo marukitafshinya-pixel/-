@@ -41,6 +41,19 @@ PGURL=... python3 csv_to_pg.py --fe 受注登録FE --dir 書き出したフォ�
 - 画面側ファイルの中の表は、`sources.json` でその画面側ファイルに割り当てたスキーマ（例：`juchu_fe`）に入れる。
 - ほかのシステムの表がいっしょに書き出されていて、すでに取り込んだものを上書きしたくないときは `--skip-schemas ws,soko` のように指定する。
 
+## 商品マスタ・得意先マスタを 1 つにまとめる（unify_masters.sql）
+
+Access では画面側ファイルごとに商品マスタ・得意先マスタの写しがあり、中身が少しずつ違う（WorkStation の写しは古い）。
+Web 版では `kyotsu."TM_商品マスタ"`・`kyotsu."TM_得意先マスタ"` の 1 つにまとめ、各スキーマ（juchu_fe・ws_fe・soko_fe・seizo_fe・housou_fe・tehai_fe・web_fe・keikaku）の同じ名前のところはビューにする。
+
+```
+psql "$PGURL" -v ON_ERROR_STOP=1 -f unify_masters.sql
+```
+
+- 中身はいちばん新しい写し（受注登録など 6 つ）を使い、そこで消された古い商品は製造計画・WorkStation の写しから足す（過去の受注・出荷の商品名を出すため）。
+- 「ロボットプログラムNo」は製造計画（なければ WorkStation）の値を入れる。
+- 取り込みをやり直したあとにもう一度流す。もとの写しは `old_master` スキーマに取っておく。
+
 ## Excel で保存した CSV からの取り込み（excel_csv_to_pg）
 
 Access の表を Excel に貼り付けて CSV にしたもの（型の情報がないもの）は、同じ形の表の型を借りて入れる。
