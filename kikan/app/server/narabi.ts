@@ -10,7 +10,7 @@ function 表を作る(): Map<string, number> {
     for (let b = 0x40; b <= 0xfc; b++) {
       if (b === 0x7f) continue;
       const ch = dec.decode(new Uint8Array([a, b]));
-      if (ch.length === 1 && ch !== "�" && !m.has(ch)) m.set(ch, a * 256 + b);
+      if (ch.length === 1 && ch.charCodeAt(0) !== 0xfffd && !m.has(ch)) m.set(ch, a * 256 + b);
     }
   return m;
 }
