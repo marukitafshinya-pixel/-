@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -58,6 +58,7 @@ async function main() {
     import("../../../server/wsZaiko"),
     import("../../../server/wsJuchu"),
     import("../../../server/wsHokan"),
+    import("../../../server/wsNenkan"),
   ]);
   authRoutes(fakeApp);
   juchu.juchuRoutes(fakeApp);
@@ -71,6 +72,7 @@ async function main() {
   wsZaiko.wsZaikoRoutes(fakeApp);
   wsJuchu.wsJuchuRoutes(fakeApp);
   wsHokan.wsHokanRoutes(fakeApp);
+  wsNenkan.wsNenkanRoutes(fakeApp);
   fetchを回す();
 
   const banner = document.getElementById("demo-banner")!;

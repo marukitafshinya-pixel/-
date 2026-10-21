@@ -82,7 +82,7 @@ async function ユーザー評価(c: PoolClient, 届け先コード: unknown, �
 }
 
 /** パレット枚数（ケース ÷ パレット単位1、端数は繰り上げ） */
-async function パレット計算(c: PoolClient, 商品コード: unknown, ケース: number): Promise<number> {
+export async function パレット計算(c: PoolClient, 商品コード: unknown, ケース: number): Promise<number> {
   const 単位 = n((await c.query(`SELECT "パレット単位1" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(商品コード)])).rows[0]?.パレット単位1);
   if (!単位) return 0;
   const x = ケース / 単位;

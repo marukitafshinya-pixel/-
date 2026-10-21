@@ -485,6 +485,7 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .wsi-group .b2 { color: #00c; }
 .wsi-group .b3 { color: #e04040; }
 .wsi-group .b4 { color: #8a7a20; }
+.wsi-group .b5 { color: #c03070; }
 .wsi.sel { background: #a6d4e2; }
 .wsi-bar { display: flex; gap: 6px; align-items: center; padding: 6px; background: #c8c8c8; }
 .wsi-bar .lbl { background: #800080; color: #fff; font-weight: bold; padding: 2px 8px; }
@@ -701,3 +702,66 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .fk-foot button { background: #fff; border: 2px outset #ddd; font-weight: bold; padding: 2px 10px; }
 .fk-foot .green { color: #080; }
 .fk-foot .blue { color: #00c; }
+
+/* 年間受注割振り（Access の F_受注検索_商品ベース_年月基準） */
+.nk { display: flex; flex-direction: column; height: 100vh; background: #7a72bf; font-size: 13px; }
+.nk-top { display: flex; gap: 14px; align-items: flex-start; padding: 4px 6px; background: #c8c8c8; flex-wrap: wrap; }
+.nk-kind { display: flex; gap: 2px; background: #888; padding: 2px; width: fit-content; }
+.nk-kind span { background: #fff; padding: 0 6px; font-weight: bold; }
+.nk-kind span.on { color: #e00000; }
+.nk-search { display: flex; align-items: flex-end; gap: 4px; margin-top: 10px; }
+.nk-ken { background: #000080; color: #fff; font-weight: bold; padding: 2px 4px; line-height: 1.1; }
+.nk-search label { display: flex; flex-direction: column; }
+.nk-search label > span { background: #800080; color: #fff; text-align: center; font-weight: bold; padding: 0 8px; }
+.nk-search input { width: 70px; background: #cff; border: 1px solid #999; padding: 1px 4px; }
+.nk-search .dash { padding: 0 2px 2px; }
+.nk-search .wide .name { min-width: 300px; background: #f4f4f4; border: 1px solid #999; padding: 1px 4px; font-weight: bold; min-height: 20px; }
+.nk-title { background: #ffe0ee; border: 1px solid #ccc; padding: 4px 80px; font-size: 20px; }
+.nk-unit .lbl { background: #555580; color: #ffe060; font-weight: bold; text-align: center; }
+.nk-unit .tg { display: flex; gap: 2px; padding: 2px; background: #dde; }
+.nk-unit .tg button { background: #fff; border: 2px outset #ddd; padding: 1px 12px; font-weight: bold; }
+.nk-unit .tg button.on { border-style: inset; background: #bfdfff; }
+.nk-btns { display: flex; gap: 6px; padding: 6px 10px; background: #333; }
+.nk-btns button { background: #fff; border: 2px outset #ddd; padding: 2px 16px; font-weight: bold; }
+.nk-btns button.on { border-style: inset; background: #ffe080; }
+.nk-id { margin-left: auto; display: flex; flex-direction: column; gap: 6px; }
+.nk-id div { background: #fff; min-width: 80px; padding: 0 4px; font-size: 11px; min-height: 16px; }
+.nk-mid { display: flex; gap: 14px; align-items: flex-start; padding: 4px 6px 8px; background: #c8c8c8; }
+.nk-soko .lbl { background: #800080; color: #fff; text-align: center; font-weight: bold; padding: 0 30px; }
+.nk-soko .row { display: flex; background: #303090; padding: 2px; gap: 4px; }
+.nk-soko select { background: #303090; color: #ffe060; border: 1px solid #aaa; }
+.nk-soko .name { color: #fff; min-width: 110px; }
+.nk-rep { margin-top: 8px; background: #fff; border: 2px outset #ddd; padding: 3px 10px; }
+.nk-sum { border-collapse: collapse; }
+.nk-sum th { background: #2d4d70; color: #fff; font-weight: normal; padding: 0 8px; border: 1px solid #999; }
+.nk-sum td { background: #fff; border: 1px solid #999; min-width: 60px; text-align: right; padding: 0 4px; }
+.nk-sum td.red, .nk-grid td.red, .nk-foot .red { color: #e00000; }
+.nk-sum td.pink, .nk-grid td.pink, .nk-foot .pink { color: #c040c0; }
+.nk-sum td.blue { color: #0060c0; }
+.nk-sum td.gray { background: #a8a8a8; color: #ffe060; }
+.nk-dates { display: flex; gap: 2px; margin-left: 140px; }
+.nk-dates span { background: #eee; border: 1px solid #ccc; padding: 2px 6px; font-size: 11px; }
+.nk-list { flex: 1; overflow: auto; }
+.nk-grid { border-collapse: collapse; }
+.nk-grid th { background: #4d5d2a; color: #fff; font-weight: normal; padding: 0 4px; border: 1px solid #999; }
+.nk-grid th.gap, .nk-grid td.gap { background: transparent; border: none; width: 4px; padding: 0; }
+.nk-grid td { background: #fff; border: 1px solid #aaa; padding: 0 4px; height: 22px; }
+.nk-grid tr.cur td.code { background: #000; color: #fff; }
+.nk-grid td.code { background: #cff; text-align: right; width: 44px; }
+.nk-grid td.todoke { width: 140px; }
+.nk-grid td.atsu { width: 46px; }
+.nk-grid td.r { text-align: right; width: 58px; }
+.nk-grid td.navy { color: #204080; }
+.nk-grid td.jigetsu { background: #a8a8a8; color: #ffe060; font-weight: bold; }
+.nk-grid td.biko { width: 180px; }
+.nk-grid td input { width: 100%; box-sizing: border-box; border: 1px solid #99c; background: #ffffe0; }
+.nk-grid td input.r { text-align: right; }
+.nk-grid button.sel { background: #fff; border: 2px outset #ddd; font-weight: bold; padding: 0 6px; }
+.nk-grid button.show { background: #fff; border: 2px outset #ddd; color: #e00000; font-weight: bold; padding: 0 6px; }
+.nk-grid tr.add td { background: #eef; }
+.nk-grid tr.add input { width: 70px; }
+.nk-none { color: #fff; padding: 8px; }
+.nk-foot { display: flex; background: #c8c8c8; padding: 2px 0; }
+.nk-foot .lbl { background: #fff; font-weight: bold; padding: 0 14px; margin-left: 50px; }
+.nk-foot .sp { width: 170px; }
+.nk-foot span:not(.lbl):not(.sp) { width: 66px; text-align: right; padding-right: 4px; color: #204080; }

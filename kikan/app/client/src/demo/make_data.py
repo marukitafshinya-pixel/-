@@ -277,6 +277,24 @@ for sid, yid, d, todoke, code, cs, zid, jun, chk, jid, moto in 出荷:
         v.update(計画変更chk=True, 変更通知="製造日が変わりました（見本）")
     ins("ws.TD_出荷", **v)
 
+# ---------------- 年間受注割振りの月の表（作り物）：見本版を開いた月と、その前の月 ----------------
+月初 = Raw("date_trunc('month', demo_day(0))")
+月末 = Raw("(date_trunc('month', demo_day(0)) + interval '1 month' - interval '1 day')")
+前月初 = Raw("(date_trunc('month', demo_day(0)) - interval '1 month')")
+前月末 = Raw("(date_trunc('month', demo_day(0)) - interval '1 day')")
+年月 = Raw("to_char(demo_day(0), 'YYMM')")
+前年月 = Raw("to_char(date_trunc('month', demo_day(0)) - interval '1 month', 'YYMM')")
+name, kikaku, irisu = 商品名[91]
+for kid, todoke, start, end, ym, moto_cs, zan, biko in [
+    (19001, 812, 月初, 月末, 年月, 100, 0, "見本：優先"),
+    (19002, 824, 月初, 月末, 年月, 80, 0, None),
+    (19003, 343, 月初, 月末, 年月, 60, 0, "見本：40個確保"),
+    (18001, 824, 前月初, 前月末, 前年月, 90, 20, None),
+]:
+    ins("ws.TMS_本社依頼受注_製造", 個別受注ID=kid, 年月=ym, 統一受注ID=Raw(f"{ym} || '-91'"), 集計開始日=start, 集計終了日=end, 運賃振分区分=1,
+        届け先コード=todoke, 届け先=名前[todoke], 商品コード=91, グループ商品コード=91, 商品名=name, 規格=kikaku, 入数=irisu,
+        受注元数=moto_cs, 受注残数=zan, 取引元ID=360, 取引帳合ID=todoke, 入庫後名義ID=todoke, 備考=biko)
+
 # ---------------- 取り込み元（倉庫管理・転売品管理・原料管理）の出荷（作り物） ----------------
 for sc, base in [("soko", 8001), ("tenbai", 8101)]:
     for i, (code, cs) in enumerate([(55, 12), (91, 8)]):
