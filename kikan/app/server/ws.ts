@@ -37,7 +37,7 @@ async function 短縮名(c: PoolClient, code: unknown): Promise<string | null> {
 }
 
 /** 商品・届け先の特記事項を備考に足す（Access の C_特別項目。0＝商品の特記事項、1＝届け先の受付時間） */
-async function 特別項目(c: PoolClient, 区分: 0 | 1, 備考: string, code: unknown): Promise<string> {
+export async function 特別項目(c: PoolClient, 区分: 0 | 1, 備考: string, code: unknown): Promise<string> {
   const r =
     区分 === 0
       ? await c.query(`SELECT "特記事項" AS v FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [Number(code ?? 0)])

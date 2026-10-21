@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { Field, parseDate } from "../formParts";
+import { ZaikoSentaku } from "./WsZaikoSelect";
 
 type Rec = Record<string, any>;
 type 一覧 = { id: number | string; name: string }[];
@@ -25,6 +26,8 @@ export default function WsDetail() {
   const [訂正モード, set訂正モード] = useState(false);
   const [訂正, set訂正] = useState<null | { 項目: string; 別名: string; 前: any; kind?: "date" | "num" }>(null);
   const [bikou, setBikou] = useState(false);
+  const [新商品, set新商品] = useState<number | null>(null); // 在庫選択中の商品コード
+  const [版, set版] = useState(0); // キャンセルしたとき、打った商品コードを元に戻すため
 
   const load = () =>
     api.get<{ row: Rec; ids: number[] }>(`/api/ws/detail/${id}`).then((x) => {
@@ -154,7 +157,10 @@ export default function WsDetail() {
             <Field value={r.商品状態隠語} className="w1s" readOnly={ro || 訂正モード} onCommit={(v) => save({ 商品状態隠語: v || null })} />
           </div>)}
           {欄("コード・商品名", <div className="wd-pair" onClick={訂正する("商品コード", "商品コード", "num")}>
-            <Field value={r.商品コード} kind="num" className="code" kyotsu="shohin" readOnly />
+            <Field key={版} value={r.商品コード} kind="num" className="code" kyotsu="shohin" readOnly={ro || 訂正モード} onCommit={(v) => {
+              const code = n(v);
+              if (code !== null && code !== r.商品コード) set新商品(code);
+            }} />
             <span className="name wide">{r.商品名}</span>
           </div>)}
           {欄("規格・入数", <div className="wd-pair"><span className="box">{r.規格}</span><span className="box">{r.入数}</span></div>)}
@@ -227,6 +233,18 @@ export default function WsDetail() {
             onBlur={(e) => e.target.value !== (r.社内連絡 ?? "") && save({ 社内連絡: e.target.value || null })} />
         </div>
       </div>
+      {新商品 !== null && (
+        <ZaikoSentaku
+          出庫ID={r.出庫ID}
+          商品コード={新商品}
+          倉庫ID={r.倉庫ID ?? 0}
+          onDone={async () => {
+            set新商品(null);
+            await load();
+            set版(版 + 1);
+          }}
+        />
+      )}
       {訂正 && (
         <TeiseiDialog
           {...訂正}

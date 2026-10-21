@@ -519,3 +519,9 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .kb-pick { width: 42px; height: 20px; background: #eee; border: 2px outset #ddd; color: #00f; font-weight: bold; font-size: 11px; }
 .kb-pick.on { border-style: inset; background: #cfe0ff; }
 .kb-memo { width: 120px; }
+
+/* 在庫読込選択（FSD_在庫読込選択） */
+.zy { background: #fff; border: 2px solid #333399; width: 420px; }
+.zy-msg { padding: 18px; font-size: 16px; white-space: pre-line; text-align: center; }
+.zy-btns { display: flex; gap: 8px; justify-content: center; padding: 10px; background: #e8e8f0; }
+.zy-btns button { background: #fff; border: 2px outset #ddd; padding: 4px 14px; font-weight: bold; }

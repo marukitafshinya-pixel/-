@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { pool, t } from "./db.js";
 import { requireUser } from "./auth.js";
 import { cint } from "./hanmori.js";
-import { 一連で, 出荷の既定値, 賞味期限計算 } from "./ws.js";
+import { 一連で, 出荷の既定値, 特別項目, 賞味期限計算 } from "./ws.js";
 
 // 丸北WorkStation の在庫の割り当て（Access の M_架空在庫集計・M_読込新・FSD_希望在庫表示）
 const 輸送計画 = t("ws", "TD_輸送計画");
@@ -16,6 +16,7 @@ const 商品区分 = t("ws_fe", "TM_商品区分");
 const 出荷場所条件 = t("ws_fe", "TM_出荷場所条件");
 const 本社依頼受注 = t("ws_fe", "TM_本社依頼受注");
 const ストックマスタ = t("ws", "TM_商品在庫ストックマスタ");
+const 倉庫 = t("ws_fe", "TD_倉庫"); // 倉庫管理の在庫の写し（WorkStation の画面側ファイルの表）
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
@@ -271,6 +272,73 @@ export function wsZaikoRoutes(app: FastifyInstance) {
         );
       }
       return { 件数: rows.length };
+    });
+  });
+
+  // ---------------- 在庫選択（明細の詳細で商品コードを変えたとき） ----------------
+  // Access の 商品コード_AfterUpdate → CC_在庫商品日付参照 → FSD_在庫読込選択 → FSD_架空在庫選択 → 在庫データ読込
+
+  // その倉庫に、この商品の在庫・生産計画・倉庫の在庫があるか（なければ在庫を選ばずにマスタから入れる）
+  // Access は TD_倉庫 の「商品kg」「chk」を数えているが、WorkStation の TD_倉庫 にはその項目がない。Web 版では行があるかで見る
+  app.get<{ Querystring: { shohin: string; soko: string } }>("/api/ws/zaiko/aru", async (req) => {
+    const args = [n(req.query.shohin), n(req.query.soko)];
+    const [r] = (
+      await pool.query(
+        `SELECT (SELECT COUNT("在庫kg") FROM ${在庫} WHERE "商品コード" = $1 AND "倉庫ID" = $2)
+              + (SELECT COUNT("商品kg") FROM ${入庫} WHERE "商品コード" = $1 AND "倉庫ID" = $2 AND "chk" = false)
+              + (SELECT COUNT(*) FROM ${倉庫} WHERE "商品コード" = $1 AND "倉庫ID" = $2) AS n,
+                (SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1) AS "商品名"`,
+        args,
+      )
+    ).rows;
+    return { ある: n(r.n) > 0, 商品名: r.商品名 ?? null };
+  });
+
+  // 選べる在庫（在庫選択＝在庫だけ、架空＝生産計画も含める）。その倉庫の分だけ
+  app.get<{ Querystring: { shohin: string; soko: string; plan?: string } }>("/api/ws/zaiko/list", async (req) => {
+    const rows = await 在庫見込み(pool, { 商品コード: n(req.query.shohin), 倉庫ID: n(req.query.soko), 計画: req.query.plan === "1" });
+    // 入庫名義（入庫後名義の短縮名）を添える
+    const ids = [...new Set(rows.map((r) => n(r.入庫後名義ID)))];
+    const 名 = new Map(
+      (await pool.query(`SELECT "短縮コード", "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = ANY($1::int[])`, [ids])).rows.map((r: Rec) => [n(r.短縮コード), r.短縮名]),
+    );
+    return rows.map((r) => ({ ...r, 入庫名義: 名.get(n(r.入庫後名義ID)) ?? null }));
+  });
+
+  // 商品コードを変える。認識ID があればその在庫を読み込む（在庫データ読込）。なければマスタの名前・規格・入数を入れる（強制）
+  app.post<{ Body: { 出庫ID: number; 商品コード: number; 認識ID?: string | null; plan?: boolean } }>("/api/ws/zaiko/set", async (req, reply) => {
+    const b = req.body;
+    return 一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [n(b.出庫ID)])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      if (cur.chk) return reply.code(403).send({ error: "登録済みのデータを訂正する場合、訂正ボタンをクリックしてください。" });
+      const 商品コード = n(b.商品コード);
+      const m = (await c.query(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品コード])).rows[0];
+      const v: Record<string, unknown> = { 商品コード };
+      if (!b.認識ID) {
+        Object.assign(v, {
+          商品名: m?.商品名 ?? null, 在庫ID: 0, 認識ID: "0", 入庫日: null, 製造日: null, 賞味期限: null, 通知: "", 入庫ID: 0, 計画変更chk: false,
+        });
+      } else {
+        const z = (await 在庫見込み(c, { 商品コード, 倉庫ID: n(cur.倉庫ID), 計画: !!b.plan })).find((r) => String(r.認識ID) === String(b.認識ID));
+        if (!z) return reply.code(400).send({ error: "選んだ在庫が見つかりません。もう一度選んでください。" });
+        Object.assign(v, {
+          輸送ID: n(cur.輸送ID) || cur.輸送ID, 認識ID: String(z.認識ID), 入庫日: z.入庫日,
+          // 通知：Access では包装日の知らせ（○日後包装）を入れたあと、在庫か計画かの知らせで上書きしている
+          在庫ID: z.架空実物 ? 0 : n(z.認識ID), 通知: z.架空実物 ? "計画" : "確認OK!",
+          商品名: z.商品名, 入庫No: z.入庫No ?? null, 製造日: z.製造日, 賞味期限: z.賞味期限, 規格: z.規格, 入数: z.入数, 入庫ID: z.入庫ID,
+          商品区分: z.商品区分, タグ: z.タグ ?? null, 産地コード: z.産地コード ?? null, 製造工場ID: z.製造工場ID ?? null, 製造工場名: z.製造工場名 ?? null,
+          検体区分: z.検体区分 ?? null, 社内連絡: `${cur.社内連絡 ?? ""}\r\n${z.検査区分 ?? ""}`, 入庫前名義ID: z.入庫後名義ID, 計画変更chk: false,
+        });
+      }
+      // 商品の特記事項を備考に足し、規格・入数はマスタの値、重量は入数×ケース（Access の C_特別項目・CC_コード表示）
+      v.備考 = await 特別項目(c, 0, String(cur.備考 ?? ""), 商品コード);
+      v.規格 = m?.規格 ?? null;
+      v.入数 = m?.入数 ?? null;
+      if (m?.入数 !== null && m?.入数 !== undefined) v.商品kg = Number(m.入数) * n(cur.ケース);
+      const cols = Object.keys(v);
+      await c.query(`UPDATE ${出荷} SET ${cols.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "出庫ID" = $1`, [cur.出庫ID, ...cols.map((k) => v[k])]);
+      return { ok: true };
     });
   });
 }
