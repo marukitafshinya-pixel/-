@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field, FindDialog } from "../formParts";
+import { Field } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -10,7 +10,6 @@ export default function Tokutei() {
   const nav = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [pass, setPass] = useState<string | null>(null); // 編集できるときの合言葉
-  const [find, setFind] = useState<null | { kind: "tokui" | "shohin"; pick: (c: number) => void }>(null);
   const load = () => api.get<Row[]>("/api/tokutei").then(setRows);
   useEffect(() => {
     load();
@@ -49,8 +48,7 @@ export default function Tokutei() {
     <tr key={r.ID ?? "new"} className={isNew ? "new" : ""}>
       <td className="c1">
         {can ? (
-          <Field value={r.商品コード} kind="num" onCommit={async (v) => save({ ...r, 商品コード: n(v), 商品名: await name("shohin", n(v)) })}
-            onDoubleClick={() => setFind({ kind: "shohin", pick: async (c) => save({ ...r, 商品コード: c, 商品名: await name("shohin", c) }) })} />
+          <Field value={r.商品コード} kind="num" onCommit={async (v) => save({ ...r, 商品コード: n(v), 商品名: await name("shohin", n(v)) })} kyotsu="shohin" />
         ) : (
           r.商品コード
         )}
@@ -58,8 +56,7 @@ export default function Tokutei() {
       <td>{can ? <Field value={r.商品名} onCommit={(v) => save({ ...r, 商品名: v })} /> : r.商品名}</td>
       <td className="c2">
         {can ? (
-          <Field value={r.届け先コード} kind="num" onCommit={async (v) => save({ ...r, 届け先コード: n(v), 届け先: await name("tokui", n(v)) })}
-            onDoubleClick={() => setFind({ kind: "tokui", pick: async (c) => save({ ...r, 届け先コード: c, 届け先: await name("tokui", c) }) })} />
+          <Field value={r.届け先コード} kind="num" onCommit={async (v) => save({ ...r, 届け先コード: n(v), 届け先: await name("tokui", n(v)) })} kyotsu="tokui" />
         ) : (
           r.届け先コード
         )}
@@ -107,17 +104,6 @@ export default function Tokutei() {
           {can && line({ ID: null }, true)}
         </tbody>
       </table>
-      {find && (
-        <FindDialog
-          kind={find.kind}
-          onClose={() => setFind(null)}
-          onPick={(c) => {
-            const f = find;
-            setFind(null);
-            f.pick(c);
-          }}
-        />
-      )}
     </div>
   );
 }

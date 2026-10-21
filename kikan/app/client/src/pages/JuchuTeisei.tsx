@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Combo, Field, FindDialog, Opt, parseDate, showDate } from "../formParts";
+import { Combo, Field, Opt, parseDate, showDate } from "../formParts";
 
 type Rec = Record<string, any>;
 
@@ -12,7 +12,6 @@ export default function JuchuTeisei() {
   const [cur, setCur] = useState<Rec | null>(null);
   const [t, setT] = useState<Rec>({});
   const [shohinOpts, setShohinOpts] = useState<Opt[]>([]);
-  const [find, setFind] = useState<null | { kind: "tokui" | "shohin"; pick: (code: number) => void }>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -93,23 +92,22 @@ export default function JuchuTeisei() {
   }
 
   if (!cur) return null;
-  const tokuiFind = (pick: (code: number) => void) => () => setFind({ kind: "tokui", pick });
 
   // [見出し, 今の値, 訂正の欄]
   const rows: [string, React.ReactNode, React.ReactNode][] = [
     ["発注日", showDate(cur.受注日), <Field value={t.発注日} kind="date" onCommit={(v) => 日付を変えた("発注日", v)} />],
     ["受注元", `${cur.受注元ID ?? ""}　${cur.受注元名 ?? ""}`,
-      <div className="pair"><Field value={t.受注元ID} kind="num" className="code" onCommit={受注元を変えた} onDoubleClick={tokuiFind((c) => 受注元を変えた(String(c)))} /><input readOnly tabIndex={-1} value={t.受注元名 ?? ""} /></div>],
+      <div className="pair"><Field value={t.受注元ID} kind="num" className="code" onCommit={受注元を変えた} kyotsu="tokui" /><input readOnly tabIndex={-1} value={t.受注元名 ?? ""} /></div>],
     ["受注先", `${cur.受注先ID ?? ""}　${cur.受注先名 ?? ""}`,
-      <div className="pair"><Field value={t.受注先ID} kind="num" className="code" onCommit={受注先を変えた} onDoubleClick={tokuiFind((c) => 受注先を変えた(String(c)))} /><input readOnly tabIndex={-1} value={t.受注先名 ?? ""} /></div>],
+      <div className="pair"><Field value={t.受注先ID} kind="num" className="code" onCommit={受注先を変えた} kyotsu="tokui" /><input readOnly tabIndex={-1} value={t.受注先名 ?? ""} /></div>],
     ["年間ID", cur.統一受注ID, <Field value={t.統一受注ID} onCommit={(v) => patch({ 統一受注ID: v || null })} />],
     ["受注番号", cur.受注番号, <Field value={t.受注番号} onCommit={(v) => patch({ 受注番号: v || null })} />],
     ["商品コード", `${cur.商品コード ?? ""}　${cur.商品名 ?? ""}`,
-      <div className="pair"><Combo value={t.商品コード} options={shohinOpts} onCommit={商品を変えた} onFind={() => setFind({ kind: "shohin", pick: (c) => 商品を変えた(String(c)) })} className="code2" /><Field value={t.商品名} onCommit={(v) => patch({ 商品名: v || null })} /></div>],
+      <div className="pair"><Combo value={t.商品コード} options={shohinOpts} onCommit={商品を変えた} kyotsu="shohin" className="code2" /><Field value={t.商品名} onCommit={(v) => patch({ 商品名: v || null })} /></div>],
     ["ケース", cur.ケース, <Field value={t.ケース} kind="num" onCommit={ケースを変えた} />],
     ["商品kg", cur.商品kg, <Field value={t.商品kg} kind="num" onCommit={(v) => patch({ 商品kg: n(v) })} />],
     ["届け先", `${cur.届け先コード ?? ""}　${cur.届け先 ?? ""}`,
-      <div className="pair"><Field value={t.届け先コード} kind="num" className="code" onCommit={届け先を変えた} onDoubleClick={tokuiFind((c) => 届け先を変えた(String(c)))} /><Field value={t.届け先} onCommit={(v) => patch({ 届け先: v || null })} /></div>],
+      <div className="pair"><Field value={t.届け先コード} kind="num" className="code" onCommit={届け先を変えた} kyotsu="tokui" /><Field value={t.届け先} onCommit={(v) => patch({ 届け先: v || null })} /></div>],
     ["納品日", showDate(cur.納品日), <Field value={t.納品日} kind="date" onCommit={(v) => 日付を変えた("納品日", v)} />],
     ["送り状No", cur.送り状No, <Field value={t.送り状No} onCommit={(v) => patch({ 送り状No: v || null })} />],
     ["隠語", cur.隠語, <Field value={t.隠語} onCommit={(v) => patch({ 隠語: v || null })} />],
@@ -164,16 +162,6 @@ export default function JuchuTeisei() {
       <p className="teisei-note">
         「閉じる」を押すと、右の値で訂正し、備考の先頭に「どこを直したか」を書き足します。WorkStation・倉庫管理・転売品管理の受注の写しも直し、まだ確定していない出荷に「受注訂正」の知らせを出します。直さずに戻るときは「やめる」を押します。
       </p>
-      {find && (
-        <FindDialog
-          kind={find.kind}
-          onClose={() => setFind(null)}
-          onPick={(c) => {
-            setFind(null);
-            find.pick(c);
-          }}
-        />
-      )}
     </div>
   );
 }

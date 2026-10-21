@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Combo, Field, FindDialog } from "../formParts";
+import { Combo, Field } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -47,7 +47,6 @@ export default function JuchuMaster() {
   const [torihikiOpts, setTorihikiOpts] = useState<{ code: number; name: string }[]>([]);
   const [userKubun, setUserKubun] = useState<{ 得意先区分コード: number; 区分名: string }[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
-  const [find, setFind] = useState<null | ((c: number) => void)>(null);
 
   // Access と同じく、開くときにパスワードを聞く
   useEffect(() => {
@@ -105,8 +104,7 @@ export default function JuchuMaster() {
       <td className="r">{r.ID ?? "（新）"}</td>
       {組.map(([c, nm]) => (
         <td key={c} className="pair">
-          <Field value={r[c]} kind="num" className="code" onCommit={(v) => save(r, { [c]: n(v) })}
-            onDoubleClick={() => setFind(() => (code: number) => save(r, { [c]: code }))} />
+          <Field value={r[c]} kind="num" className="code" onCommit={(v) => save(r, { [c]: n(v) })} kyotsu="tokui" />
           <span>{r[nm]}</span>
         </td>
       ))}
@@ -167,11 +165,11 @@ export default function JuchuMaster() {
         </div>
         <label>
           取引元
-          <Combo value={torihiki} options={torihikiOpts} onCommit={setTorihiki} className="jm-combo" wide />
+          <Combo value={torihiki} options={torihikiOpts} onCommit={setTorihiki} kyotsu="tokui" className="jm-combo" wide />
         </label>
         <label>
           届け先で探す
-          <Field value={todoke} kind="num" className="jm-todoke" onCommit={setTodoke} onDoubleClick={() => setFind(() => (c: number) => setTodoke(String(c)))} />
+          <Field value={todoke} kind="num" className="jm-todoke" onCommit={setTodoke} kyotsu="tokui" />
         </label>
         <button onClick={() => (setTorihiki(""), setTodoke(""))}>条件をはずす</button>
         <span className="note">{rows.length} 件。欄を直してほかへ移ると保存されます。コードの欄はダブルクリックで名前から探せます。</span>
@@ -203,17 +201,6 @@ export default function JuchuMaster() {
         </table>
         {todoke && rows.length === 0 && <p className="note">この届け先の受注グループはまだありません。一番下の行に入れると新しく登録できます。</p>}
       </div>
-      {find && (
-        <FindDialog
-          kind="tokui"
-          onClose={() => setFind(null)}
-          onPick={(c) => {
-            const f = find;
-            setFind(null);
-            f(c);
-          }}
-        />
-      )}
     </div>
   );
 }

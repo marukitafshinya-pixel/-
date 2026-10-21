@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
-import { Combo, Field, FindDialog, parseDate } from "../formParts";
+import { Combo, Field, parseDate } from "../formParts";
 
 type Choice = { コード: string | number; 名前: string; 自社コード: number };
 
@@ -18,7 +18,6 @@ export default function HacchuForm() {
   const [shohinShown, setShohinShown] = useState(日本食研); // 日本食研以外は、届け先を選ぶと商品の選択肢が出る
   const [f, setF] = useState<Record<string, any>>({});
   const [見る, set見る] = useState<{ 商品名?: string; 届け先?: string }>({});
-  const [find, setFind] = useState(false);
 
   useEffect(() => {
     api.get<any>(`/api/hacchu/name/${moto}`).then((r) => setTitle(r.短縮名));
@@ -105,6 +104,7 @@ export default function HacchuForm() {
               patch({ 届け先コード: v });
               setShohinShown(true);
             }}
+            kyotsu={日本食研 ? undefined : "tokui"}
             className="w1"
           />
           <input className="w2s gray" readOnly tabIndex={-1} value={名前(ch.届け先, f.届け先コード)} />
@@ -119,7 +119,7 @@ export default function HacchuForm() {
             value={f.商品コード}
             options={shohinShown ? ch.商品.map((c) => ({ code: c.コード, name: c.名前 })) : []}
             onCommit={(v) => patch({ 商品コード: v })}
-            onFind={日本食研 ? undefined : () => setFind(true)}
+            kyotsu={日本食研 ? undefined : "shohin"}
             className="w1"
           />
           <input className="w2s gray" readOnly tabIndex={-1} value={名前(ch.商品, f.商品コード)} />
@@ -141,16 +141,6 @@ export default function HacchuForm() {
           <input className="w2 dark" readOnly tabIndex={-1} value={見る.商品名 ?? ""} />
         </div>
       </div>
-      {find && (
-        <FindDialog
-          kind="shohin"
-          onClose={() => setFind(false)}
-          onPick={(c) => {
-            setFind(false);
-            patch({ 商品コード: c });
-          }}
-        />
-      )}
     </div>
   );
 }

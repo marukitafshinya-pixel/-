@@ -315,3 +315,9 @@ input, select { font: inherit; }
 .jm-grid tr.new td { background: #ffffe0; }
 .jm-grid .del { font-size: 11px; color: #c00; }
 .jm-grid input { height: 20px; }
+/* 共通コード（得意先の短縮コード）が入る欄：色を変える。ダブルクリックで得意先を探せる */
+input.kyotsu, .combo input.kyotsu { background: #ffe8b8; border-color: #d08a00; }
+input.kyotsu:focus { background: #ffd98a; }
+input.kyotsu[readonly] { background: #f3e2c0; }
+.search .shohin-combo { width: 90px; } .search .shohin-combo .combo-list { width: 320px; }
+.jf-row.big input.kyotsu, .jf-row.big input.kyotsu[readonly] { background: #ffe8b8; }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, mdw, num, ymd } from "../api";
+import { Combo } from "../formParts";
 
 type MotoBtn = { 並び: number; 表示名: string; 値: number; 要確認: boolean };
 type SakiBtn = { 受注先ID: number; 表示名: string };
@@ -186,14 +187,14 @@ export default function JuchuSearch() {
         <div className="field purple wide">
           <span>商品で検索</span>
           <div>
-            <select value={f.shohin ?? "0"} onChange={(e) => set({ shohin: e.target.value === "0" ? undefined : e.target.value })}>
-              <option value="0">0</option>
-              {shohinList.map((s) => (
-                <option key={s.商品コード} value={s.商品コード}>
-                  {s.商品コード} {s.商品名}
-                </option>
-              ))}
-            </select>
+            <Combo
+              value={f.shohin ?? ""}
+              options={shohinList.map((x) => ({ code: x.商品コード, name: x.商品名 }))}
+              onCommit={(v) => set({ shohin: v.trim() === "" || v === "0" ? undefined : v })}
+              kyotsu="shohin"
+              className="shohin-combo"
+              wide
+            />
             <span className="shohin-name">{shohinName}</span>
           </div>
         </div>

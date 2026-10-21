@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Combo, Field, FindDialog, Opt, cint, differs, pad, parseDate, today, 統一受注ID } from "../formParts";
+import { Combo, Field, Opt, cint, differs, pad, parseDate, today, 統一受注ID } from "../formParts";
 
 type Rec = Record<string, any>;
 
@@ -23,7 +23,6 @@ export default function JuchuTodokeForm() {
   const [shohinOpts, setShohinOpts] = useState<Opt[]>([]);
   const [meigiOpts, setMeigiOpts] = useState<Opt[]>([]);
   const [meigiName, setMeigiName] = useState("");
-  const [find, setFind] = useState<null | { kind: "tokui" | "shohin"; pick: (code: number) => void }>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const bangoRef = useRef<HTMLInputElement>(null);
@@ -281,7 +280,6 @@ export default function JuchuTodokeForm() {
   }
 
   const locked受注先 = Number(rec.受注先ID ?? 0) !== 0 && !!groupId && Number(defaults?.受注先ID ?? 0) !== 0;
-  const tokuiFind = (pick: (code: number) => void) => () => setFind({ kind: "tokui", pick });
 
   return (
     <div className="jform" onKeyDown={onKeyDown} ref={formRef}>
@@ -317,14 +315,12 @@ export default function JuchuTodokeForm() {
         </div>
         <div className="jf-row big">
           <span className="lbl">受注先</span>
-          <Field value={rec.受注先ID} kind="num" className="code" readOnly={locked受注先} onCommit={受注先IDを変えた}
-            onDoubleClick={locked受注先 ? undefined : tokuiFind((c) => 受注先IDを変えた(String(c)))} />
+          <Field value={rec.受注先ID} kind="num" className="code" readOnly={locked受注先} onCommit={受注先IDを変えた} kyotsu="tokui" />
           <Field value={rec.受注先名} className="name" readOnly={locked受注先} onCommit={(v) => patch({ 受注先名: v })} />
         </div>
         <div className="jf-row big">
           <span className="lbl">帳合先</span>
-          <Field value={rec.受注帳合ID} kind="num" className="code" readOnly={locked受注先} onCommit={(v) => patch({ 受注帳合ID: numOrNull(v) })}
-            onDoubleClick={locked受注先 ? undefined : tokuiFind((c) => patch({ 受注帳合ID: c }))} />
+          <Field value={rec.受注帳合ID} kind="num" className="code" readOnly={locked受注先} onCommit={(v) => patch({ 受注帳合ID: numOrNull(v) })} kyotsu="tokui" />
           <Field value={rec.受注帳合名} className="name" readOnly={locked受注先} onCommit={(v) => patch({ 受注帳合名: v })} />
         </div>
         <div className="jf-row">
@@ -350,10 +346,8 @@ export default function JuchuTodokeForm() {
         </div>
         <div className="jf-line">
           <span className="lbl">届け先コード</span>
-          <Combo value={rec.届け先コード} options={todokeOpts} onCommit={届け先コードを変えた}
-            onFind={tokuiFind((c) => 届け先コードを変えた(String(c)))} className="w1" />
-          <Combo value={rec.届け先コード1} options={todokeOpts} onCommit={(v) => patch({ 届け先コード1: numOrNull(v) })}
-            onFind={tokuiFind((c) => patch({ 届け先コード1: c }))} className="w1" />
+          <Combo value={rec.届け先コード} options={todokeOpts} onCommit={届け先コードを変えた} kyotsu="tokui" className="w1" />
+          <Combo value={rec.届け先コード1} options={todokeOpts} onCommit={(v) => patch({ 届け先コード1: numOrNull(v) })} kyotsu="tokui" className="w1" />
         </div>
         <div className="jf-line">
           <span className="lbl">届け先</span>
@@ -361,10 +355,8 @@ export default function JuchuTodokeForm() {
         </div>
         <div className="jf-line">
           <span className="lbl">商品コード</span>
-          <Combo value={rec.商品コード} options={shohinOpts} onCommit={商品コードを変えた}
-            onFind={() => setFind({ kind: "shohin", pick: (c) => 商品コードを変えた(String(c)) })} className="w1" />
-          <Combo value={rec.商品コード1} options={shohinOpts} onCommit={(v) => patch({ 商品コード1: numOrNull(v) })}
-            onFind={() => setFind({ kind: "shohin", pick: (c) => patch({ 商品コード1: c }) })} className="w1" />
+          <Combo value={rec.商品コード} options={shohinOpts} onCommit={商品コードを変えた} kyotsu="shohin" className="w1" />
+          <Combo value={rec.商品コード1} options={shohinOpts} onCommit={(v) => patch({ 商品コード1: numOrNull(v) })} kyotsu="shohin" className="w1" />
           <input
             type="checkbox"
             className="chk"
@@ -390,7 +382,7 @@ export default function JuchuTodokeForm() {
         </div>
         <div className="jf-line">
           <span className="lbl">入庫名義</span>
-          <Combo value={rec.入庫名義ID} options={meigiOpts} onCommit={(v) => patch({ 入庫名義ID: numOrNull(v) })} className="w1" />
+          <Combo value={rec.入庫名義ID} options={meigiOpts} onCommit={(v) => patch({ 入庫名義ID: numOrNull(v) })} kyotsu="tokui" className="w1" />
           <input className="w1 gray" value={meigiName} readOnly tabIndex={-1} />
         </div>
         <div className="jf-line">
@@ -426,16 +418,6 @@ export default function JuchuTodokeForm() {
           <span className="msg">{dirty ? "入力中（まだ保存していません）" : msg}</span>
         </div>
       </div>
-      {find && (
-        <FindDialog
-          kind={find.kind}
-          onClose={() => setFind(null)}
-          onPick={(c) => {
-            setFind(null);
-            find.pick(c);
-          }}
-        />
-      )}
     </div>
   );
 }

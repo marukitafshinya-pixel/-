@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, upload } from "../api";
-import { Field, FindDialog } from "../formParts";
+import { Field } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -20,7 +20,6 @@ export default function HanmoriJuchu() {
   const [file, setFile] = useState<File | null>(null);
   const [info, setInfo] = useState(1);
   const [busy, setBusy] = useState(false);
-  const [find, setFind] = useState<null | ((code: number) => void)>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = (o = only) => api.get<Row[]>("/api/hanmori/juchu/list", { only: o ? "unlinked" : "" }).then(setRows);
@@ -154,7 +153,7 @@ export default function HanmoriJuchu() {
                   kind="num"
                   className="hm-code"
                   onCommit={(v) => setRow(r, { 変換丸北届け先コード: v.trim() === "" ? 0 : Number(v) })}
-                  onDoubleClick={() => setFind(() => (c: number) => setRow(r, { 変換丸北届け先コード: c }))}
+                  kyotsu="tokui"
                 />
               </td>
             </tr>
@@ -162,17 +161,6 @@ export default function HanmoriJuchu() {
         </tbody>
       </table>
       {rows.length === 0 && <p className="hm-empty">ファイル参照で、販盛の受注実績一覧を読み込んでください。</p>}
-      {find && (
-        <FindDialog
-          kind="tokui"
-          onClose={() => setFind(null)}
-          onPick={(c) => {
-            const f = find;
-            setFind(null);
-            f(c);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -55,6 +55,11 @@ export function 統一受注ID(納品日: string | null, 商品コード: unknow
 }
 
 /** 文字を打つ欄。確定（Enter・ほかの欄へ移る）したときだけ onCommit を呼ぶ（Access の「更新後処理」と同じ）。 */
+/**
+ * 共通コード（全システムで使うマスタのコード）が入る欄の印。アプリ全体の決まり：
+ * kyotsu="tokui"（得意先の短縮コード）・kyotsu="shohin"（商品コード）を付けると、色を変え、
+ * ダブルクリックでそのマスタを探す画面を出す（選ぶと onCommit にそのコードが入る）。
+ */
 export function Field(props: {
   value: any;
   onCommit?: (v: string) => void;
@@ -64,29 +69,44 @@ export function Field(props: {
   inputRef?: React.Ref<HTMLInputElement>;
   onDoubleClick?: () => void;
   list?: string;
+  kyotsu?: "tokui" | "shohin";
 }) {
   const shown = props.kind === "date" ? showDate(props.value) : props.value ?? "";
   const [draft, setDraft] = useState<string>(String(shown));
+  const [finding, setFinding] = useState(false);
   useEffect(() => setDraft(String(shown)), [shown]);
   const commit = () => {
     if (draft !== String(shown)) props.onCommit?.(draft);
   };
+  const kyotsu = props.kyotsu && !props.readOnly;
   return (
-    <input
-      ref={props.inputRef}
-      className={(props.className ?? "") + (props.kind === "num" ? " r" : "")}
-      value={draft}
-      readOnly={props.readOnly}
-      tabIndex={props.readOnly ? -1 : undefined}
-      list={props.list}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onDoubleClick={props.onDoubleClick}
-    />
+    <>
+      <input
+        ref={props.inputRef}
+        className={(props.className ?? "") + (props.kind === "num" ? " r" : "") + (props.kyotsu ? " kyotsu" : "")}
+        value={draft}
+        readOnly={props.readOnly}
+        tabIndex={props.readOnly ? -1 : undefined}
+        list={props.list}
+        title={kyotsu ? `共通コード（ダブルクリックで${props.kyotsu === "shohin" ? "商品" : "得意先"}を探せます）` : undefined}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onDoubleClick={kyotsu ? () => setFinding(true) : props.onDoubleClick}
+      />
+      {finding && (
+        <FindDialog
+          kind={props.kyotsu!}
+          onClose={() => setFinding(false)}
+          onPick={(c) => {
+            setFinding(false);
+            setDraft(String(c));
+            props.onCommit?.(String(c));
+          }}
+        />
+      )}
+    </>
   );
 }
-
-/** 一覧から選べる欄（Access のコンボボックス）。▼で一覧、ダブルクリックで名前から探す。 */
 export function Combo(props: {
   value: any;
   options: Opt[];
@@ -95,11 +115,12 @@ export function Combo(props: {
   className?: string;
   inputRef?: React.Ref<HTMLInputElement>;
   wide?: boolean;
+  kyotsu?: "tokui" | "shohin";
 }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={"combo " + (props.className ?? "")}>
-      <Field value={props.value} kind="num" onCommit={props.onCommit} onDoubleClick={props.onFind} inputRef={props.inputRef} />
+      <Field value={props.value} kind="num" onCommit={props.onCommit} onDoubleClick={props.onFind} inputRef={props.inputRef} kyotsu={props.kyotsu} />
       <button type="button" tabIndex={-1} onClick={() => setOpen(!open)} title="一覧から選ぶ">
         ▾
       </button>
