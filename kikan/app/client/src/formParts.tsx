@@ -69,11 +69,12 @@ export function Field(props: {
   inputRef?: React.Ref<HTMLInputElement>;
   onDoubleClick?: () => void;
   list?: string;
-  kyotsu?: "tokui" | "shohin";
+  kyotsu?: "tokui" | "shohin" | "unso";
 }) {
   const shown = props.kind === "date" ? showDate(props.value) : props.value ?? "";
   const [draft, setDraft] = useState<string>(String(shown));
   const [finding, setFinding] = useState(false);
+  const [calendar, setCalendar] = useState(false);
   useEffect(() => setDraft(String(shown)), [shown]);
   const commit = () => {
     if (draft !== String(shown)) props.onCommit?.(draft);
@@ -88,11 +89,25 @@ export function Field(props: {
         readOnly={props.readOnly}
         tabIndex={props.readOnly ? -1 : undefined}
         list={props.list}
-        title={kyotsu ? `共通コード（ダブルクリックで${props.kyotsu === "shohin" ? "商品" : "得意先"}を探せます）` : undefined}
+        title={kyotsu ? `共通コード（ダブルクリックで${props.kyotsu === "shohin" ? "商品" : props.kyotsu === "unso" ? "運送会社" : "得意先"}を探せます）` : props.kind === "date" && !props.readOnly ? "ダブルクリックでカレンダーから選べます" : undefined}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
-        onDoubleClick={kyotsu ? () => setFinding(true) : props.onDoubleClick}
+        onDoubleClick={
+          kyotsu ? () => setFinding(true) : props.kind === "date" && !props.readOnly && !props.onDoubleClick ? () => setCalendar(true) : props.onDoubleClick
+        }
       />
+      {calendar && (
+        <CalendarDialog
+          value={props.value}
+          onClose={() => setCalendar(false)}
+          onPick={(d) => {
+            setCalendar(false);
+            const v = d.replace(/-/g, "/");
+            setDraft(v);
+            props.onCommit?.(v);
+          }}
+        />
+      )}
       {finding && (
         <FindDialog
           kind={props.kyotsu!}
@@ -115,7 +130,7 @@ export function Combo(props: {
   className?: string;
   inputRef?: React.Ref<HTMLInputElement>;
   wide?: boolean;
-  kyotsu?: "tokui" | "shohin";
+  kyotsu?: "tokui" | "shohin" | "unso";
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -165,13 +180,14 @@ type 一覧 = { id: number | string; name: string }[];
  * 共通の探す画面（Access の FSD_得意先選択・FSD_商品名選択）。
  * カナのボタン・文字・分類などで絞り、行をダブルクリック（または選んで［選択］）するとそのコードを返す。
  */
-export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: number) => void; onClose: () => void }) {
+export function FindDialog(props: { kind: "tokui" | "shohin" | "unso"; onPick: (code: number) => void; onClose: () => void }) {
   const 商品 = props.kind === "shohin";
+  const 運送 = props.kind === "unso";
   const [kana, setKana] = useState("ｱ-ﾝ"); // Access と同じく、開いたときは「全」（ｱ-ﾝ）
   const [w, setW] = useState("");
   const [col, setCol] = useState("商品名");
   const [sel, setSel] = useState<Record<string, string>>({});
-  const [sort, setSort] = useState(商品 ? "商品コード" : "ｶﾅ分類");
+  const [sort, setSort] = useState(商品 ? "商品コード" : 運送 ? "運送会社ID" : "ｶﾅ分類");
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [cur, setCur] = useState<number | null>(null);
   const [lists, setLists] = useState<Record<string, 一覧>>({});
@@ -184,7 +200,7 @@ export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: num
     const h = setTimeout(
       () =>
         api
-          .get<any[]>(商品 ? "/api/find/shohin" : "/api/find/tokui", { kana, w, col, sort, ...sel })
+          .get<any[]>(`/api/find/${props.kind}`, { kana, w, col, sort, ...sel })
           .then((r) => {
             setRows(r);
             setCur(r[0]?.コード ?? null);
@@ -201,17 +217,19 @@ export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: num
     setPref([]);
   };
   const 選ぶ = (k: string, v: string) => setSel((o) => ({ ...o, [k]: v }));
-  const head = 商品
+  const head = 運送
+    ? ([["カナ分類", "ｶﾅ"], ["運送会社ID", "コード"], ["短縮名", "運送会社"], ["住所", "住所"]] as const)
+    : 商品
     ? ([["ｶﾅ分類", "ｶﾅ"], ["商品コード", "コード"], ["本社コード", "本社"], ["商品名", "商品名"], ["規格", "規格"], ["分類名", "分類"]] as const)
     : ([["ｶﾅ分類", "ｶﾅ"], ["短縮コード", "コード"], ["短縮名", "短縮名"], ["得意先名", "得意先名"], ["住所", "住所"]] as const);
-  const 値 = (r: Record<string, any>, k: string) => (k === "商品コード" || k === "短縮コード" ? r.コード : r[k]);
+  const 値 = (r: Record<string, any>, k: string) => (k === "商品コード" || k === "短縮コード" || k === "運送会社ID" ? r.コード : r[k]);
   const pick = (code: number | null) => code !== null && props.onPick(code);
 
   return (
     <div className="modal" onClick={props.onClose}>
       <div className="find big" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === "Escape" && props.onClose()}>
         <div className="find-head">
-          {商品 ? "商品名選択" : "得意先選択"}
+          {商品 ? "商品名選択" : 運送 ? "運送会社選択" : "得意先選択"}
           <span className="cap">{kana ? `［${kana}］` : "すべて"}{w ? `「${w}」` : ""}</span>
           <button onClick={() => pick(cur)} disabled={cur === null}>
             選択
@@ -239,7 +257,9 @@ export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: num
           </button>
         </div>
         <div className="find-filters">
-          {商品 ? (
+          {運送 ? (
+            <input autoFocus value={w} onChange={(e) => setW(e.target.value)} placeholder="運送会社名の一部かコード" />
+          ) : 商品 ? (
             <>
               <select value={col} onChange={(e) => setCol(e.target.value)}>
                 {["商品名", "短縮名", "規格", "取引先名", "本社コード", "グループ商品コード"].map((c) => (
@@ -320,7 +340,7 @@ export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: num
               {rows.map((r) => (
                 <tr key={r.コード} className={cur === r.コード ? "cur" : ""} onClick={() => setCur(r.コード)} onDoubleClick={() => pick(r.コード)}>
                   {head.map(([k]) => (
-                    <td key={k} className={k === "商品コード" || k === "短縮コード" ? "num" : k === "ｶﾅ分類" ? "kn" : ""}>
+                    <td key={k} className={k === "商品コード" || k === "短縮コード" || k === "運送会社ID" ? "num" : k === "ｶﾅ分類" || k === "カナ分類" ? "kn" : ""}>
                       {値(r, k)}
                     </td>
                   ))}
@@ -329,6 +349,58 @@ export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: num
             </tbody>
           </table>
           {rows.length === 0 && <p className="empty">当てはまるものがありません</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type 日 = { date: string; label: string; inMonth: boolean; holiday: string; color: "red" | "blue" | "black"; underline: boolean };
+
+/**
+ * 共通のカレンダー（Access の FSD_日付選択）。年・月を選び、日を押すとその日を返す。
+ * 祝日・会社の休日は赤の下線（名前は日に重ねると出る）、日曜は赤、土曜は青、今日は黄色。
+ */
+export function CalendarDialog(props: { value?: string | null; onPick: (date: string) => void; onClose: () => void }) {
+  const base = props.value ? new Date(props.value.slice(0, 10) + "T00:00:00") : new Date();
+  const [year, setYear] = useState(base.getFullYear());
+  const [month, setMonth] = useState(base.getMonth() + 1);
+  const [days, setDays] = useState<日[]>([]);
+  useEffect(() => {
+    api.get<日[]>("/api/calendar", { year, month }).then(setDays);
+  }, [year, month]);
+  const todayStr = today();
+  const years = Array.from({ length: 11 }, (_, i) => base.getFullYear() - 5 + i);
+  return (
+    <div className="modal" onClick={props.onClose}>
+      <div className="cal" onClick={(e) => e.stopPropagation()}>
+        <div className="cal-head">
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))}>
+            {years.map((y) => (
+              <option key={y}>{y}</option>
+            ))}
+          </select>
+          <span>年度</span>
+          <button onClick={props.onClose}>キャンセル</button>
+        </div>
+        <div className="cal-months">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+            <button key={m} className={m === month ? "on" : ""} onClick={() => setMonth(m)}>
+              {m}
+            </button>
+          ))}
+        </div>
+        <div className="cal-grid">
+          {days.map((d) => (
+            <button
+              key={d.date}
+              className={(d.inMonth ? "" : "out ") + (d.date === todayStr ? "today " : "") + d.color + (d.underline ? " ul" : "")}
+              title={d.holiday}
+              onClick={() => props.onPick(d.date)}
+            >
+              {d.label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

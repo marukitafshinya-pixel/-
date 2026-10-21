@@ -338,3 +338,97 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .find-list tr.cur td { background: #ffe8b8; }
 .find-list td.kn { color: #666; width: 60px; }
 .find-list .empty { padding: 8px; color: #777; }
+/* 共通のカレンダー（FSD_日付選択） */
+.cal { background: #ece9d8; width: 380px; padding: 4px; border: 1px solid #666; }
+.cal-head { display: flex; gap: 6px; align-items: center; }
+.cal-head select { font-size: 18px; background: #ccffff; width: 140px; text-align: right; }
+.cal-head span { font-size: 18px; }
+.cal-head button { margin-left: auto; background: #fff; border: 1px solid #999; padding: 3px 20px; }
+.cal-months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #333399; padding: 3px; margin: 4px 0; }
+.cal-months button { background: #fff; border: 1px solid #999; font-size: 15px; font-weight: bold; padding: 2px 0; }
+.cal-months button.on { background: #cde6ff; border: 2px inset #888; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-grid button { height: 34px; background: #fff; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+.cal-grid button.out { font-size: 9px; }
+.cal-grid button.red { color: #e00; }
+.cal-grid button.blue { color: #00f; }
+.cal-grid button.ul { text-decoration: underline; }
+.cal-grid button.today { font-weight: bold; font-size: 17px; background: #ffff00; }
+.menu-sec { margin: 14px 16px 0; font-size: 15px; border-bottom: 2px solid #5b4b8a; color: #5b4b8a; }
+
+/* 丸北WorkStation 出荷明細票 */
+.ws { background: #a6d4e2; min-height: 100vh; font-size: 12px; }
+.ws input, .ws select, .ws textarea { font-size: 12px; }
+.ws .lbl { background: #800080; color: #fff; font-weight: bold; padding: 1px 6px; white-space: nowrap; }
+.ws .lbl.big { font-size: 15px; padding: 2px 8px; }
+.ws button.small { font-size: 11px; padding: 1px 6px; background: #fff; border: 1px solid #888; }
+.ws button:disabled { opacity: .5; }
+.ws-head { display: flex; gap: 6px; padding: 4px; background: #c8c8c8; border-bottom: 2px solid #555; flex-wrap: wrap; }
+.ws-block { display: flex; flex-direction: column; gap: 3px; }
+.ws-row { display: flex; gap: 4px; align-items: center; }
+.ws .navb { display: flex; }
+.ws .navb button { width: 26px; height: 22px; font-size: 10px; background: #fff; border: 1px solid #888; padding: 0; }
+.ws-date { background: #ffffcc; border: 1px solid #888; padding: 3px 8px; font-size: 15px; font-weight: bold; text-align: center; cursor: pointer; }
+.ws-status { background: #0000a0; color: #fff; font-size: 16px; font-weight: bold; width: 52px; text-align: center; }
+.ws-status.done { background: #008000; }
+.ws-page { font-size: 14px; margin-left: 6px; }
+.ws-kv { display: flex; align-items: center; gap: 3px; }
+.ws-kv span { background: #333399; color: #fff; width: 70px; text-align: center; }
+.ws-kv input { width: 120px; }
+.ws-kv b { width: 120px; text-align: right; background: #fff; padding: 0 4px; }
+.ws-unso { display: flex; align-items: center; gap: 3px; }
+.ws-unso .lbl { width: 52px; text-align: center; }
+.ws-unso .code { width: 60px; text-align: right; }
+.ws-unso .name { background: #fff; width: 190px; padding: 1px 4px; font-weight: bold; font-size: 13px; }
+.ws-unso .carno { width: 255px; font-size: 14px; }
+.ws-times { display: grid; grid-template-columns: repeat(3, auto); gap: 2px 6px; }
+.ws-time { display: flex; gap: 2px; align-items: center; }
+.ws-time span { background: #333399; color: #fff; padding: 0 4px; font-size: 11px; }
+.ws-time input { width: 52px; text-align: center; }
+.ws-sel { display: flex; gap: 3px; align-items: center; }
+.ws-sel .lbl { width: 64px; text-align: center; }
+.ws-sel select, .ws-sel input { width: 110px; }
+.ws-block.right .shuka { width: 100px; }
+.ws-block.right .temp { width: 60px; }
+.ws-block.right textarea { width: 260px; height: 46px; }
+.ws-btns { display: flex; gap: 2px; background: #333; padding: 2px; }
+.ws-btns button { font-size: 12px; font-weight: bold; background: #fff; border: 2px outset #ddd; padding: 2px 6px; }
+.ws-btns .red { color: #c00; }
+.ws-btns .blue { color: #36c; }
+.ws-weight { display: flex; flex-direction: column; gap: 2px; }
+.ws-weight div { background: #fff; width: 60px; text-align: right; padding: 0 3px; border: 1px solid #aaa; }
+.ws-notice { min-width: 80px; height: 22px; background: #fff; border: 1px solid #888; }
+.ws-notice.on { background: #f00; color: #fff; font-weight: bold; }
+.ws .del { color: #c00; }
+.ws-body { display: flex; }
+.ws-left { width: 170px; background: #555; color: #fff; min-height: calc(100vh - 180px); padding: 4px; }
+.ws-ltabs { display: flex; gap: 2px; margin-bottom: 4px; }
+.ws-ltabs button { font-size: 11px; background: #fff; border: 1px solid #888; padding: 1px 6px; }
+.ws-ltabs button.on { background: #cde6ff; }
+.ws-tsumi { background: #6b6b9a; margin-bottom: 4px; padding: 2px; }
+.ws-tsumi .nums { display: flex; gap: 3px; }
+.ws-tsumi .nums span { background: #333399; padding: 0 3px; }
+.ws-tsumi .nums b { background: #ffff00; color: #000; width: 26px; text-align: center; }
+.ws-tsumi .c { display: inline-block; width: 34px; text-align: right; background: #fff; color: #000; }
+.ws-tsumi .memo { white-space: pre-wrap; font-size: 11px; }
+.ws-gridwrap { flex: 1; overflow: auto; background: #7b6fc0; }
+.ws-grid { border-collapse: collapse; background: #fff; }
+.ws-grid th { background: #1f3a68; color: #fff; font-weight: bold; padding: 1px 4px; border: 1px solid #888; position: sticky; top: 0; }
+.ws-grid td { border: 1px solid #aaa; padding: 1px 3px; vertical-align: middle; }
+.ws-grid td.r { text-align: right; }
+.ws-grid td.c { text-align: center; }
+.ws-grid td.kc { color: #00f; }
+.ws-grid td.bold { font-weight: bold; }
+.ws-grid td.notice { background: #1f3a68; font-size: 10px; text-align: center; }
+.ws-grid td.notice .y { color: #ffff00; }
+.ws-grid td.notice .r { color: #ff6060; }
+.ws-grid td.jun { background: #ffe8b0; text-align: center; font-weight: bold; }
+.ws-grid td.tag { font-size: 15px; color: #00a; }
+.ws-grid td.yoyaku { color: #c00; font-weight: bold; font-size: 14px; }
+.ws-grid td.dates { font-weight: bold; font-size: 11px; }
+.ws-grid td.dates .b, .ws-grid .b { color: #00c; }
+.ws-grid td.dates .o, .ws-grid td.o { color: #e07000; }
+.ws-empty { color: #fff; padding: 10px; }
+.ws-foot { display: flex; gap: 2px; padding: 6px; justify-content: flex-end; }
+.ws-foot .k { background: #333399; color: #fff; padding: 1px 8px; }
+.ws-foot .v { background: #fff; padding: 1px 8px; min-width: 70px; text-align: right; }
