@@ -285,6 +285,55 @@ export async function 帳票を作る(
   return pages;
 }
 
+/** 輸送依頼書（Access の R_輸送依頼書ver2）。運送会社あての依頼。納品日・届け先ごとに品名と数 */
+export async function 輸送依頼書(c: PoolClient, 輸送ID: number) {
+  const plan = (
+    await c.query(
+      `SELECT p.*, r."コメント" AS "冷凍コメント" FROM ${輸送計画} p LEFT JOIN ${冷凍区分} r ON r."冷凍ID" = p."冷凍区分ID" WHERE p."輸送ID" = $1`,
+      [輸送ID],
+    )
+  ).rows[0];
+  if (!plan) return null;
+  const 得意先 = async (code: unknown) =>
+    (await c.query(`SELECT "得意先名", "住所", "電話番号" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(code)])).rows[0] ?? {};
+  const rows = (
+    await c.query(
+      `SELECT "納品日", "届け先コード", "倉庫ID", "手配帳合ID", "商品コード", "商品名", SUM("ケース") AS "ケース", SUM("商品kg") AS "kg", MIN("商品積込順") AS "順"
+       FROM ${出荷} WHERE "輸送ID" = $1 AND "届け先コード" <> 0
+       GROUP BY "納品日", "届け先コード", "倉庫ID", "手配帳合ID", "商品コード", "商品名" ORDER BY "納品日", MIN("商品積込順"), "届け先コード", "商品コード"`,
+      [輸送ID],
+    )
+  ).rows;
+  // 集荷先は出す倉庫、請求先は手配帳合（なければ倉庫）
+  const 集荷先 = await 得意先(rows[0]?.倉庫ID ?? 11);
+  const 請求先 = await 得意先(rows[0]?.手配帳合ID || rows[0]?.倉庫ID || 11);
+  const 納品日ごと: Rec[] = [];
+  for (const r of rows) {
+    let g = 納品日ごと.find((x) => x.納品日 === 日付(r.納品日));
+    if (!g) 納品日ごと.push((g = { 納品日: 日付(r.納品日), 届け先: [] as Rec[] }));
+    let t = g.届け先.find((x: Rec) => x.コード === r.届け先コード);
+    if (!t) {
+      const m = await 得意先(r.届け先コード);
+      g.届け先.push((t = { コード: r.届け先コード, 名前: m.得意先名 ?? "", 住所: m.住所 ?? "", TEL: m.電話番号 ?? "", 品: [] as Rec[], ケース: 0, kg: 0, 備考: plan.冷凍コメント ?? "" }));
+    }
+    t.品.push({ 商品名: r.商品名, ケース: n(r.ケース), kg: Number(r.kg ?? 0), サイズ: n(plan.運送会社ID) === 24 ? "L ｻｲｽﾞ" : "" });
+    t.ケース += n(r.ケース);
+    t.kg += Number(r.kg ?? 0);
+    // トマトダイスはお願い事項（Access の グループフッター1_Format）
+    if (n(r.商品コード) === 1159 || n(r.商品コード) === 1174) {
+      const 特記 = (await c.query(`SELECT "特記事項" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(r.商品コード)])).rows[0]?.特記事項 ?? "";
+      t.備考 = `お願い事項\n${r.商品名} ${特記}`;
+    }
+  }
+  const 差 = (await c.query(`SELECT * FROM ${差出人の表} WHERE "区分" = '丸北'`)).rows[0] ?? {};
+  const 連絡先 = (await c.query(`SELECT "値" FROM app."設定" WHERE "名前" = '輸送依頼書の連絡先'`)).rows[0]?.値 ?? "";
+  return {
+    No: `${n(plan.運送会社ID)}${輸送ID}`, 印刷日: 日本の今().日付, 差出人: 差, 宛先: `${plan.運送会社名 ?? ""}御中`,
+    集荷先: { 名前: 集荷先.得意先名 ?? "", 住所: 集荷先.住所 ?? "", TEL: 集荷先.電話番号 ?? "" },
+    集荷日: 日付(plan.集荷日), 出荷日: 日付(plan.出荷計画日), 納品日ごと, 請求先: 請求先.得意先名 ?? "", セット温度: plan.セット温度, 連絡先,
+  };
+}
+
 export function wsChohyoRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
@@ -300,6 +349,19 @@ export function wsChohyoRoutes(app: FastifyInstance) {
         return { pages };
       }),
   );
+
+  // 輸送依頼書（出荷明細票の「輸送依頼書」）
+  app.get<{ Params: { id: string } }>("/api/ws/yusoirai/:id", async (req, reply) =>
+    一連で(async (c) => (await 輸送依頼書(c, n(req.params.id))) ?? reply.code(404).send({ error: "この便はありません" })),
+  );
+
+  // 帳票の設定（人の名前などを含む文言。app."設定"）
+  app.get("/api/ws/settei", async () => (await pool.query(`SELECT "名前", "値" FROM app."設定" ORDER BY "名前"`)).rows);
+  app.post<{ Body: { 名前: string; 値: string } }>("/api/ws/settei", async (req, reply) => {
+    const r = await pool.query(`UPDATE app."設定" SET "値" = $2 WHERE "名前" = $1`, [req.body.名前, req.body.値 ?? ""]);
+    if (!r.rowCount) return reply.code(404).send({ error: "この設定はありません。" });
+    return { ok: true };
+  });
 
   // 差出人の設定
   app.get("/api/ws/sashidashi", async () => (await pool.query(`SELECT * FROM ${差出人の表} ORDER BY "並び"`)).rows);

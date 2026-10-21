@@ -92,3 +92,5 @@ INSERT INTO app."帳票_差出人" ("区分", "並び", "社名") VALUES
   ('ふらの', 3, 'ふらの農業協同組合'),
   ('大阪丸北', 4, '大阪丸北商事㈱')
 ON CONFLICT DO NOTHING;
+-- 輸送依頼書の注意書きの連絡先（Access ではレポートに人の名前が書かれていた。ここで入れる）
+INSERT INTO app."設定" ("名前", "値") VALUES ('輸送依頼書の連絡先', '') ON CONFLICT DO NOTHING;

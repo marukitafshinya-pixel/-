@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate } from "../formParts";
 import { KibouDialog, type 希望在庫 } from "./WsKibou";
+import { 輸送依頼書印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
 type 選択肢 = Record<string, { id: number; name: string }[]>;
@@ -43,6 +44,7 @@ export default function WsMain() {
   const [検索倉庫, set検索倉庫] = useState<number | null>(null);
   const [希望, set希望] = useState<希望在庫 | null>(null);
   const [通知一覧, set通知一覧] = useState(false);
+  const [依頼書, set依頼書] = useState<Rec | null>(null);
 
   useEffect(() => {
     api.get<選択肢>("/api/ws/choices").then(setCh);
@@ -287,7 +289,7 @@ export default function WsMain() {
             <span className="lbl">セット℃</span>
             <Field value={p.セット温度} kind="num" className="temp" readOnly={!輸送ID} onCommit={(v) => save({ セット温度: n(v) })} />
             <button className="small" onClick={() => nav(`/ws/houkoku?date=${date}`)} title="出荷関連報告書印刷（FSD_出荷報告印刷）">入庫案内・出荷・送品案内</button>
-            <button className="small" disabled title="④で作ります">輸送依頼書</button>
+            <button className="small" disabled={!輸送ID} onClick={async () => { try { set依頼書(await api.get<Rec>(`/api/ws/yusoirai/${輸送ID}`)); } catch (e) { alert(e instanceof ApiError ? e.message : String(e)); } }} title="輸送依頼書（R_輸送依頼書ver2）">輸送依頼書</button>
           </div>
           <div className="ws-row">
             <span className="lbl">担当者</span>
@@ -426,6 +428,7 @@ export default function WsMain() {
           }}
         />
       )}
+      {依頼書 && <輸送依頼書印刷 y={依頼書} onClose={() => set依頼書(null)} />}
       {通知一覧 && (
         <NoticeDialog
           onClose={() => set通知一覧(false)}

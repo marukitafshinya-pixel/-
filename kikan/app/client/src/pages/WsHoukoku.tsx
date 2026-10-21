@@ -51,6 +51,7 @@ export default function WsHoukoku() {
   const [印刷, set印刷] = useState<{ pages: Rec[]; 名前: string } | null>(null);
   const [差出人, set差出人] = useState<Rec[] | null>(null);
   const [積込, set積込] = useState<Rec | null>(null);
+  const [設定, set設定] = useState<Rec[]>([]);
 
   // 開いたとき：表を作り直す
   useEffect(() => {
@@ -117,6 +118,7 @@ export default function WsHoukoku() {
 
   async function 差出人を開く() {
     set差出人(await api.get<Rec[]>("/api/ws/sashidashi"));
+    set設定(await api.get<Rec[]>("/api/ws/settei"));
   }
 
   async function 差出人を保存(x: Rec) {
@@ -235,7 +237,22 @@ export default function WsHoukoku() {
                 ))}
               </tbody>
             </table>
-            <p className="sd-note">丸北北海道：名義が丸北北海道のとき。丸北：ユーザー納入分。ふらの：名義がふらのとき（FAX は入庫依頼書の送り先の案内に使う）。大阪丸北：名義・扱いが大阪丸北のとき。</p>
+            <table className="ws-grid sd-grid">
+              <thead>
+                <tr><th>そのほかの文言</th><th>内容</th></tr>
+              </thead>
+              <tbody>
+                {設定.map((x) => (
+                  <tr key={x.名前}>
+                    <td>{x.名前}</td>
+                    <td>
+                      <input defaultValue={x.値} onBlur={(e) => { if (e.target.value !== x.値) { x.値 = e.target.value; api.post("/api/ws/settei", x).catch(エラー); } }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="sd-note">丸北北海道：名義が丸北北海道のとき。丸北：ユーザー納入分。ふらの：名義がふらのとき（FAX は入庫依頼書の送り先の案内に使う）。大阪丸北：名義・扱いが大阪丸北のとき。輸送依頼書の連絡先：注意書きの「至急○○まで連絡してください」に入る名前。</p>
           </div>
         </div>
       )}

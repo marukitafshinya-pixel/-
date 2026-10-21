@@ -521,3 +521,100 @@ export function 積込確認書印刷(props: { s: Rec; onClose: () => void }) {
     </div>
   );
 }
+
+// ---------------- 輸送依頼書（R_輸送依頼書ver2） ----------------
+const 令和 = (v: string | null) => {
+  const x = d(v);
+  return x ? `${x.getFullYear() - 2018}年${x.getMonth() + 1}月${x.getDate()}日${曜[x.getDay()]}曜日` : "";
+};
+const 年月日曜 = (v: string | null) => {
+  const x = d(v);
+  return x ? `${x.getFullYear()}年${x.getMonth() + 1}月${x.getDate()}日${曜[x.getDay()]}曜` : "";
+};
+
+function 輸送依頼書ページ(props: { y: Rec }) {
+  const y = props.y;
+  const 差 = y.差出人 ?? {};
+  const 違う = y.集荷日 && y.出荷日 && y.集荷日 !== y.出荷日;
+  return (
+    <div className="pv-page yi">
+      <div className="yi-top">
+        <div>No. {y.No}</div>
+        <div className="title">{[..."輸送依頼書"].join(" ")}</div>
+        <div className="from">
+          <div>{令和(y.印刷日)}</div>
+          <div className="sha">{差.社名}</div>
+          <div className="addr">{差.住所}</div>
+          {差.TEL && <div className="addr">TEL：{差.TEL}</div>}
+          {差.FAX && <div className="addr">FAX：{差.FAX}</div>}
+        </div>
+      </div>
+      <div className="yi-ate">{y.宛先}</div>
+      <table className="yi-kv">
+        <tbody>
+          <tr><th>集 荷 先</th><td>{y.集荷先.名前}</td></tr>
+          <tr><th>住　 所</th><td>{y.集荷先.住所}</td></tr>
+          <tr><th>Ｔ Ｅ Ｌ</th><td>{y.集荷先.TEL}</td></tr>
+          <tr className="gap"><td colSpan={2} /></tr>
+          <tr>
+            <th>集 荷 日</th>
+            <td>
+              <span className={違う ? "ul" : ""}>{年月日曜(y.集荷日)}</span>
+              {違う && <><span>{` ～   ${年月日曜(y.集荷日)}`}</span><div className="kome">　集荷可能な日に〇を記入の上、返信お願いします　</div></>}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {y.納品日ごと.map((g: Rec) => (
+        <div key={g.納品日} className="yi-day">
+          <div className="nohin">納 品 日　{g.納品日 ? `${Number(g.納品日.slice(5, 7))}月${Number(g.納品日.slice(8, 10))}日` : ""}</div>
+          {g.届け先.map((t: Rec) => (
+            <div key={t.コード} className="yi-todoke">
+              <table>
+                <tbody>
+                  <tr><th>届 け 先</th><td>{t.名前}</td><td className="sum">合 計　{t.ケース} 個　　{数(t.kg)} kg</td></tr>
+                  <tr><th>住　 所</th><td colSpan={2}>{t.住所}</td></tr>
+                  <tr><th>Ｔ Ｅ Ｌ</th><td colSpan={2}>{t.TEL}</td></tr>
+                  {t.品.map((h: Rec, i: number) => (
+                    <tr key={i}><th>{i === 0 ? "品　 名：" : ""}</th><td>{h.商品名}{h.サイズ ? `　${h.サイズ}` : ""}</td><td className="ko">{h.ケース} 個　　{数(h.kg)} kg</td></tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="biko"><span>備　 考：</span><span className="pre">{t.備考}</span></div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="yi-reply">受信されましたら御確認のうえ、上記宛てに返信下さい</div>
+      <div className="yi-bottom">
+        <div className="seikyu">請求先は{y.請求先}でお願いします。</div>
+        <div className="notes">
+          <div>　　　冷凍機指示：　　　　　　　セット温度　{y.セット温度}℃　チャート紙　必要</div>
+          <div>　　　商 品 積 付：基本積み付け 天地無用厳守実施（横積み厳禁）重ね積み最大5段 角打ち禁止 落下禁止</div>
+          <div>※　積込前に冷凍機のE/g始動の確認して下さい。又 異常等が発生の場合</div>
+          <div>※　（交通事情・異常気象・等により配達時間の変更の場合）は至急{y.連絡先}まで連絡してください。</div>
+          <div>　　連絡の無いものや、積込み時異常報告のない場合は乗務員の責任とさせていただきます。</div>
+          <div>　　商品の破損発見時（DBの破損、つぶれ）又 落下等による破損の場合、必ず積込み者立会いのもとで</div>
+          <div>　　現認後の積込みになります。</div>
+        </div>
+        <div className="page">1/1 ページ</div>
+      </div>
+    </div>
+  );
+}
+
+/** 輸送依頼書の印刷画面 */
+export function 輸送依頼書印刷(props: { y: Rec; onClose: () => void }) {
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>輸送依頼書（{props.y.宛先}）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        <輸送依頼書ページ y={props.y} />
+      </div>
+    </div>
+  );
+}
