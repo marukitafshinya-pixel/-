@@ -13,6 +13,7 @@ const items: { label: string; to: string }[] = [
   { label: "SB受注取り込み", to: "/form/F_エスビー受注インポート" },
   { label: "発注依頼", to: "/form/F_受注元選択" },
   { label: "特定商品表示", to: "/form/FM_特定商品表示" },
+  { label: "受注グループマスタ", to: "/form/FM_受注先マスタ登録" },
 ];
 
 export default function Menu({ user, onLogout }: { user: User; onLogout: () => void }) {
