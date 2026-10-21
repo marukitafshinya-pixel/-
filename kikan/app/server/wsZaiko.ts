@@ -368,7 +368,7 @@ export function wsZaikoRoutes(app: FastifyInstance) {
 }
 
 /** 入庫できる届け先・名義か（Access の NewkoCondition） */
-async function 入庫できる(c: PoolClient, 届け先コード: unknown, 名義: unknown): Promise<boolean> {
+export async function 入庫できる(c: PoolClient, 届け先コード: unknown, 名義: unknown): Promise<boolean> {
   if (届け先コード === null || 届け先コード === undefined) return false; // Access ではここでエラーになり、登録しない
   const f = (await c.query(`SELECT "入庫フラグ" FROM ${得意先マスタ} WHERE "倉庫区分" = true AND "短縮コード" = $1 LIMIT 1`, [n(届け先コード)])).rows[0];
   if (f && f.入庫フラグ === false) return true;

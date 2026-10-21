@@ -17,7 +17,7 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   { label: "受注グループマスタ", to: "/form/FM_受注先マスタ登録" },
   ] },
   // 丸北WorkStation（Access の WorkStation のメインメニュー）。作ったものから足していく
-  { title: "丸北WorkStation", items: [{ label: "出荷明細票", to: "/ws" }, { label: "在庫表", to: "/ws/zaikohyo" }, { label: "保管庫詳細", to: "/ws/hokan" }] },
+  { title: "丸北WorkStation", items: [{ label: "出荷明細票", to: "/ws" }, { label: "在庫表", to: "/ws/zaikohyo" }, { label: "保管庫詳細", to: "/ws/hokan" }, { label: "在庫更新", to: "/ws/koshin" }, { label: "パレット輸送割付", to: "/ws/pallet" }] },
 ];
 
 export default function Menu({ user, onLogout }: { user: User; onLogout: () => void }) {

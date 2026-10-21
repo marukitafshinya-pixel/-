@@ -1066,3 +1066,19 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .pi-list th { text-align: left; font-weight: normal; }
 .pi-list td, .pi-list th { padding: 0 1mm; border-right: 1px solid #000; }
 .pi-list td.kubun { font-size: 9pt; }
+
+/* 在庫更新（Access の FM_在庫更新） */
+.ko { display: flex; flex-direction: column; height: 100vh; background: #dedcc8; font-size: 13px; }
+.ko-top { display: flex; align-items: center; gap: 16px; padding: 6px 10px; }
+.ko-top .title { font-size: 20px; font-weight: bold; background: #000080; color: #fff; padding: 2px 16px; }
+.ko-top .info { flex: 1; }
+.ko-top .btns { display: flex; gap: 6px; background: #444; padding: 6px; }
+.ko-top .btns button { background: #fff; border: 2px outset #ddd; padding: 4px 18px; font-weight: bold; }
+.ko-top .btns .go { color: #0050c0; }
+.ko-top .btns .red { color: #d00; }
+.ko-body { flex: 1; display: grid; grid-template-columns: 3fr 2fr; gap: 10px; padding: 0 10px 10px; overflow: auto; }
+.ko-box { background: #fff; border: 1px solid #888; overflow: auto; }
+.ko-box .cap { display: flex; justify-content: space-between; background: #000080; color: #fff; padding: 3px 6px; font-weight: bold; position: sticky; top: 0; }
+.ko-box .cap button { margin-left: 4px; font-size: 11px; }
+.ko-box tr.on td { background: #fff3b0; }
+.ko-none { padding: 8px; }
