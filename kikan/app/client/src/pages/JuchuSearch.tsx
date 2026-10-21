@@ -48,13 +48,20 @@ export default function JuchuSearch() {
     api.get<any[]>("/api/juchu/form/shori-list").then(setShoriList);
   }, []);
 
+  // Access と同じく、開いたときに受注オートチェック（倉庫の出庫・名義変更を受注に写す）をしてから検索する
+  const [checked, setChecked] = useState(false);
   useEffect(() => {
+    api.post("/api/juchu/search/autocheck").finally(() => setChecked(true));
+  }, []);
+
+  useEffect(() => {
+    if (!checked) return;
     setLoading(true);
     api.get<Row[]>("/api/juchu/search", f).then((r) => {
       setRows(r);
       setLoading(false);
     });
-  }, [f]);
+  }, [f, checked]);
 
   function set(patch: Record<string, string | undefined>) {
     setF((old) => {
@@ -304,7 +311,7 @@ export default function JuchuSearch() {
             ))}
           </tbody>
         </table>
-        <div className="count">{loading ? "読み込み中…" : `${rows.length} 件${rows.length >= 3000 ? "（3000 件まで表示）" : ""}`}</div>
+        <div className="count">{!checked ? "オートチェック中…" : loading ? "読み込み中…" : `${rows.length} 件${rows.length >= 3000 ? "（3000 件まで表示）" : ""}`}</div>
       </div>
     </div>
   );

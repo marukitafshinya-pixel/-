@@ -160,6 +160,39 @@ export function juchuRoutes(app: FastifyInstance) {
     q(`SELECT "商品コード", "商品名" FROM ${商品マスタ} WHERE COALESCE("使用中止", false) = false ORDER BY "商品コード"`),
   );
 
+  // 受注オートチェック（Access のメニューで受注検索を開くときに動く C_受注オートチェック・C_受注オートチェック名変）
+  // 倉庫管理の出庫（輸送計画）と名義変更から、受注の倉庫・出荷予定日・運送会社などを写す
+  app.post("/api/juchu/search/autocheck", async () => {
+    const 今日 = 日本の今().日付;
+    // 1. 営業冷蔵庫の出庫分（Q_受注進行状況取得：5 日前より後の出荷。受注ID ごとに最初の 1 件）
+    const r1 = await q(
+      `WITH k AS (
+         SELECT DISTINCT ON (d."受注ID") d."受注ID", y.*
+         FROM ${t("soko", "TD_輸送計画")} y LEFT JOIN ${t("soko", "TD_出荷")} d ON y."輸送ID" = d."輸送ID"
+         WHERE d."受注ID" <> 0 AND d."出荷日" > $1::date - 5
+         ORDER BY d."受注ID", y."輸送ID", d.ctid
+       )
+       UPDATE ${受注} j SET "倉庫ID" = k."出庫場所ID", "倉庫名" = k."出庫場所", "手配出庫番号" = k."運行指令No",
+         "手配輸送番号" = k."web輸送送り状No", "出荷予定日" = k."出荷計画日", "受注ユーザーID" = k."運送会社ID",
+         "受注ユーザー名" = k."運送会社名", "月間No" = k."輸送ID"
+       FROM k WHERE k."受注ID" = j."受注ID" AND j."納品日" > $1::date - 2
+       RETURNING j."受注ID"`,
+      [今日],
+    );
+    // 2. 名義変更分（Q_受注進行状況取得_名変：5 日前より後の変更。受注ID ごとに最初の 1 件）
+    const r2 = await q(
+      `WITH k AS (
+         SELECT DISTINCT ON (h."受注ID") h.* FROM ${t("soko", "TD_在庫変更")} h
+         WHERE h."変更日" > $1::date - 5 ORDER BY h."受注ID", h.ctid
+       )
+       UPDATE ${受注} j SET "倉庫ID" = k."保管庫ID", "倉庫名" = k."保管庫名", "受注ユーザー名" = '名  変', "出荷予定日" = k."変更日"
+       FROM k WHERE k."受注ID" = j."受注ID" AND j."納品日" > $1::date - 2
+       RETURNING j."受注ID"`,
+      [今日],
+    );
+    return { 出庫: r1.length, 名変: r2.length };
+  });
+
   // チェックの付け外し（F_受注検索の表のチェック。押すとすぐ保存される）
   app.post<{ Body: { 受注ID: number; 項目: string; 値: boolean } }>("/api/juchu/search/check", async (req, reply) => {
     const { 受注ID, 項目, 値 } = req.body ?? ({} as any);
