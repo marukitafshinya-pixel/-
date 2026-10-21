@@ -164,8 +164,8 @@ export function wsSekisaiRoutes(app: FastifyInstance) {
       const 輸送ID = n(req.params.id);
       const plan = (await c.query(`SELECT * FROM ${輸送計画} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
       if (!plan) return reply.code(404).send({ error: "この便はありません" });
-      if (n(plan.パレット輸送区分) === 1)
-        return reply.code(400).send({ error: "パレット輸送の便の積込確認書（パレット輸送割付）は、まだ作っていません。" });
+      // パレット輸送の便は、パレット輸送割付の画面を開く（Access と同じ）
+      if (n(plan.パレット輸送区分) === 1) return { パレット輸送: true, 輸送ID };
       const 出荷日 = 日付(plan.出荷計画日)!;
       const 社名 = (await c.query(`SELECT "社名" FROM ${差出人の表} WHERE "区分" = '丸北北海道'`)).rows[0]?.社名 ?? "";
       const 出荷rows = (

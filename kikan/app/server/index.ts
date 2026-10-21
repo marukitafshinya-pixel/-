@@ -21,6 +21,7 @@ import { wsNenkanRoutes } from "./wsNenkan.js";
 import { wsHoukokuRoutes } from "./wsHoukoku.js";
 import { wsChohyoRoutes } from "./wsChohyo.js";
 import { wsSekisaiRoutes } from "./wsSekisai.js";
+import { wsPalletRoutes } from "./wsPallet.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -44,6 +45,7 @@ await app.register(async (a) => wsNenkanRoutes(a));
 await app.register(async (a) => wsHoukokuRoutes(a));
 await app.register(async (a) => wsChohyoRoutes(a));
 await app.register(async (a) => wsSekisaiRoutes(a));
+await app.register(async (a) => wsPalletRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");

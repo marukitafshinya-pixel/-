@@ -618,3 +618,78 @@ export function 輸送依頼書印刷(props: { y: Rec; onClose: () => void }) {
     </div>
   );
 }
+
+// ---------------- パレット輸送の積み込み指示書（A_パレット輸送積込確認書） ----------------
+/** 枠の文字（商品名・製造日 区分・個数）を、Access と同じく行ごとに色を変えて出す */
+function 枠の文字(props: { v: string }) {
+  const [名前, ロット, 個数] = String(props.v ?? "").split(/\r?\n/);
+  return (
+    <>
+      <div>{名前}</div>
+      {ロット !== undefined && <div className="lot">{ロット}</div>}
+      {個数 !== undefined && <div className="ko">{個数}</div>}
+    </>
+  );
+}
+
+function 積み込み指示書(props: { p: Rec }) {
+  const p = props.p;
+  return (
+    <div className="pv-page pi">
+      <div className="pi-cols">
+        <div className="pi-col">
+          <div className="cap">ヨ コ</div>
+          {p.左.map((v: string, i: number) => (
+            <div key={i} className="slot yoko"><span className="no">{i + 1}</span><div className="t"><枠の文字 v={v} /></div></div>
+          ))}
+        </div>
+        <div className="pi-col">
+          <div className="cap">タ テ</div>
+          {p.右.map((v: string, i: number) => (
+            <div key={i} className="slot tate"><span className="no">{i + 1}</span><div className="t"><枠の文字 v={v} /></div></div>
+          ))}
+        </div>
+        <div className="pi-right">
+          <div className="title">積み込み指示書</div>
+          <div className="info">
+            <div className="unso">{p.便.運送会社名}</div>
+            <div className="gou">号 車 {p.便.車番 ?? ""}</div>
+            <table>
+              <tbody>
+                <tr><th>集 荷 日</th><td>：</td><td>{月日曜(p.便.集荷日)}</td></tr>
+                <tr><th>積込予定時間</th><td>：</td><td>{p.便.開始}</td></tr>
+                <tr><th>届 け 先</th><td>：</td><td>{p.届け先}</td></tr>
+                <tr><th>納 品 日</th><td>：</td><td>{月日曜(p.納品日)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <table className="pi-list">
+            <thead><tr><th>商品名</th><th>ロット</th><th>区分</th><th>個数</th><th>kg</th></tr></thead>
+            <tbody>
+              {p.明細.map((r: Rec, i: number) => (
+                <tr key={i}><td>{r.商品名}</td><td>{期限2(r.ロット)}</td><td className="kubun">{r.区分}</td><td>{r.個数}</td><td>{r.kg}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 積み込み指示書と積み込み前点検表の印刷画面（Access の cmd_印刷_Click） */
+export function パレット積込印刷(props: { p: Rec; onClose: () => void }) {
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>積み込み指示書（{props.p.便.運送会社名}）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        <積み込み指示書 p={props.p} />
+        <積込み前点検表 s={props.p} />
+      </div>
+    </div>
+  );
+}

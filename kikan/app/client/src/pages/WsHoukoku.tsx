@@ -110,7 +110,10 @@ export default function WsHoukoku() {
   async function 積込確認書() {
     if (!yuso) return alert("運送便を指定してください");
     try {
-      set積込(await api.get<Rec>(`/api/ws/sekisai/${yuso}`));
+      const r = await api.get<Rec>(`/api/ws/sekisai/${yuso}`);
+      // パレット輸送の便は、パレット輸送割付を開く（Access と同じ）
+      if (r.パレット輸送) return nav(`/ws/pallet?id=${yuso}`);
+      set積込(r);
     } catch (e) {
       エラー(e);
     }
