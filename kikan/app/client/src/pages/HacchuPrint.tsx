@@ -11,7 +11,7 @@ type 発行元 = { 会社名: string; 住所: string; TEL: string; FAX: string }
 
 const 日 = (v: string | null | undefined) => (v ? v.slice(0, 10).replace(/-/g, "/") : "");
 /** 郵便番号 "3060606" → "306-0606" */
-const 〒 = (v: unknown) => {
+const 郵便 = (v: unknown) => {
   const s = String(v ?? "").trim();
   return /^\d{7}$/.test(s) ? `${s.slice(0, 3)}-${s.slice(3)}` : s;
 };
@@ -87,7 +87,7 @@ export default function HacchuPrint() {
                 <div className="hc-row">
                   <span className="k">住所</span>
                   <span className="bold">
-                    〒 {〒(r.郵便番号)} {r.住所}
+                    〒 {郵便(r.郵便番号)} {r.住所}
                   </span>
                 </div>
                 <div className="hc-row">
