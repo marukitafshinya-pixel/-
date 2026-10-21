@@ -19,7 +19,7 @@ import Tokutei from "./pages/Tokutei";
 import JuchuMaster from "./pages/JuchuMaster";
 import WsMain from "./pages/WsMain";
 import WsDetail from "./pages/WsDetail";
-import { WsImportMenu, WsImportSelect } from "./pages/WsImport";
+import { WsImportMenu, WsImportSelect, WsYomikomi } from "./pages/WsImport";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -52,6 +52,7 @@ function App() {
       <Route path="/ws/detail/:id" element={<WsDetail />} />
       <Route path="/ws/import" element={<WsImportMenu />} />
       <Route path="/ws/import/:src" element={<WsImportSelect />} />
+      <Route path="/ws/yomikomi" element={<WsYomikomi />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

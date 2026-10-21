@@ -493,5 +493,8 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .wsi-bar button.go { color: #00c; font-weight: bold; }
 .wsi-bar .note { font-size: 12px; }
 .wsi-err { padding: 8px; color: #900; }
+.wsy .tg { display: inline-flex; }
+.wsy .tg button { padding: 2px 8px; }
+.wsy .tg button.on { border-style: inset; background: #ffe080; font-weight: bold; }
 .ws-grid tr.picked td { background: #ffffc0; }
 .ws-grid td.note { font-size: 11px; max-width: 200px; }

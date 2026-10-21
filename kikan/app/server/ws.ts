@@ -423,6 +423,79 @@ export function wsRoutes(app: FastifyInstance) {
     });
   });
 
+  // ---------------- 受注読込（Access の FSD_受注選択） ----------------
+  // 出荷日・届け先の地区・割付前／割付後で出荷の行を出し、印（抽出区分）を付けた行をこの便に入れる。
+  // 印は Access と同じく表（TD_出荷.抽出区分）に書く。閉じたときに消すのは便に入っている行の印だけ（Access と同じ）。
+
+  /** 地区（0＝全て、1〜9）と割付前／割付後の条件。全て選択・全て解除は Access と同じく地区コード 0・なしの届け先を含めない */
+  function 受注選択の条件(p: { date: string; chiku?: string | number; ato?: string | boolean }, args: unknown[], 全ての地区: string) {
+    args.push(p.date);
+    let where = `s."出荷日" = $${args.length}::date`;
+    const chiku = Number(p.chiku ?? 0);
+    if (chiku) {
+      args.push(chiku);
+      where += ` AND m."地区コード" = $${args.length}`;
+    } else where += 全ての地区;
+    where += p.ato === true || p.ato === "1" ? ` AND s."輸送ID" <> 0` : ` AND s."輸送ID" = 0`;
+    return where;
+  }
+  const 地区つき = `${出荷} s LEFT JOIN LATERAL (SELECT "地区コード" FROM ${得意先マスタ} WHERE "短縮コード" = s."届け先コード" LIMIT 1) m ON true`;
+
+  app.get<{ Querystring: { date: string; chiku?: string; ato?: string } }>("/api/ws/yomikomi", async (req) => {
+    const args: unknown[] = [];
+    const where = 受注選択の条件(req.query, args, "");
+    return q(
+      `SELECT s."出庫ID", s."抽出区分", s."輸送ID", s."製造日", s."ケース", s."倉庫名", s."商品kg", p."運送会社名", s."商品名", s."納品日", s."届け先", m."地区コード"
+       FROM ${地区つき} LEFT JOIN ${輸送計画} p ON p."輸送ID" = s."輸送ID"
+       WHERE ${where} ORDER BY s."輸送ID", s."届け先コード", s."倉庫ID", s."商品コード", s."出庫ID"`,
+      args,
+    );
+  });
+
+  // 1 行の印を付ける・はずす
+  app.post<{ Body: { 出庫ID: number; 抽出区分: boolean } }>("/api/ws/yomikomi/check", async (req) => {
+    await q(`UPDATE ${出荷} SET "抽出区分" = $2 WHERE "出庫ID" = $1`, [Number(req.body.出庫ID), !!req.body.抽出区分]);
+    return { ok: true };
+  });
+
+  // 全て選択・全て解除（いま出している条件の行。地区が「全て」のときは地区コード 0・なしの届け先を含めない）
+  app.post<{ Body: { date: string; chiku?: number; ato?: boolean; 抽出区分: boolean } }>("/api/ws/yomikomi/all", async (req) => {
+    const args: unknown[] = [];
+    const where = 受注選択の条件(req.body, args, ` AND m."地区コード" <> 0`);
+    args.push(!!req.body.抽出区分);
+    const r = await pool.query(
+      `UPDATE ${出荷} SET "抽出区分" = $${args.length} WHERE "出庫ID" IN (SELECT s."出庫ID" FROM ${地区つき} WHERE ${where})`,
+      args,
+    );
+    return { 件数: r.rowCount };
+  });
+
+  /** 閉じたとき：便に入っている行の印を消す（Access の Form_Close。Q_出荷レコード＝便のある行で届け先コードが 0 でないもの） */
+  async function 受注選択の印を消す(c: { query: (sql: string) => Promise<unknown> }) {
+    await c.query(
+      `UPDATE ${出荷} s SET "抽出区分" = false WHERE s."抽出区分" = true AND s."届け先コード" <> 0
+         AND EXISTS (SELECT 1 FROM ${輸送計画} p WHERE p."輸送ID" = s."輸送ID")`,
+    );
+  }
+
+  app.post("/api/ws/yomikomi/close", async () => {
+    await 受注選択の印を消す(pool);
+    return { ok: true };
+  });
+
+  // 読込：印の付いた行（画面に出ていない行も含め、表全体で印のあるもの）をこの便に入れ、出荷日を便の出荷日にする
+  app.post<{ Body: { 輸送ID: number } }>("/api/ws/yomikomi/read", async (req) => {
+    const 輸送ID = Number(req.body.輸送ID) || 0;
+    return 一連で(async (c) => {
+      const plan = (await c.query(`SELECT "出荷計画日" FROM ${輸送計画} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
+      // 便が見つからないときは今日の日付（Access の Nz(DLookup(...), Date)）
+      const 日付 = plan?.出荷計画日 ?? 日本の今().日付;
+      const r = await c.query(`UPDATE ${出荷} SET "輸送ID" = $1, "出荷日" = $2 WHERE "抽出区分" = true`, [輸送ID, 日付]);
+      await 受注選択の印を消す(c);
+      return { 件数: r.rowCount };
+    });
+  });
+
   // ---------------- インポート処理（倉庫管理・転売品管理・原料管理から） ----------------
   // Access の FSD_出庫インポート選択・FSD_転売インポート選択・FSD_原料インポート選択（CC_出荷to出庫）
 

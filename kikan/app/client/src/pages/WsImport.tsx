@@ -42,7 +42,7 @@ export function WsImportMenu() {
       <div className="wsi-group">
         <div>受注から選択</div>
         <div className="box">
-          <button className="b1" disabled title="受注読込は次に作ります">受注読込</button>
+          <button className="b1" onClick={() => nav(`/ws/yomikomi?id=${id}`)}>受注読込</button>
         </div>
         <div>別ファイルからインポート</div>
         <div className="box">
@@ -164,6 +164,118 @@ export function WsImportSelect() {
         </tbody>
       </table>
       {!err && rows.length === 0 && <p className="wsi-err">この出荷日のデータはありません。</p>}
+    </div>
+  );
+}
+
+const 地区 = ["全て", "北海道", "東北", "関東", "東海", "北陸", "近畿", "中国", "四国", "九州"];
+const 月日 = (s: string | null | undefined) => (s ? `${Number(s.slice(5, 7))}月${s.slice(8, 10)}` : "");
+
+/** 受注読込（Access の FSD_受注選択）。出荷の行に印を付けて、この便に入れる */
+export function WsYomikomi() {
+  const nav = useNavigate();
+  const [sp] = useSearchParams();
+  const id = Number(sp.get("id"));
+  const [date, setDate] = useState<string | null>(null);
+  const [chiku, setChiku] = useState(0);
+  const [ato, setAto] = useState(false);
+  const [rows, setRows] = useState<Rec[]>([]);
+  const [planDate, setPlanDate] = useState("");
+
+  useEffect(() => {
+    // 開いたときは、その便の出荷日（便がなければ今日）
+    api
+      .get<any>(`/api/ws/plan/${id}`)
+      .then((r) => {
+        setDate(String(r.plan.出荷計画日).slice(0, 10));
+        setPlanDate(String(r.plan.出荷計画日).slice(0, 10));
+      })
+      .catch(() => setDate(new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10)));
+  }, [id]);
+  const 出す = () => {
+    if (date) api.get<Rec[]>("/api/ws/yomikomi", { date, chiku: String(chiku), ato: ato ? "1" : "" }).then(setRows);
+  };
+  useEffect(出す, [date, chiku, ato]);
+
+  async function 閉じる() {
+    await api.post("/api/ws/yomikomi/close", {});
+    nav(-1);
+  }
+  async function 全て(on: boolean) {
+    await api.post("/api/ws/yomikomi/all", { date, chiku, ato, 抽出区分: on });
+    出す();
+  }
+  async function 印(r: Rec, on: boolean) {
+    setRows(rows.map((x) => (x.出庫ID === r.出庫ID ? { ...x, 抽出区分: on } : x)));
+    await api.post("/api/ws/yomikomi/check", { 出庫ID: r.出庫ID, 抽出区分: on });
+  }
+  async function 読込() {
+    try {
+      const r = await api.post<{ 件数: number }>("/api/ws/yomikomi/read", { 輸送ID: id });
+      alert(`${r.件数} 件を読み込みました。`);
+      nav(`/ws?date=${planDate}&id=${id}`);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+  }
+
+  const 印の数 = rows.filter((r) => r.抽出区分).length;
+  return (
+    <div className="wsi sel wsy">
+      <div className="tabs">
+        <span>メインメニュー</span>
+        <span>F_インポート処理</span>
+        <span className="active">FSD_受注選択</span>
+      </div>
+      <div className="wsi-bar">
+        <span className="lbl">出荷予定日</span>
+        <Field value={date} kind="date" className="wsi-date" onCommit={(v) => {
+          const d = parseDate(v);
+          if (d === undefined) return alert("日付の書き方が正しくありません。（例：10/28）");
+          setDate(d);
+        }} />
+        <span className="lbl">届け先エリア</span>
+        <span className="tg">
+          {地区.map((n, i) => (
+            <button key={n} className={chiku === i ? "on" : ""} onClick={() => setChiku(i)}>{n}</button>
+          ))}
+        </span>
+        <span className="lbl">輸送</span>
+        <span className="tg">
+          <button className={!ato ? "on" : ""} onClick={() => setAto(false)}>割付前</button>
+          <button className={ato ? "on" : ""} onClick={() => setAto(true)}>割付後</button>
+        </span>
+      </div>
+      <div className="wsi-bar">
+        <button onClick={() => 全て(true)}>全て選択</button>
+        <button onClick={() => 全て(false)}>全て解除</button>
+        <button className="go" onClick={読込}>読込</button>
+        <button onClick={閉じる}>キャンセル</button>
+        <span className="note">{rows.length} 件中 {印の数} 件に印</span>
+      </div>
+      <table className="ws-grid">
+        <thead>
+          <tr>
+            <th></th><th>製造日</th><th>ケース</th><th>出荷場所</th><th>重量</th><th>運送会社</th><th>商品名</th><th>納品日</th><th>届け先</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.出庫ID} className={r.抽出区分 ? "picked" : ""}>
+              <td className="c"><input type="checkbox" checked={!!r.抽出区分} onChange={(e) => 印(r, e.target.checked)} /></td>
+              <td>{r.製造日?.slice(0, 10).replace(/-/g, "/")}</td>
+              <td className="r">{num(r.ケース)}</td>
+              <td>{r.倉庫名}</td>
+              <td className="r">{num(r.商品kg)}</td>
+              <td>{r.運送会社名}</td>
+              <td className="bold">{r.商品名}</td>
+              <td>{月日(r.納品日)}</td>
+              <td>{r.届け先}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {rows.length === 0 && <p className="wsi-err">この条件の出荷はありません。</p>}
     </div>
   );
 }
