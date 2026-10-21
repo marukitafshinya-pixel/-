@@ -42,7 +42,7 @@ export function WsImportMenu() {
       <div className="wsi-group">
         <div>受注から選択</div>
         <div className="box">
-          <button className="b1" onClick={() => nav(`/ws/yomikomi?id=${id}`)}>受注読込</button>
+          <button className="b1" onClick={() => nav(`/ws/juchu?id=${id}`)}>受注読込</button>
         </div>
         <div>別ファイルからインポート</div>
         <div className="box">
