@@ -765,3 +765,46 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .nk-foot .lbl { background: #fff; font-weight: bold; padding: 0 14px; margin-left: 50px; }
 .nk-foot .sp { width: 170px; }
 .nk-foot span:not(.lbl):not(.sp) { width: 66px; text-align: right; padding-right: 4px; color: #204080; }
+
+/* 出荷関連報告書印刷（Access の FSD_出荷報告印刷） */
+.hr { display: flex; flex-direction: column; height: 100vh; background: #8e8e8e; font-size: 13px; }
+.hr-top { display: flex; gap: 10px; padding: 4px 10px 8px; align-items: flex-start; }
+.hr-col .lbl { background: #8b2d5f; color: #ffe060; font-weight: bold; text-align: center; padding: 1px 40px; border-bottom: 3px solid #444; }
+.hr-col input.date { display: block; width: 100%; box-sizing: border-box; text-align: center; background: #ffffc0; border: 1px solid #999; margin-top: 4px; font-size: 14px; }
+.hr-col .sekisai { display: block; width: 100%; margin-top: 50px; background: #fff; border: 2px outset #ddd; padding: 2px; }
+.hr-bin { background: #6a6a9c; color: #ffe060; min-height: 96px; width: 260px; border: 1px solid #555; }
+.hr-bin .head { color: #fff; border-bottom: 1px solid #ccc; }
+.hr-bin > div { display: grid; grid-template-columns: 1fr 110px; cursor: pointer; padding: 0 2px; }
+.hr-bin > div span + span { border-left: 1px solid #ccc; padding-left: 2px; }
+.hr-bin > div.on { background: #ffe060; color: #000; }
+.hr-right { margin-left: 30px; display: flex; flex-direction: column; gap: 8px; }
+.hr-kind { display: flex; gap: 4px; background: #000; padding: 4px; }
+.hr-kind button { background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 4px 12px; font-weight: bold; }
+.hr-kind button.on { border: 2px inset #888; background: #ffe080; }
+.hr-kind .b1 { color: #0060c0; } .hr-kind .b2 { color: #e00000; } .hr-kind .b3 { color: #4070a0; } .hr-kind .b4 { color: #e05050; }
+.hr-memo { display: flex; gap: 70px; align-items: flex-start; }
+.hr-memo > button { background: #fff; border: 1px solid #aaa; padding: 2px 40px; }
+.hr-memo .memo .row { display: flex; gap: 6px; margin-bottom: 4px; }
+.hr-memo .memo .k { background: #fff; font-weight: bold; padding: 1px 6px; width: 60px; text-align: center; }
+.hr-memo .memo .k.tall { height: 60px; display: flex; align-items: center; justify-content: center; }
+.hr-memo .memo input, .hr-memo .memo textarea { width: 250px; background: #cff; border: 1px solid #999; }
+.hr-memo .memo textarea { height: 60px; }
+.hr-list { flex: 1; overflow: auto; }
+.hr-grid { border-collapse: collapse; margin-left: 16px; }
+.hr-grid th { background: #1f4778; color: #ffe060; font-weight: normal; padding: 0 4px; border: 1px solid #999; white-space: pre-line; font-size: 12px; line-height: 1.1; }
+.hr-grid th.red { color: #ff8080; }
+.hr-grid td { background: #6a6a9c; color: #ffe060; border: 1px solid #888; padding: 0 4px; height: 20px; }
+.hr-grid td.c { background: #888; text-align: center; }
+.hr-grid td.todoke { color: #fff; font-weight: bold; min-width: 200px; }
+.hr-grid td.r { text-align: right; }
+.hr-grid td.mei { min-width: 110px; }
+.hr-grid td.kubun { text-align: center; font-weight: bold; color: #fff; }
+.hr-grid td.kubun.soko { background: #555; color: #ffe060; }
+.hr-grid td.kubun.user { background: #1f4778; }
+.hr-grid td.seki { background: #fff; color: #000; text-align: center; min-width: 70px; }
+.hr-grid td.seki.mi { color: #e00000; }
+.hr-grid button.kari { background: #fff; color: #00008b; border: 1px solid #ccc; font-weight: bold; padding: 0 8px; }
+.hr-none { color: #fff; padding: 8px 16px; }
+.hr-foot { display: flex; justify-content: flex-end; padding: 4px 190px 4px; background: #eee; border-top: 2px solid #555; }
+.hr-foot .box { display: flex; gap: 6px; background: #ccc; padding: 4px; border: 1px solid #888; }
+.hr-foot button { background: #fff; border: 2px outset #ddd; padding: 2px 16px; font-weight: bold; }

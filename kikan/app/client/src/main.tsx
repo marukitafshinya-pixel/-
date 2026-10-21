@@ -23,6 +23,7 @@ import { WsImportMenu, WsImportSelect, WsYomikomi } from "./pages/WsImport";
 import WsJuchu from "./pages/WsJuchu";
 import { WsHokan, WsZaikoHyo } from "./pages/WsZaikoHyo";
 import WsNenkan from "./pages/WsNenkan";
+import WsHoukoku from "./pages/WsHoukoku";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -58,6 +59,7 @@ function App() {
       <Route path="/ws/yomikomi" element={<WsYomikomi />} />
       <Route path="/ws/juchu" element={<WsJuchu />} />
       <Route path="/ws/nenkan" element={<WsNenkan />} />
+      <Route path="/ws/houkoku" element={<WsHoukoku />} />
       <Route path="/ws/zaikohyo" element={<WsZaikoHyo />} />
       <Route path="/ws/hokan" element={<WsHokan />} />
       <Route path="/form/:name" element={<NotYet />} />

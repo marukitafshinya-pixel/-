@@ -286,7 +286,7 @@ export default function WsMain() {
           <div className="ws-row">
             <span className="lbl">セット℃</span>
             <Field value={p.セット温度} kind="num" className="temp" readOnly={!輸送ID} onCommit={(v) => save({ セット温度: n(v) })} />
-            <button className="small" disabled title="④で作ります">入庫案内・出荷・送品案内</button>
+            <button className="small" onClick={() => nav(`/ws/houkoku?date=${date}`)} title="出荷関連報告書印刷（FSD_出荷報告印刷）">入庫案内・出荷・送品案内</button>
             <button className="small" disabled title="④で作ります">輸送依頼書</button>
           </div>
           <div className="ws-row">
