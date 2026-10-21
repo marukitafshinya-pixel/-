@@ -147,7 +147,7 @@ for i, (code, name, name2, kana, chiku, soko, moto, uke) in enumerate(得意先,
 ]
 for i, (code, short, name, kikaku, irisu, bunrui, pal) in enumerate(商品, 1):
     ins("kyotsu.TM_商品マスタ", ID=i, 商品コード=code, グループ商品コード=code, 分類ID=bunrui, **{"ｶﾅ分類": "ｿ" if bunrui == 1 else "ﾍ"},
-        短縮名=short, 商品名=name, 規格=kikaku, 入数=irisu, 品質保持期間=2, 賞味期限日付差=-1, パレット単位1=pal, 製造場所ID=11,
+        短縮名=short, 商品名=name, 規格=kikaku, 入数=irisu, 品質保持期間=2, 賞味期限日付差=-1, パレット単位1=pal, パレット単位2=pal, 製造場所ID=11,
         製造場所="丸北　北海道", 使用可能chk=True, 本社コード=f"D{code:04d}")
 商品名 = {c: (n, k, i) for c, _, n, k, i, _, _ in 商品}
 名前 = {c: n for c, n, *_ in 得意先}
@@ -222,7 +222,8 @@ for yid, d, unso, car in 便:
     ins("ws.TD_輸送計画", 輸送ID=yid, 出荷計画日=day(d), 運送会社ID=unso, 運送会社名=運送名[unso], 車番=car, 集荷日=day(d),
         手配運送会社コード=630, 手配運送会社名="丸北　北海道", 帳合運送会社コード=unso, 帳合運送会社名=運送名[unso],
         輸送区分ID=1, 輸送区分="陸", 車両区分ID=2, 車両区分="4t", 冷凍区分ID=1, 配達区分ID=1, 運賃区分ID=1, セット温度=-22,
-        最大積載重量kg=4000, 担当者="見本：納品日前日までに配車受付をお願いします。")
+        最大積載重量kg=4000, 担当者="見本：納品日前日までに配車受付をお願いします。",
+        パレット輸送区分=1 if yid == 1005 else 0)
 
 # ---------------- 在庫（作り物） ----------------
 在庫 = [
@@ -263,6 +264,9 @@ for nid, code, cs, d, tag in [(90001, 55, 100, 2, "①"), (90002, 91, 150, 3, "�
     (5007, 0, 0, 826, 97, 20, 70007, 0, False, 0, 11),
     (5008, 1003, 1, 343, 97, 30, 70007, 1, False, 0, 11),
     (5009, 1003, 1, 1254, 55, 10, 70002, 2, False, 0, 11),
+    # パレット輸送の便（見本冷蔵 札幌＝164 行き）
+    (5010, 1005, 2, 164, 91, 90, 70003, 1, False, 0, 11),
+    (5011, 1005, 2, 164, 55, 50, 70001, 2, False, 0, 11),
 ]
 for sid, yid, d, todoke, code, cs, zid, jun, chk, jid, moto in 出荷:
     name, kikaku, irisu = 商品名[code]
