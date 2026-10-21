@@ -74,3 +74,21 @@ CREATE TABLE IF NOT EXISTS app."設定" (
   "値"   TEXT NOT NULL DEFAULT ''
 );
 INSERT INTO app."設定" ("名前", "値") VALUES ('寿預かりの備考', '') ON CONFLICT DO NOTHING;
+
+-- 入庫依頼書・出荷通知書・送品案内書に出す差出人（Access ではレポートの中に書かれていたもの）。
+-- 名義・扱いで 4 つを使い分ける。住所・電話は画面の「差出人の設定」で入れる（ここには書かない）。起動のたびに消さない。
+CREATE TABLE IF NOT EXISTS app."帳票_差出人" (
+  "区分"   TEXT PRIMARY KEY,
+  "並び"   INTEGER NOT NULL DEFAULT 0,
+  "社名"   TEXT NOT NULL DEFAULT '',
+  "店舗"   TEXT NOT NULL DEFAULT '',
+  "住所"   TEXT NOT NULL DEFAULT '',
+  "TEL"    TEXT NOT NULL DEFAULT '',
+  "FAX"    TEXT NOT NULL DEFAULT ''
+);
+INSERT INTO app."帳票_差出人" ("区分", "並び", "社名") VALUES
+  ('丸北北海道', 1, '㈱丸北北海道'),
+  ('丸北', 2, '㈱　丸　北'),
+  ('ふらの', 3, 'ふらの農業協同組合'),
+  ('大阪丸北', 4, '大阪丸北商事㈱')
+ON CONFLICT DO NOTHING;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog } from "../formParts";
+import { 帳票印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -28,7 +29,9 @@ const 印 = [
   { k: "送品案内書確認chk", name: "送品案内書\nチェック" },
   { k: "送品案内送付chk", name: "送品案内書\n印刷済み" },
 ];
-const まだ = () => alert("帳票の形は、紙の見本（写真や PDF）をいただいてから作ります。");
+const まだ = () => alert("積込確認書は、これから作ります。");
+// 帳票の選び方ごとの帳票（Access の cmd表示_Click）
+const 帳票の種類: Record<number, string> = { 1: "nyuko", 2: "tsuchi", 3: "sohin_reizo", 4: "sohin_user", 5: "sohin_muji" };
 
 /**
  * 出荷関連報告書印刷（Access の FSD_出荷報告印刷）。出荷明細票の「入庫案内・出荷・送品案内」から開く。
@@ -46,6 +49,8 @@ export default function WsHoukoku() {
   const [cal, setCal] = useState(false);
   const [担当者, set担当者] = useState("");
   const [備考, set備考] = useState("");
+  const [印刷, set印刷] = useState<{ pages: Rec[]; 名前: string } | null>(null);
+  const [差出人, set差出人] = useState<Rec[] | null>(null);
 
   // 開いたとき：表を作り直す
   useEffect(() => {
@@ -71,6 +76,42 @@ export default function WsHoukoku() {
     try {
       await api.post("/api/ws/houkoku/chk", { ID: r.ID, 項目: k, 値, kind });
       setRows(rows.map((x) => (x.ID === r.ID ? { ...x, [k]: 値 } : x)));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+
+  // 印刷表示：選んだ行の帳票（Access の cmd表示_Click）
+  async function 印刷表示() {
+    if (!kind) return alert("印刷する帳票（入庫依頼書・出荷案内書・送品案内書）を選んでください。");
+    if (!rows.some((r) => r.抽出区分)) return alert("印刷する行の「選択」に印を付けてください。");
+    try {
+      const r = await api.post<{ pages: Rec[] }>("/api/ws/chohyo", { 種類: 帳票の種類[kind], 出荷日: date, 担当者, 備考 });
+      set印刷({ pages: r.pages, 名前: 帳票.find((x) => x.id === kind)!.name });
+    } catch (e) {
+      エラー(e);
+    }
+  }
+
+  // 仮印刷：その行だけ（Access の cmd_仮印刷_Click。印刷すると「仮入庫印刷」に印が付く）
+  async function 仮印刷(r: Rec) {
+    if (!confirm("仮印刷表示になりますが、よろしいですか？")) return;
+    try {
+      const x = await api.post<{ pages: Rec[] }>("/api/ws/chohyo", { 種類: "nyuko", 出荷日: date, links: [r.リンクコード1], 担当者, 備考, 仮: true });
+      setRows(rows.map((y) => (y.ID === r.ID ? { ...y, 仮入庫通知: true } : y)));
+      set印刷({ pages: x.pages, 名前: `仮印刷 ${r.届け先}` });
+    } catch (e) {
+      エラー(e);
+    }
+  }
+
+  async function 差出人を開く() {
+    set差出人(await api.get<Rec[]>("/api/ws/sashidashi"));
+  }
+
+  async function 差出人を保存(x: Rec) {
+    try {
+      await api.post("/api/ws/sashidashi", x);
     } catch (e) {
       エラー(e);
     }
@@ -112,7 +153,7 @@ export default function WsHoukoku() {
             ))}
           </div>
           <div className="hr-memo">
-            <button onClick={まだ}>大阪入庫リスト印刷</button>
+            <button onClick={差出人を開く} title="帳票に出す会社名・住所・電話">差出人の設定</button>
             <div className="memo">
               <div className="row"><span className="k">担当者名</span><input value={担当者} onChange={(e) => set担当者(e.target.value)} /></div>
               <div className="row"><span className="k tall">備考</span><textarea value={備考} onChange={(e) => set備考(e.target.value)} /></div>
@@ -134,7 +175,7 @@ export default function WsHoukoku() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.ID}>
-                <td><button className="kari" onClick={まだ}>印刷</button></td>
+                <td><button className="kari" onClick={() => 仮印刷(r)}>印刷</button></td>
                 <td className="c"><input type="checkbox" checked={!!r.抽出区分} onChange={(e) => 印を付ける(r, "抽出区分", e.target.checked)} /></td>
                 <td className="todoke">{r.届け先}</td>
                 <td className="r kg">{num(r.商品kg)}</td>
@@ -154,10 +195,39 @@ export default function WsHoukoku() {
       <div className="hr-foot">
         <div className="box">
           <button onClick={() => { setYuso(null); setKind(0); }}>条件クリア</button>
-          <button onClick={まだ}>印刷表示</button>
+          <button onClick={印刷表示}>印刷表示</button>
           <button onClick={閉じる}>閉じる</button>
         </div>
       </div>
+      {印刷 && <帳票印刷 pages={印刷.pages} 名前={印刷.名前} onClose={() => set印刷(null)} />}
+      {差出人 && (
+        <div className="modal" onClick={() => set差出人(null)}>
+          <div className="nt" onClick={(e) => e.stopPropagation()}>
+            <div className="nt-head">
+              差出人の設定（入庫依頼書・出荷通知書・送品案内書に出す会社名・住所・電話）
+              <button onClick={() => set差出人(null)}>閉じる</button>
+            </div>
+            <table className="ws-grid sd-grid">
+              <thead>
+                <tr><th>使うところ</th><th>社名</th><th>店舗</th><th>住所</th><th>TEL</th><th>FAX</th></tr>
+              </thead>
+              <tbody>
+                {差出人.map((x) => (
+                  <tr key={x.区分}>
+                    <td>{x.区分}</td>
+                    {(["社名", "店舗", "住所", "TEL", "FAX"] as const).map((k) => (
+                      <td key={k}>
+                        <input defaultValue={x[k]} onBlur={(e) => { if (e.target.value !== x[k]) { x[k] = e.target.value; 差出人を保存(x); } }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="sd-note">丸北北海道：名義が丸北北海道のとき。丸北：ユーザー納入分。ふらの：名義がふらのとき（FAX は入庫依頼書の送り先の案内に使う）。大阪丸北：名義・扱いが大阪丸北のとき。</p>
+          </div>
+        </div>
+      )}
       {cal && (
         <CalendarDialog
           value={date}
