@@ -283,7 +283,8 @@ export function wsKoshinRoutes(app: FastifyInstance) {
       await 集計(c);
       const 登録できない = await 出荷登録(c, 更新日, 更新時間, now.日付);
       await 集計(c);
-      await c.query(`UPDATE ${利用者} SET "更新時間" = $1`, [更新時間]);
+      const u = await c.query(`UPDATE ${利用者} SET "更新時間" = $1`, [更新時間]);
+      if (!u.rowCount) await c.query(`INSERT INTO ${利用者} ("ID", "更新時間") VALUES (1, $1)`, [更新時間]);
       return { 更新時間, 入庫件数, 登録できない, 在庫確認: await 在庫確認(c, 11, now.日付) };
     }),
   );
