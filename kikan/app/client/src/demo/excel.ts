@@ -1,0 +1,4 @@
+// 見本版では Excel 出力は使えない（server/excel.ts の代わり）
+export async function 受注検索のExcel(): Promise<never> {
+  throw new Error("見本版では Excel 出力は使えません。");
+}

@@ -86,6 +86,16 @@ PGURL=... npm start                # http://localhost:3000 で開く
 - 開発中は `npm run dev`（画面は http://localhost:5173）。
 - 受注の削除には、Access と同じく合言葉が要る。合言葉はプログラムに書かず、サーバーを動かすときに `JUCHU_DELETE_PASSWORD` で渡す（今の Access と同じものにする。2026/10/20 確認）。渡していないときは削除できない。
 
+### 見本版（Artifacts で試すもの）
+
+サーバーとデータベースがなくても画面を触れるように、ブラウザの中だけで動く見本版を作れる（`client/src/demo/`）。
+
+- データベースは PGlite（ブラウザの中で動く PostgreSQL）。表の形は本番と同じ（`schema.sql`、pg_dump の表の定義だけ）。
+- サーバーの処理は本番と同じものを使い、データベースの接続（`db.ts`）とログイン（`auth.ts`）だけ差し替える（`vite.demo.config.ts`）。
+- データはすべて作り物（`make_data.py` で `data.sql` を作る）。区分などの一覧表だけ、取引先名の入らないものを写す。日付は開いた日が基準。
+- Artifacts の画面では確かめる窓（confirm など）が出ないので、見本版では知らせを右下に出し、確かめる窓は OK、合言葉は demo で進める。直した内容はページを閉じると消える。
+- 作り方：`npm run build:demo` → `dist-demo/artifact.html` と `dist-demo/assets/` を Artifacts に置く。表の形を変えたら `schema.sql` を作り直す（`pg_dump --schema-only -N bk -N old_master` から `\restrict` 行と `set_config` 行を除く）。
+
 ### 画面の決まり（全部の画面で同じにする）
 - **日付**の欄は、ダブルクリックで共通のカレンダー（Access の FSD_日付選択）が出る。祝日・第 2/第 4 土曜などの休み・会社の特休（TM_イベントスケジュール）は赤の下線、日曜は赤、土曜は青、今日は黄色。
 - 共通コードには**運送会社**（`kyotsu="unso"`、FSD_運送会社選択）もある。

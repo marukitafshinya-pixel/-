@@ -21,9 +21,12 @@ const 番号を探す受注ID = 37359;
 
 /** 販盛の CSV（Shift_JIS か UTF-8）を文字にする */
 export function 文字にする(buf: Buffer): string {
-  const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(buf);
-  if (!utf8.includes("�")) return utf8.replace(/^﻿/, "");
-  return new TextDecoder("shift_jis").decode(buf);
+  // UTF-8 として読めれば UTF-8、読めない文字があれば Shift_JIS
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buf).replace(/^﻿/, "");
+  } catch {
+    return new TextDecoder("shift_jis").decode(buf);
+  }
 }
 
 /** CSV を行と列に分ける（"..." の中のカンマ・改行もそのまま読む） */

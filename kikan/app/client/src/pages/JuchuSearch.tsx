@@ -159,6 +159,7 @@ export default function JuchuSearch() {
             title="いま表示している条件で Excel に出力します"
             onClick={() => {
               // 今の検索条件のまま、Excel のファイルを受け取る
+              if (import.meta.env.VITE_DEMO) return alert("見本版では Excel 出力は使えません。");
               window.location.href = "/api/juchu/search/export?" + new URLSearchParams(f).toString();
             }}
           >

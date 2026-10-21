@@ -12,3 +12,4 @@ node_modules/
 kikan/migrate/data/
 移し替え結果.md
 kikan/app/dist/
+kikan/app/dist-demo/

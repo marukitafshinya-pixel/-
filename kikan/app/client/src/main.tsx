@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, MemoryRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { api } from "./api";
 import Login from "./pages/Login";
 import Menu from "./pages/Menu";
@@ -61,11 +61,14 @@ function App() {
   );
 }
 
+// 見本版（Artifacts で開くもの）は、ページの住所が変えられないので、画面の切り替えをページの中だけで持つ
+const Router = import.meta.env.VITE_DEMO ? MemoryRouter : BrowserRouter;
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router>
       <App />
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>,
 );
 
