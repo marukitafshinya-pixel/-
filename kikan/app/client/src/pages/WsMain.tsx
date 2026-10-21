@@ -110,6 +110,17 @@ export default function WsMain() {
     }
   }
 
+  // 振分け（Access の cmd_Auto振分け）
+  async function 振分け() {
+    if (!confirm("自動振分けを開始します。以前のデータは上書きされますが、よろしいですか?")) return;
+    try {
+      await api.post("/api/ws/plan/furiwake", { 輸送ID });
+      await load();
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+  }
+
   async function 新しい便() {
     const r = await api.post<{ 輸送ID: number }>("/api/ws/plan/new", { date });
     await 日付を移す(date, r.輸送ID);
@@ -329,6 +340,7 @@ export default function WsMain() {
               )}
             </div>
           ))}
+          <button className="small ws-furi" disabled={!輸送ID} onClick={振分け} title="届け先・出荷元ごとに届け順と積込順を作り直します">振分け</button>
         </div>
         <div className="ws-gridwrap">
           <table className="ws-grid">

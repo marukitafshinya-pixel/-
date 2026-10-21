@@ -259,6 +259,35 @@ export function wsRoutes(app: FastifyInstance) {
   });
 
   // 新しい便（その出荷日で）
+  // 振分け（Access の 配車自動振分け）：この便の届け先・出荷元ごとに、届け順と積込順を作り直す（前の積込順は消える。積込備考も消える）
+  app.post<{ Body: { 輸送ID: number } }>("/api/ws/plan/furiwake", async (req) => {
+    const 輸送ID = Number(req.body.輸送ID);
+    return 一連で(async (c) => {
+      await c.query(`DELETE FROM ${積込順} WHERE "輸送ID" = $1`, [輸送ID]);
+      // 届け先・出荷元ごとに、商品積込順（はじめの行の値）の大きい順、地区コードの順
+      const rows = (
+        await c.query(
+          `SELECT s."届け先コード", s."倉庫ID", (array_agg(s."商品積込順" ORDER BY s."出庫ID"))[1] AS "順", m."地区コード"
+           FROM ${出荷} s LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = s."届け先コード"
+           WHERE s."輸送ID" = $1 GROUP BY s."届け先コード", s."倉庫ID", m."地区コード"
+           ORDER BY 3 DESC NULLS LAST, m."地区コード", s."届け先コード", s."倉庫ID"`,
+          [輸送ID],
+        )
+      ).rows;
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_積込順.ID'))`);
+      let id = Number((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS n FROM ${積込順}`)).rows[0].n);
+      let 積込順の数 = rows.length;
+      for (const [i, r] of rows.entries()) {
+        await c.query(
+          `INSERT INTO ${積込順} ("ID", "輸送ID", "積込順", "届け順", "積込順出荷元", "積込順届け先", "積込指定No", "積込指定外No", "OneDriveChk")
+           VALUES ($1, $2, $3, $4, $5, $6, 0, 0, false)`,
+          [id++, 輸送ID, 積込順の数--, i + 1, r.倉庫ID, r.届け先コード],
+        );
+      }
+      return { 件数: rows.length };
+    });
+  });
+
   app.post<{ Body: { date: string } }>("/api/ws/plan/new", async (req) => {
     const c = await pool.connect();
     try {
