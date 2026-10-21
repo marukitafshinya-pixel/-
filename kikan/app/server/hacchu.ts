@@ -10,6 +10,7 @@ const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
 const 相手先商品 = t("juchu", "TM_相手先商品マスタ");
 const 受注特定項目 = t("juchu_fe", "TM_受注特定項目");
 const 宛先 = `app."発注依頼書_宛先"`;
+const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
 
 /** 300 日前（Access の Date - 300） */
 function 三百日前(): string {
@@ -164,5 +165,47 @@ export function hacchuRoutes(app: FastifyInstance) {
       [id, ...v, 日本の今().日時],
     );
     return { ok: true };
+  });
+
+  // ---------------- 伝票発行（F_伝票発行 → R_和弘食品専用伝票） ----------------
+
+  // 届け先（和弘食品の受注の受注先。電話番号で選ぶ）と商品の選択肢
+  // 商品は、届け先を選ぶ前は Access と同じく得意先短縮コード 1 のもの、選んだあとはその届け先のもの（相手先商品マスタ）
+  app.get<{ Querystring: { todoke?: string } }>("/api/denpyo/choices", async (req) => {
+    const 届け先 = await q(
+      `SELECT m."電話番号", m."得意先名", m."短縮コード" FROM ${受注} j LEFT JOIN ${得意先マスタ} m ON j."受注先ID" = m."短縮コード"
+       WHERE j."受注元ID" = 1237 GROUP BY m."電話番号", m."得意先名", m."短縮コード"`,
+    );
+    const 商品 = await q(
+      `SELECT "相手先商品コード", "商品コード", "相手先商品名" FROM ${相手先商品} WHERE "得意先短縮コード" = $1
+       GROUP BY "相手先商品コード", "商品コード", "相手先商品名" ORDER BY "商品コード"`,
+      [req.query.todoke ? Number(req.query.todoke) : 1],
+    );
+    return { 届け先, 商品 };
+  });
+
+  // 受注番号を入れたときの、商品名・届け先・商品kg（Access の 受注番号_AfterUpdate）
+  app.get<{ Querystring: { shohin: string; todoke: string; bango: string } }>("/api/denpyo/lookup", async (req) => {
+    const [r] = await q(
+      `SELECT "商品名", "届け先", "商品kg" FROM ${受注} WHERE "商品コード" = $1 AND "届け先コード" = $2 AND "受注番号" = $3
+       ORDER BY "受注ID" LIMIT 1`,
+      [Number(req.query.shohin || 0), Number(req.query.todoke || 0), req.query.bango],
+    );
+    return r ?? { 商品名: null, 届け先: null, 商品kg: null };
+  });
+
+  // 和弘食品専用伝票に載せる受注（受注元が和弘食品 1237・1088 で、条件にすべて合うもの）
+  app.get<{ Querystring: Record<string, string> }>("/api/denpyo/report", async (req) => {
+    const p = req.query;
+    return q(
+      `SELECT j.*, s."規格kg", s."規格枚数", COALESCE(s."規格kg"::text, '') || 'kg×' || COALESCE(s."規格枚数"::text, '') AS "規格表示",
+              m."得意先名" AS "届け先正式名", m."住所", m."電話番号"
+       FROM ${受注} j LEFT JOIN ${商品マスタ} s ON j."商品コード" = s."商品コード"
+       LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = j."届け先コード"
+       WHERE j."受注元ID" IN (1237, 1088) AND j."受注日"::date = $1::date AND j."納品日"::date = $2::date AND j."受注先ID" = $3
+         AND j."受注番号" = $4 AND j."商品コード" = $5 AND j."ケース" = $6
+       ORDER BY j."受注ID"`,
+      [p.受注日, p.納品日, Number(p.受注先ID), p.受注番号, Number(p.商品コード), Number(p.ケース)],
+    );
   });
 }
