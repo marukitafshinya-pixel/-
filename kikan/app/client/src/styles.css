@@ -607,3 +607,64 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .wj-foot .sp { flex: 1; }
 .wj-foot .k { background: #800080; color: #fff; font-weight: bold; padding: 2px 10px; }
 .wj-foot .v { background: #6a6aa8; color: #fff; min-width: 70px; text-align: right; padding: 2px 6px; }
+
+/* 在庫表（FM_商品別在庫）・保管庫詳細（FM_保管庫） */
+.zh, .hk { min-height: 100vh; display: flex; flex-direction: column; }
+.zh { background: #dedcc8; }
+.hk { background: #c96a95; }
+.zh-top, .hk-top { display: flex; gap: 12px; align-items: flex-end; padding: 6px 10px; background: #dedcc8; flex-wrap: wrap; }
+.zh-col .lbl { background: #000080; color: #fff; font-weight: bold; text-align: center; padding: 1px 10px; border-bottom: 3px solid #333; }
+.zh-col .row { display: flex; gap: 4px; align-items: center; }
+.zh-col .name { background: #fff; border: 1px solid #999; min-width: 180px; padding: 2px 8px; font-weight: bold; text-align: center; }
+.zh-col .name.blue { color: #0000c0; background: #cff; }
+.zh-col input { width: 190px; background: #cff; border: 1px solid #999; }
+.zh-col .tg button { background: #fff; border: 2px outset #ddd; padding: 1px 10px; }
+.zh-col .tg button.on { border-style: inset; background: #ffe080; font-weight: bold; }
+.zh-nav { display: flex; }
+.zh-nav button { background: #eee; border: 1px solid #888; padding: 1px 6px; font-size: 11px; }
+.zh-btns { display: flex; flex-direction: column; gap: 4px; margin-left: auto; }
+.zh-btns .box, .hk-foot .box { display: flex; gap: 4px; padding: 3px; border: 2px solid #555; }
+.zh-btns button, .hk-foot button { background: #fff; border: 2px outset #ddd; font-weight: bold; padding: 2px 10px; }
+.zh-btns .blue, .hk-foot .blue { color: #00c; }
+.zh-btns .green, .hk-foot .green { color: #080; }
+.hk-foot .red { color: #c00; }
+.hk-foot .red.on { border-style: inset; background: #ffd0d0; }
+.zh-list, .hk-list { flex: 1; overflow: auto; background: #fff; }
+.zh-grid, .hk-grid { border-collapse: collapse; font-size: 13px; }
+.zh-grid th { background: #8a2a5a; color: #fff; padding: 2px 8px; }
+.zh-grid td { border: 1px solid #bbb; padding: 1px 6px; }
+.zh-grid td.code { cursor: pointer; color: #000; }
+.zh-grid td.kikaku { color: #a04000; }
+.zh-grid .bunrui { text-align: center; font-size: 12px; }
+.zh-grid .bunrui.sot { background: #335; color: #8f8; }
+.zh-grid .bunrui.pas { background: #335; color: #8f8; }
+.zh-grid .bunrui.min { background: #335; color: #fc6; }
+.zh-grid .g, .zh-foot .g { color: #080; }
+.zh-grid .b, .zh-foot .b { color: #00c; }
+.zh-grid .o, .zh-foot .o { color: #e05000; }
+.zh-grid .p, .zh-foot .p { color: #a060c0; }
+.zh-grid th.g, .zh-grid th.b, .zh-grid th.o, .zh-grid th.p { color: #fff; }
+.zh-foot { display: flex; gap: 0; justify-content: flex-end; padding: 4px 20px; background: #dedcc8; font-weight: bold; }
+.zh-foot span { min-width: 80px; padding: 0 6px; border: 1px solid #bbb; background: #fff; }
+.hk-grid th { background: #4a4a9a; color: #fff; padding: 2px 6px; font-weight: normal; }
+.hk-grid th.o { color: #f80; }
+.hk-grid td { border: 1px solid #ccc; padding: 1px 3px; vertical-align: top; background: #fff; }
+.hk-grid td.zaiko { background: #ffffd0; }
+.hk-grid td.tome { background: #ddd; }
+.hk-grid .small { font-size: 11px; }
+.hk-grid .navy input { color: #00008b; font-weight: bold; }
+.hk-grid .orange, .hk-grid .orange input { color: #e08000; }
+.hk-grid .blue, .hk-grid .blue input { color: #4060ff; }
+.hk-grid .maroon input { color: #8b1a4a; font-weight: bold; }
+.hk-grid .red { color: #d00; }
+.hk-grid input.hk-n { width: 56px; }
+.hk-grid input.hk-d { width: 86px; }
+.hk-grid input.hk-code { width: 56px; }
+.hk-grid input.hk-tag { width: 70px; }
+.hk-grid input.hk-memo { width: 110px; }
+.hk-grid input[readonly] { background: transparent; border: 1px solid transparent; }
+.hk-furi { background: #fff; color: #00c; font-weight: bold; border: 1px solid #999; font-size: 11px; line-height: 1.1; }
+.hk-foot { display: flex; gap: 6px; align-items: center; padding: 6px 20px; background: #dedcc8; }
+.hk-foot .k { background: #888; color: #fff; padding: 1px 8px; }
+.hk-foot .v { background: #fff; border: 1px solid #888; min-width: 70px; text-align: right; padding: 1px 6px; }
+.hk-foot .sp { flex: 1; }
