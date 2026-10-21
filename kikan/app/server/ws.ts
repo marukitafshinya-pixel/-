@@ -188,6 +188,11 @@ export function wsRoutes(app: FastifyInstance) {
     return { 件数: n };
   });
 
+  // 通知の一覧（Access の FSD_通知。計画変更chk の付いた出荷を出荷日の順に）
+  app.get("/api/ws/notice/list", async () =>
+    q(`SELECT "出庫ID", "輸送ID", "出荷日", "商品名", "届け先", "変更通知" FROM ${出荷} WHERE "計画変更chk" = true ORDER BY "出荷日", "出庫ID"`),
+  );
+
   // 1 便の中身（上の欄・明細・積込順・合計）
   app.get<{ Params: { id: string } }>("/api/ws/plan/:id", async (req, reply) => {
     const id = Number(req.params.id);

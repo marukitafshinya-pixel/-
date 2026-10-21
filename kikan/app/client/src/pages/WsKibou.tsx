@@ -106,71 +106,95 @@ export function KibouDialog(props: {
     }
   }
 
+  // 行ごとの希望C/S（Access の 実算ケース。入れると重量も出す）
+  function 希望(r: Rec, v: string) {
+    const x = v.trim() === "" ? 0 : Number(v);
+    if (Number.isNaN(x)) return;
+    setRows(rows.map((y) => (y === r ? { ...y, 実算ケース: x, 実算kg: x * (y.入数 ?? 0) } : y)));
+  }
+  const 年月日2 = (v: string | null | undefined) => (v ? v.slice(2, 10).replace(/-/g, "/") : "");
+  const 月日2 = (v: string | null | undefined) => (v ? `${v.slice(5, 7)}/${v.slice(8, 10)}` : "");
+
   return (
     <div className="modal">
-      <div className="kb">
-        <div className="kb-head">
-          <b className="kb-title">希望在庫表示{props.data.表題 ? `　${props.data.表題}` : ""}</b>
-          <span className="kb-kv"><span>本社依頼kg</span><b>{num(props.data.本社依頼kg)}</b></span>
-          <span className="kb-kv"><span>本社依頼残kg</span><b>{num(props.data.本社依頼残kg)}</b></span>
-          <span className="kb-kv"><span>在庫合計</span><b>{num(在庫総数)}</b><b>{num(在庫kg計)} kg</b></span>
-        </div>
-        <div className="kb-head">
-          <span className="kb-kv">
-            <span>希望C/S</span>
-            <input className="r" defaultValue="" onBlur={(e) => 必要数を選ぶ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
-            <b>{受注kg === null ? "" : `${num(受注kg)} kg`}</b>
-          </span>
-          <span className="kb-kv"><span>受注割付数</span><b>{num(割付数)}</b><b>{num(割付kg)} kg</b></span>
-          <span className="kb-kv">
-            <span>必要数</span>
-            <b>{受注個数 === null ? "" : num(受注個数 - 割付数)}</b>
-            <b>{受注kg === null ? "" : `${num(受注kg - 割付kg)} kg`}</b>
-          </span>
-          <button className={絞り === "当日" ? "on" : ""} onClick={() => set絞り("当日")} title="出荷予定日までに入庫するものだけ">出荷可能表示</button>
-          <button className={絞り === "全体" ? "on" : ""} onClick={() => set絞り("全体")}>全体表示</button>
-          <button className={絞り === "検体" ? "on" : ""} onClick={() => set絞り("検体")}>検体表示</button>
-          <select value={名義 ?? ""} onChange={(e) => set名義(e.target.value === "" ? null : Number(e.target.value))}>
-            <option value="">名義：全部</option>
-            {名義一覧.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <span className="sp" />
-          <button className="ok" onClick={OK}>OK</button>
-          <button onClick={() => props.onClose(false)}>キャンセル</button>
+      <div className="kb kb2">
+        <div className="kb2-top">
+          <div className="kb2-btns">
+            <div className="box">
+              <button className="ok" onClick={OK}>読 込</button>
+              <button onClick={() => props.onClose(false)}>キャンセル</button>
+            </div>
+            <div className="row">
+              <button className={絞り === "当日" ? "on" : ""} onClick={() => set絞り("当日")} title="出荷予定日までに入庫するものだけ">出荷可能表示</button>
+              <button className={絞り === "検体" ? "on" : ""} onClick={() => set絞り("検体")}>検体表示</button>
+            </div>
+            <button className={絞り === "全体" ? "on" : ""} onClick={() => set絞り("全体")}>全体</button>
+          </div>
+          <div className="kb2-msg">{props.data.表題}</div>
+          <div className="kb2-hq">
+            <div className="h">本社依頼kg</div>
+            <div className="v">{num(props.data.本社依頼kg)}</div>
+            <div className="h">本社依頼残kg</div>
+            <div className="v">{num(props.data.本社依頼残kg)}</div>
+          </div>
+          <table className="kb2-sum">
+            <thead><tr><th></th><th>ケース</th><th>重量</th></tr></thead>
+            <tbody>
+              <tr>
+                <th>必　要　数</th>
+                <td><input className="r" defaultValue="" onBlur={(e) => 必要数を選ぶ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} /></td>
+                <td>{受注kg === null ? "" : num(受注kg)}</td>
+              </tr>
+              <tr><th>受注割付数</th><td>{num(割付数)}</td><td>{num(割付kg)}</td></tr>
+              <tr><th>受 注 残 数</th><td>{受注個数 === null ? "" : num(受注個数 - 割付数)}</td><td>{受注kg === null ? "" : num(受注kg - 割付kg)}</td></tr>
+              <tr><th>在 庫 合 計</th><td>{num(在庫総数)}</td><td>{num(在庫kg計)}</td></tr>
+            </tbody>
+          </table>
+          {名義一覧.length > 1 && (
+            <select value={名義 ?? ""} onChange={(e) => set名義(e.target.value === "" ? null : Number(e.target.value))} title="入庫後名義で絞る">
+              <option value="">名義：全部</option>
+              {名義一覧.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          )}
         </div>
         <div className="kb-list">
-          <table className="ws-grid">
+          <table className="ws-grid kb2-grid">
             <thead>
               <tr>
-                <th>抽出</th><th>製造日</th><th>賞味期限</th><th></th><th>保管場所</th><th>在庫C/S</th><th>在庫kg</th><th>出荷数</th>
-                <th>入庫日</th><th>入庫元数</th><th>商品名</th><th>区分</th><th>タグ</th><th>名義</th><th>検査予定日</th><th>検体</th>
-                <th>出荷止め</th><th>管理備考</th><th>備考</th>
+                <th>保管場所</th><th>品名</th><th>検査予定日</th><th>入庫日</th><th>区分</th><th>製造日</th><th className="y">賞味期限</th>
+                <th className="y">元数</th><th>C/S</th><th>Kg</th><th>出荷数</th><th></th><th>備考</th><th>区分</th><th>希望C/S</th><th>★</th>
               </tr>
             </thead>
             <tbody>
               {shown.map((r) => (
-                <tr key={r.認識ID} className={(r.抽出区分 ? "picked " : "") + (r.架空実物 ? "plan" : "")}>
-                  <td className="c"><button className={"kb-pick" + (r.抽出区分 ? " on" : "")} onClick={() => 抽出(r)}>{r.抽出区分 ? "抽出" : ""}</button></td>
-                  <td className="bold">{年月日(r.製造日)}</td>
-                  <td>{年月日(r.賞味期限)}</td>
-                  <td className="red">{r.賞味期限通知}</td>
-                  <td>{r.倉庫名}</td>
+                <tr key={r.認識ID} className={r.抽出区分 ? "picked" : ""}>
+                  <td className="yl">{r.倉庫名}</td>
+                  <td>{r.商品名}</td>
+                  <td>{曜日付き(r.検査予定日)}</td>
+                  <td className="c">{月日2(r.入庫日)}</td>
+                  <td className="c tag">{r.タグ}</td>
+                  <td className="c">
+                    <div>{年月日2(r.製造日)}</div>
+                    {r.架空実物 && <div className="y">生産計画</div>}
+                    {r.検体区分 && <div className="y">検体合わせ</div>}
+                  </td>
+                  <td className="c">
+                    <div>{年月日2(r.賞味期限)}</div>
+                    {r.賞味期限通知 && <div className="red">{r.賞味期限通知}</div>}
+                  </td>
+                  <td className="r y">{num(r.入庫元数)}</td>
                   <td className={"r" + (r.在庫ケース < 0 ? " red" : "")}>{num(r.在庫ケース)}</td>
                   <td className={"r" + (r.在庫kg < 0 ? " red" : "")}>{num(r.在庫kg)}</td>
-                  <td className="r bold">{r.抽出区分 ? num(r.実算ケース ? r.実算ケース : r.在庫ケース) : ""}</td>
-                  <td>{月日(r.入庫日)}</td>
-                  <td className="r">{num(r.入庫元数)}</td>
-                  <td>{r.商品名}</td>
-                  <td>{r.商品区分名}</td>
-                  <td>{r.タグ}</td>
-                  <td className="r">{r.入庫後名義ID}</td>
-                  <td>{曜日付き(r.検査予定日)}</td>
-                  <td className="c">{r.検体区分 ? "検体合わせ" : ""}</td>
-                  <td className="c"><input type="checkbox" checked={!!r.出荷止め区分} onChange={(e) => 止め(r, e.target.checked, r.管理備考)} /></td>
-                  <td>
-                    <input className="kb-memo" defaultValue={r.管理備考 ?? ""} onBlur={(e) => e.target.value !== (r.管理備考 ?? "") && 止め(r, !!r.出荷止め区分, e.target.value)} />
+                  <td className="memo">{r.備考在庫}</td>
+                  <td className="c chk"><input type="checkbox" title="出荷止め" checked={!!r.出荷止め区分} onChange={(e) => 止め(r, e.target.checked, r.管理備考)} /></td>
+                  <td className="bikou">
+                    <textarea defaultValue={r.管理備考 ?? ""} onBlur={(e) => e.target.value !== (r.管理備考 ?? "") && 止め(r, !!r.出荷止め区分, e.target.value)} />
                   </td>
-                  <td className="note pre">{r.備考在庫}</td>
+                  <td className="y small">{r.商品区分名}</td>
+                  <td className="r">
+                    <input className="kb2-want r" value={r.実算ケース ?? 0} onChange={(e) => 希望(r, e.target.value)} />
+                  </td>
+                  <td className="c"><button className={"kb-pick" + (r.抽出区分 ? " on" : "")} onClick={() => 抽出(r)}>{r.抽出区分 ? "抽出" : ""}</button></td>
                 </tr>
               ))}
             </tbody>

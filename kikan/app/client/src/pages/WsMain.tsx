@@ -42,6 +42,7 @@ export default function WsMain() {
   const [検索商品, set検索商品] = useState<number | null>(null);
   const [検索倉庫, set検索倉庫] = useState<number | null>(null);
   const [希望, set希望] = useState<希望在庫 | null>(null);
+  const [通知一覧, set通知一覧] = useState(false);
 
   useEffect(() => {
     api.get<選択肢>("/api/ws/choices").then(setCh);
@@ -265,8 +266,8 @@ export default function WsMain() {
             <span className="lbl">集荷日</span>
             <Field value={p.集荷日} kind="date" className="shuka" readOnly={!輸送ID} onCommit={(v) => { const d = parseDate(v); if (d === undefined) return alert("日付の書き方が正しくありません。（例：10/28）"); save({ 集荷日: d }); }} />
             <div className="ws-btns">
-              <button className="red" disabled title="③で作ります">割付解除</button>
-              <button disabled title="③で作ります">配車割付</button>
+              <button className="red" onClick={削除} disabled={!輸送ID} title="この便を消し、明細を便からはずす">割付解除</button>
+              <button disabled={!輸送ID} onClick={() => nav(`/ws/yomikomi?id=${輸送ID}`)} title="受注読込（FSD_受注選択）">配車割付</button>
               <button className="blue" disabled title="④で作ります">輸送印刷</button>
               <button onClick={() => nav("/")}>閉じる</button>
             </div>
@@ -291,11 +292,8 @@ export default function WsMain() {
             </div>
           </div>
           <div className="ws-row">
-            <button className={"ws-notice" + (通知 ? " on" : "")} onClick={() => 通知 && alert(`計画変更の通知が ${通知} 件あります。（通知の画面は②で作ります）`)}>
+            <button className={"ws-notice" + (通知 ? " on" : "")} onClick={() => 通知 && set通知一覧(true)}>
               {通知 ? `通知 ${通知}件` : ""}
-            </button>
-            <button className="small del" onClick={削除} disabled={!輸送ID}>
-              この便を削除
             </button>
           </div>
         </div>
@@ -416,6 +414,16 @@ export default function WsMain() {
           }}
         />
       )}
+      {通知一覧 && (
+        <NoticeDialog
+          onClose={() => set通知一覧(false)}
+          onGo={async (r) => {
+            if (!r.輸送ID) return alert("まだ便に入っていない出荷です。受注読込（配車割付）から登録してください。");
+            set通知一覧(false);
+            await 日付を移す(String(r.出荷日).slice(0, 10), r.輸送ID);
+          }}
+        />
+      )}
       {希望 && 輸送ID && (
         <KibouDialog
           data={希望}
@@ -429,6 +437,41 @@ export default function WsMain() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/** 通知（Access の FSD_通知）。計画変更のあった出荷の一覧。［→］でその便へ移る */
+function NoticeDialog(props: { onClose: () => void; onGo: (r: Rec) => void }) {
+  const [rows, setRows] = useState<Rec[]>([]);
+  useEffect(() => {
+    api.get<Rec[]>("/api/ws/notice/list").then(setRows);
+  }, []);
+  return (
+    <div className="modal" onClick={props.onClose}>
+      <div className="nt" onClick={(e) => e.stopPropagation()}>
+        <div className="nt-head">
+          変更があるレコードは <b>{rows.length}</b> 件あります
+          <button onClick={props.onClose}>閉じる</button>
+        </div>
+        <table className="ws-grid">
+          <thead>
+            <tr><th>出荷日</th><th>商品名</th><th>届け先</th><th>配車伝票No</th><th></th><th>変更通知</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.出庫ID}>
+                <td>{String(r.出荷日 ?? "").slice(0, 10).replace(/-/g, "/")}</td>
+                <td className="bold">{r.商品名}</td>
+                <td>{r.届け先}</td>
+                <td className="r">{r.輸送ID || ""}</td>
+                <td><button className="small" onClick={() => props.onGo(r)}>移る</button></td>
+                <td className="red">{r.変更通知}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

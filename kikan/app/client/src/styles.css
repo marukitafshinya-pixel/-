@@ -537,3 +537,37 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .zs-grid td.ken { background: #ffffa0; color: #333; min-width: 70px; }
 .zs-grid .red { color: #ff6060; }
 .zs-pick { background: #fff; color: #00c; border: 2px outset #ddd; font-weight: bold; width: 34px; padding: 2px; }
+
+/* 通知（FSD_通知） */
+.nt { background: #fff; border: 1px solid #666; min-width: 560px; max-height: 80vh; overflow: auto; }
+.nt-head { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: #fff0c0; font-weight: bold; }
+.nt-head button { margin-left: auto; background: #fff; border: 2px outset #ddd; padding: 2px 12px; }
+.nt td.red { color: #d00; }
+
+/* 希望在庫表示：Access の並び */
+.kb2 { background: #5a5a86; }
+.kb2-top { display: flex; gap: 12px; align-items: flex-start; padding: 6px; background: #dedcc8; }
+.kb2-btns { display: flex; flex-direction: column; gap: 4px; }
+.kb2-btns .box { display: flex; gap: 4px; padding: 3px; border: 2px solid #666; }
+.kb2-btns .row { display: flex; gap: 4px; }
+.kb2-btns button { background: #fff; border: 2px outset #ddd; padding: 2px 10px; }
+.kb2-btns button.ok { color: #00c; font-weight: bold; padding: 2px 18px; }
+.kb2-btns button.on { border-style: inset; background: #ffe080; }
+.kb2-msg { flex: 1; min-height: 64px; background: #ffe0ec; border: 1px solid #888; font-size: 18px; padding: 6px; text-align: center; }
+.kb2-hq { display: grid; gap: 2px; width: 120px; }
+.kb2-hq .h { background: #800040; color: #fff; font-weight: bold; text-align: center; font-size: 12px; }
+.kb2-hq .v { background: #1a3a6a; color: #fff; text-align: right; padding: 0 4px; }
+.kb2-sum { border-collapse: collapse; font-size: 12px; }
+.kb2-sum th { background: #800040; color: #fff; padding: 0 6px; }
+.kb2-sum td { background: #1a3a6a; color: #fff; text-align: right; width: 70px; padding: 0 4px; }
+.kb2-sum td input { width: 60px; background: #1a6ab0; color: #fff; border: 0; }
+.kb2-grid td { background: #5a5a86; color: #fff; font-weight: bold; vertical-align: top; }
+.kb2-grid td.yl { color: #ffff80; }
+.kb2-grid .y, .kb2-grid th.y { color: #ffc000; }
+.kb2-grid td.small { font-size: 11px; }
+.kb2-grid .red { color: #ff6060; }
+.kb2-grid td.memo { background: #cff8ff; color: #00c; font-size: 11px; white-space: pre-line; min-width: 100px; font-weight: normal; }
+.kb2-grid td.bikou { background: #ffffa0; padding: 0; }
+.kb2-grid td.bikou textarea { width: 130px; height: 34px; background: #ffffa0; border: 0; font-size: 11px; }
+.kb2-grid tr.picked td { background: #7a7ab0; }
+.kb2-want { width: 50px; }
