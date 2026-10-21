@@ -230,6 +230,7 @@ export default function JuchuSearch() {
         <table className="grid">
           <thead>
             <tr>
+              <th>発注<br />依頼</th>
               <th>受注ID<br />販盛番号</th>
               <th>販盛売上<br />No</th>
               <th className="red">完了<br />消込</th>
@@ -258,6 +259,11 @@ export default function JuchuSearch() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.受注ID}>
+                <td className="center prt">
+                  <button title="この受注の発注書（発注依頼書）を印刷します" onClick={() => window.open(`/print/hacchu?jid=${r.受注ID}`, "_blank")}>
+                    印刷
+                  </button>
+                </td>
                 <td className="num">
                   <b>{r.受注ID}</b>
                   <br />

@@ -10,7 +10,6 @@ const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
 const 相手先商品 = t("juchu", "TM_相手先商品マスタ");
 const 受注特定項目 = t("juchu_fe", "TM_受注特定項目");
 const 宛先 = `app."発注依頼書_宛先"`;
-const 商品マスタ = t("juchu_fe", "TM_商品マスタ");
 
 /** 300 日前（Access の Date - 300） */
 function 三百日前(): string {
@@ -97,23 +96,32 @@ export function hacchuRoutes(app: FastifyInstance) {
     return r ?? { 商品名: null, 届け先: null };
   });
 
-  // 発注依頼書に載せる受注（R_発注依頼。条件にすべて合う受注）
+  // 発注依頼書に載せる受注（R_発注依頼）。受注ID を指定したとき（受注検索の「印刷」）はその受注、ほかは条件にすべて合う受注
   app.get<{ Querystring: Record<string, string> }>("/api/hacchu/report", async (req) => {
     const p = req.query;
-    const where = [`j."納品日" = $1::date`, `j."届け先コード" = $2`, `j."受注番号" = $3`, `j."商品コード" = $4`, `j."商品kg" = $5`];
-    const args: unknown[] = [p.納品日, Number(p.届け先コード), p.受注番号, Number(p.商品コード), Number(p.商品kg)];
-    if (p.受注日) {
-      args.push(p.受注日);
-      where.push(`j."受注日"::date = $6::date`);
+    let where: string[];
+    let args: unknown[];
+    if (p.jid) {
+      where = [`j."受注ID" = $1`];
+      args = [Number(p.jid)];
+    } else {
+      where = [`j."納品日" = $1::date`, `j."届け先コード" = $2`, `j."受注番号" = $3`, `j."商品コード" = $4`, `j."商品kg" = $5`];
+      args = [p.納品日, Number(p.届け先コード), p.受注番号, Number(p.商品コード), Number(p.商品kg)];
+      if (p.受注日) {
+        args.push(p.受注日);
+        where.push(`j."受注日"::date = $6::date`);
+      }
     }
     const rows = await q(
-      `SELECT j.*, m."得意先名" AS "届け先正式名", m."住所", m."電話番号" FROM ${受注} j
-       LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = j."届け先コード"
+      `SELECT j.*, m."得意先名" AS "届け先正式名", m."郵便番号", m."住所", m."電話番号", m."FAX番号",
+              (SELECT a."相手先商品コード" FROM ${相手先商品} a WHERE a."商品コード" = j."商品コード" AND a."受注元コード" = j."受注元ID" LIMIT 1) AS "GTINコード"
+       FROM ${受注} j LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = j."届け先コード"
        WHERE ${where.join(" AND ")} ORDER BY j."受注元ID", j."受注先ID"`,
       args,
     );
     const 宛先一覧 = await q(`SELECT * FROM ${宛先} ORDER BY "商品コード"`);
-    return { rows, 宛先: 宛先一覧 };
+    const [発行元] = await q(`SELECT * FROM app."発注依頼書_発行元" WHERE "番号" = 1`);
+    return { rows, 宛先: 宛先一覧, 発行元 };
   });
 
   // 発注依頼書の宛先（商品コード 0 がふだんの宛先。75・1163 などは商品ごとの宛先）
@@ -121,11 +129,21 @@ export function hacchuRoutes(app: FastifyInstance) {
   app.post<{ Body: Record<string, any> }>("/api/hacchu/atesaki", async (req) => {
     const b = req.body;
     await q(
-      `INSERT INTO ${宛先} ("商品コード", "手配依頼先", "仕入先名", "仕入先コード", "返信コメント2", "返信コメント3")
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT ("商品コード") DO UPDATE SET "手配依頼先" = $2, "仕入先名" = $3, "仕入先コード" = $4, "返信コメント2" = $5, "返信コメント3" = $6`,
-      [Number(b.商品コード), b.手配依頼先 ?? "", b.仕入先名 ?? "", b.仕入先コード ?? "", b.返信コメント2 ?? "", b.返信コメント3 ?? ""],
+      `INSERT INTO ${宛先} ("商品コード", "手配依頼先", "仕入先名", "仕入先コード", "返信コメント2", "返信コメント3", "納品指定時間")
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT ("商品コード") DO UPDATE SET "手配依頼先" = $2, "仕入先名" = $3, "仕入先コード" = $4, "返信コメント2" = $5,
+         "返信コメント3" = $6, "納品指定時間" = $7`,
+      [Number(b.商品コード), b.手配依頼先 ?? "", b.仕入先名 ?? "", b.仕入先コード ?? "", b.返信コメント2 ?? "", b.返信コメント3 ?? "", b.納品指定時間 ?? ""],
     );
+    return { ok: true };
+  });
+
+  // 発行元（自社）の名前・住所・電話
+  app.post<{ Body: Record<string, any> }>("/api/hacchu/hakkomoto", async (req) => {
+    const b = req.body;
+    await q(`UPDATE app."発注依頼書_発行元" SET "会社名" = $1, "住所" = $2, "TEL" = $3, "FAX" = $4 WHERE "番号" = 1`, [
+      b.会社名 ?? "", b.住所 ?? "", b.TEL ?? "", b.FAX ?? "",
+    ]);
     return { ok: true };
   });
 
@@ -165,47 +183,5 @@ export function hacchuRoutes(app: FastifyInstance) {
       [id, ...v, 日本の今().日時],
     );
     return { ok: true };
-  });
-
-  // ---------------- 伝票発行（F_伝票発行 → R_和弘食品専用伝票） ----------------
-
-  // 届け先（和弘食品の受注の受注先。電話番号で選ぶ）と商品の選択肢
-  // 商品は、届け先を選ぶ前は Access と同じく得意先短縮コード 1 のもの、選んだあとはその届け先のもの（相手先商品マスタ）
-  app.get<{ Querystring: { todoke?: string } }>("/api/denpyo/choices", async (req) => {
-    const 届け先 = await q(
-      `SELECT m."電話番号", m."得意先名", m."短縮コード" FROM ${受注} j LEFT JOIN ${得意先マスタ} m ON j."受注先ID" = m."短縮コード"
-       WHERE j."受注元ID" = 1237 GROUP BY m."電話番号", m."得意先名", m."短縮コード"`,
-    );
-    const 商品 = await q(
-      `SELECT "相手先商品コード", "商品コード", "相手先商品名" FROM ${相手先商品} WHERE "得意先短縮コード" = $1
-       GROUP BY "相手先商品コード", "商品コード", "相手先商品名" ORDER BY "商品コード"`,
-      [req.query.todoke ? Number(req.query.todoke) : 1],
-    );
-    return { 届け先, 商品 };
-  });
-
-  // 受注番号を入れたときの、商品名・届け先・商品kg（Access の 受注番号_AfterUpdate）
-  app.get<{ Querystring: { shohin: string; todoke: string; bango: string } }>("/api/denpyo/lookup", async (req) => {
-    const [r] = await q(
-      `SELECT "商品名", "届け先", "商品kg" FROM ${受注} WHERE "商品コード" = $1 AND "届け先コード" = $2 AND "受注番号" = $3
-       ORDER BY "受注ID" LIMIT 1`,
-      [Number(req.query.shohin || 0), Number(req.query.todoke || 0), req.query.bango],
-    );
-    return r ?? { 商品名: null, 届け先: null, 商品kg: null };
-  });
-
-  // 和弘食品専用伝票に載せる受注（受注元が和弘食品 1237・1088 で、条件にすべて合うもの）
-  app.get<{ Querystring: Record<string, string> }>("/api/denpyo/report", async (req) => {
-    const p = req.query;
-    return q(
-      `SELECT j.*, s."規格kg", s."規格枚数", COALESCE(s."規格kg"::text, '') || 'kg×' || COALESCE(s."規格枚数"::text, '') AS "規格表示",
-              m."得意先名" AS "届け先正式名", m."住所", m."電話番号"
-       FROM ${受注} j LEFT JOIN ${商品マスタ} s ON j."商品コード" = s."商品コード"
-       LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = j."届け先コード"
-       WHERE j."受注元ID" IN (1237, 1088) AND j."受注日"::date = $1::date AND j."納品日"::date = $2::date AND j."受注先ID" = $3
-         AND j."受注番号" = $4 AND j."商品コード" = $5 AND j."ケース" = $6
-       ORDER BY j."受注ID"`,
-      [p.受注日, p.納品日, Number(p.受注先ID), p.受注番号, Number(p.商品コード), Number(p.ケース)],
-    );
   });
 }

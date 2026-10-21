@@ -3,7 +3,7 @@ import { api } from "../api";
 import type { User } from "../main";
 
 // 受注管理のメニュー（Access の FM_メインメニュー）。まだ作っていない画面は「準備中」を開く。
-// 受注日報・売上日報・日本食研web確認表は、社内で「移さない」と決めたので載せない（09_必要な機能と帳票.md）。
+// 受注日報・売上日報・日本食研web確認表・伝票発行は、社内で「移さない」と決めたので載せない（09_必要な機能と帳票.md。伝票発行は受注検索の「印刷」で代わりにする）。
 const items: { label: string; to: string }[] = [
   { label: "受注登録", to: "/juchu/select" },
   { label: "受注検索", to: "/juchu/search" },
@@ -12,7 +12,6 @@ const items: { label: string; to: string }[] = [
   { label: "単価チェック", to: "/form/F_販盛単価確認" },
   { label: "SB受注取り込み", to: "/form/F_エスビー受注インポート" },
   { label: "発注依頼", to: "/form/F_受注元選択" },
-  { label: "伝票発行", to: "/form/F_伝票発行" },
   { label: "特定商品表示", to: "/form/FM_特定商品表示" },
 ];
 

@@ -16,8 +16,6 @@ import HacchuMoto from "./pages/HacchuMoto";
 import HacchuForm from "./pages/HacchuForm";
 import HacchuPrint from "./pages/HacchuPrint";
 import Tokutei from "./pages/Tokutei";
-import Denpyo from "./pages/Denpyo";
-import DenpyoPrint from "./pages/DenpyoPrint";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -45,8 +43,6 @@ function App() {
       <Route path="/hacchu/:moto" element={<HacchuForm />} />
       <Route path="/print/hacchu" element={<HacchuPrint />} />
       <Route path="/form/FM_特定商品表示" element={<Tokutei />} />
-      <Route path="/form/F_伝票発行" element={<Denpyo />} />
-      <Route path="/print/denpyo" element={<DenpyoPrint />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

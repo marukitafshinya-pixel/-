@@ -50,8 +50,19 @@ CREATE TABLE IF NOT EXISTS app."発注依頼書_宛先" (
   "返信コメント2" TEXT NOT NULL DEFAULT '',
   "返信コメント3" TEXT NOT NULL DEFAULT ''
 );
-INSERT INTO app."発注依頼書_宛先" VALUES
-  (0, '大阪丸北商事㈱', '大阪丸北商事株式会社　様', '1000710', '尚、出庫手配の返信をFAXお願いします。', ''),
-  (75, '株式会社　綾・野菜加工館 御中', '', '', '※確認の為FAXにて返信お願いします。', '  尚、運送便決まり次第、運送の送り状を返信お願いします。'),
-  (1163, 'ハーヴィーインターナショナル 御中', '', '', '※確認の為FAXにて返信お願いします。', '  尚、運送便決まり次第、運送の送り状を返信お願いします。')
+ALTER TABLE app."発注依頼書_宛先" ADD COLUMN IF NOT EXISTS "納品指定時間" TEXT NOT NULL DEFAULT '';
+INSERT INTO app."発注依頼書_宛先" ("商品コード", "手配依頼先", "仕入先名", "仕入先コード", "返信コメント2", "返信コメント3", "納品指定時間") VALUES
+  (0, '大阪丸北商事㈱', '大阪丸北商事株式会社　様', '1000710', '尚、出庫手配の返信をFAXお願いします。', '', 'AM必着'),
+  (75, '株式会社　綾・野菜加工館 御中', '', '', '※確認の為FAXにて返信お願いします。', '  尚、運送便決まり次第、運送の送り状を返信お願いします。', ''),
+  (1163, 'ハーヴィーインターナショナル 御中', '', '', '※確認の為FAXにて返信お願いします。', '  尚、運送便決まり次第、運送の送り状を返信お願いします。', '')
 ON CONFLICT DO NOTHING;
+
+-- 発注依頼書の下に出す、発行元（自社）の名前・住所・電話。画面の「宛先の設定」で入れる（ここには書かない）。
+CREATE TABLE IF NOT EXISTS app."発注依頼書_発行元" (
+  "番号"   INTEGER PRIMARY KEY DEFAULT 1 CHECK ("番号" = 1),
+  "会社名" TEXT NOT NULL DEFAULT '',
+  "住所"   TEXT NOT NULL DEFAULT '',
+  "TEL"    TEXT NOT NULL DEFAULT '',
+  "FAX"    TEXT NOT NULL DEFAULT ''
+);
+INSERT INTO app."発注依頼書_発行元" ("番号") VALUES (1) ON CONFLICT DO NOTHING;
