@@ -193,7 +193,7 @@ export default function WsMain() {
           </div>
           <div className="ws-row">
             <button className="small" disabled title="在庫の割り当て（③で作ります）">検索実行</button>
-            <button className="small" disabled title="受注読込・インポート（②で作ります）">インポート処理</button>
+            <button className="small" disabled={!輸送ID} onClick={() => nav(`/ws/import?id=${輸送ID}`)}>インポート処理</button>
           </div>
           {sel("運賃計算区分", "運賃区分")}
         </div>

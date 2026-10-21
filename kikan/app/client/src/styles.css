@@ -470,3 +470,28 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .td-body label { display: flex; flex-direction: column; font-size: 12px; }
 .td-btns { display: flex; gap: 8px; justify-content: flex-end; padding: 8px; }
 .td-btns button { background: #f0f0f0; border: 2px outset #ddd; padding: 3px 14px; }
+/* インポート処理 */
+.wsi { background: #fff; min-height: 100vh; }
+.wsi-head { display: flex; gap: 30px; align-items: flex-start; padding: 6px 10px; }
+.wsi-head table { border-collapse: collapse; }
+.wsi-head th { background: #333399; color: #ffff66; font-weight: normal; padding: 2px 40px; }
+.wsi-head td { background: #e8e8f0; padding: 3px 14px; font-size: 14px; }
+.wsi-head > button { background: #e8eef8; border: 1px solid #99a; padding: 6px 24px; border-radius: 3px; }
+.wsi-msg { margin: 6px 10px; background: #ffe0ec; border: 1px solid #888; font-size: 20px; padding: 4px 70px; width: 520px; }
+.wsi-group { margin: 6px 100px; width: 400px; }
+.wsi-group .box { background: #777; padding: 6px; display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.wsi-group .box button { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 8px; font-size: 15px; font-weight: bold; }
+.wsi-group .b1 { color: #6060c0; }
+.wsi-group .b2 { color: #00c; }
+.wsi-group .b3 { color: #e04040; }
+.wsi-group .b4 { color: #8a7a20; }
+.wsi.sel { background: #a6d4e2; }
+.wsi-bar { display: flex; gap: 6px; align-items: center; padding: 6px; background: #c8c8c8; }
+.wsi-bar .lbl { background: #800080; color: #fff; font-weight: bold; padding: 2px 8px; }
+.wsi-bar .wsi-date { width: 110px; }
+.wsi-bar button { background: #fff; border: 2px outset #ddd; padding: 2px 12px; }
+.wsi-bar button.go { color: #00c; font-weight: bold; }
+.wsi-bar .note { font-size: 12px; }
+.wsi-err { padding: 8px; color: #900; }
+.ws-grid tr.picked td { background: #ffffc0; }
+.ws-grid td.note { font-size: 11px; max-width: 200px; }

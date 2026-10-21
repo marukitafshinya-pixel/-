@@ -422,4 +422,98 @@ export function wsRoutes(app: FastifyInstance) {
       return { 消した: true };
     });
   });
+
+  // ---------------- インポート処理（倉庫管理・転売品管理・原料管理から） ----------------
+  // Access の FSD_出庫インポート選択・FSD_転売インポート選択・FSD_原料インポート選択（CC_出荷to出庫）
+
+  // 取り込み元の一覧（出荷日で）。どの便にも取り込んでいないかの目安として、WorkStation にある件数も出す
+  app.get<{ Params: { src: string }; Querystring: { date: string; soko?: string } }>("/api/ws/import/:src", async (req, reply) => {
+    const src = 取り込み元[req.params.src];
+    if (!src) return reply.code(404).send({ error: "取り込み元がありません" });
+    if (!(await 表がある(src.表))) return reply.code(400).send({ error: `${src.名前}のデータがまだデータベースにありません。` });
+    const args: unknown[] = [req.query.date, src.場所ID];
+    let where = `s."出荷日" = $1::date`;
+    if (req.query.soko) {
+      args.push(Number(req.query.soko));
+      where += ` AND s."倉庫ID" = $3`;
+    }
+    return q(
+      `SELECT s."出庫ID", s."輸送ID", s."商品積込順", s."届け先コード", s."届け先", s."倉庫ID", s."倉庫名", s."商品コード", s."商品名",
+              s."ケース", s."商品kg", s."製造日", s."賞味期限", s."納品日", s."タグ", s."備考",
+              (SELECT COUNT(*)::int FROM ${出荷} w WHERE w."インポート場所ID" = $2 AND w."インポート場所出庫ID" = s."出庫ID") AS "取込済"
+       FROM ${src.表} s WHERE ${where}
+       ORDER BY s."輸送ID", s."商品積込順", s."届け先コード", s."倉庫ID", s."商品コード", s."賞味期限", s."タグ"`,
+      args,
+    );
+  });
+
+  // 選んだ行を、この便の出荷に入れる（Access の 読込）
+  app.post<{ Params: { src: string }; Body: { 輸送ID: number; 出庫ID: number[] } }>("/api/ws/import/:src", async (req, reply) => {
+    const src = 取り込み元[req.params.src];
+    if (!src) return reply.code(404).send({ error: "取り込み元がありません" });
+    if (!(await 表がある(src.表))) return reply.code(400).send({ error: `${src.名前}のデータがまだデータベースにありません。` });
+    const 輸送ID = Number(req.body.輸送ID);
+    return 一連で(async (c) => {
+      const plan = (await c.query(`SELECT "出荷計画日" FROM ${輸送計画} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
+      if (!plan) return reply.code(404).send({ error: "この便はありません" });
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_出荷.出庫ID'))`);
+      let next = Number((await c.query(`SELECT COALESCE(MAX("出庫ID"), 0) + 1 AS n FROM ${出荷}`)).rows[0].n);
+      const rows = (await c.query(`SELECT * FROM ${src.表} WHERE "出庫ID" = ANY($1::int[]) ORDER BY "輸送ID", "商品積込順", "出庫ID"`, [req.body.出庫ID])).rows;
+      for (const r of rows) {
+        const v: Record<string, unknown> = { ...出荷の既定値, 出庫ID: next++, 輸送ID, 出荷日: plan.出荷計画日 };
+        // タグ2 は倉庫管理からのときだけ写す（転売品管理・原料管理は Access でも写していない）
+        for (const k of 写す項目) if (k in r && (k !== "タグ2" || src.場所ID === 2)) v[k] = r[k];
+        v.倉庫受注ID = r.受注ID ?? null;
+        v.インポート場所ID = src.場所ID;
+        v.インポート場所出庫ID = r.出庫ID;
+        if (src.場所ID === 2) v.認識ID = `S_${r.在庫ID ?? ""}`;
+        if (src.場所ID === 4) v.認識ID = `G_${r.在庫ID ?? ""}`;
+        if (src.場所ID === 8) {
+          v.認識ID = r.認識ID ?? null;
+          v.他工場伝票No = r.他工場伝票No ?? null;
+        }
+        // 倉庫管理からのときだけ、パレット枚数を出す（ケース ÷ 商品マスタのパレット単位1）
+        if (src.場所ID === 2) {
+          const p1 = Number((await c.query(`SELECT "パレット単位1" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [r.商品コード ?? 0])).rows[0]?.パレット単位1 ?? 0);
+          v.パレット使用枚数 = p1 ? cint(Number(r.ケース ?? 0) / p1) : 0;
+        }
+        v.運賃振分区分名 = (await c.query(`SELECT "運賃振分区分名" FROM ${運賃振分区分マスタ} WHERE "運賃振分区分" = $1`, [r.運賃振分区分 ?? 0])).rows[0]?.運賃振分区分名 ?? null;
+        const k = Object.keys(v);
+        await c.query(`INSERT INTO ${出荷} (${k.map((x) => `"${x}"`).join(", ")}) VALUES (${k.map((_, i) => `$${i + 1}`).join(", ")})`, k.map((x) => v[x]));
+        // 取り込み元に印を付ける（転売品管理は丸北輸送ID、原料管理はインポート先出庫ID）
+        if (src.場所ID === 8) await c.query(`UPDATE ${src.表} SET "丸北輸送ID" = $2 WHERE "出庫ID" = $1`, [r.出庫ID, 輸送ID]);
+        if (src.場所ID === 4) await c.query(`UPDATE ${src.表} SET "インポート先出庫ID" = $2 WHERE "出庫ID" = $1`, [r.出庫ID, v.出庫ID]);
+      }
+      return { 件数: rows.length };
+    });
+  });
+}
+
+/** 取り込み元（インポート場所ID：2＝倉庫管理、8＝転売品管理、4＝原料管理） */
+const 取り込み元: Record<string, { 表: string; 場所ID: number; 名前: string }> = {
+  soko: { 表: t("soko", "TD_出荷"), 場所ID: 2, 名前: "倉庫管理" },
+  tenbai: { 表: t("tenbai", "TD_出荷"), 場所ID: 8, 名前: "転売品管理" },
+  genryo: { 表: t("genryo", "TD_出荷"), 場所ID: 4, 名前: "原料管理" },
+};
+
+/** 取り込むときに元から写す項目（Access の CC_出荷to出庫） */
+const 写す項目 = [
+  "商品積込順", "納品日", "商品コード", "商品名", "規格", "入数", "ケース", "商品kg", "製造日", "入庫前名義ID", "入庫後名義ID", "入庫No", "賞味期限",
+  "倉庫ID", "倉庫名", "届け先コード", "届け先", "手配元ID", "手配帳合ID", "手配元", "手配帳合", "取引元ID", "取引帳合ID", "取引元", "取引帳合",
+  "ユーザー伝票No", "サービス区分", "タグ", "タグ2", "製造工場ID", "製造工場名", "社内連絡", "備考", "商品状態隠語", "商品区分", "運賃請求ID", "運賃振分区分",
+];
+
+/** WorkStation の出荷に新しく入れるときの初めの値（Access の表の既定値。今のデータで、取り込んだ行がみなこの値） */
+const 出荷の既定値: Record<string, unknown> = {
+  入庫ID: 0, 在庫ID: 0, サンプル区分: false, 出荷区分: false, chk: false, 計画変更chk: false, 請求先コード: 0, 個別運賃: 0, 地区コード: 0,
+  買取単価コード: 0, 買取chk: false, 買取金額: 0, パレット枚数: 0, 入庫フラグ: false, 完了フラグ: false, 抽出区分: false, 受注確認: false,
+  出荷元数: 0, 破損個数: 0, 受注グループ: 0, 輸送履歴読込chk: false, ユーザーchk: false, 帳票グループ化: 0, 積込確認: false, 破損出庫ID: 0,
+  商品区分: 0, 出荷元kg: 0, 訂正kg: 0, 入庫備考: false, 商品輸送区分: 629, 本社受注: false, 特別検査区分: false, Newクロップ区分: false,
+  取扱い区分: false, 検体区分: false, 指定最終届け先コード: 0, 受注元ID: 0, 蔵前区分: false, パレット区分: 0, 混載区分: 0, 混載No: 0,
+  パレット積載数: 0, 空き予定パレット数: 0, パレット積載元数: 0, OneDriveChk: false, 売上科目コード: 0, パレット使用枚数: 0,
+};
+
+async function 表がある(qualified: string): Promise<boolean> {
+  const [r] = await q<{ r: string | null }>(`SELECT to_regclass($1) AS r`, [qualified]);
+  return r.r !== null;
 }
