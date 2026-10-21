@@ -321,3 +321,20 @@ input.kyotsu:focus { background: #ffd98a; }
 input.kyotsu[readonly] { background: #f3e2c0; }
 .search .shohin-combo { width: 90px; } .search .shohin-combo .combo-list { width: 320px; }
 .jf-row.big input.kyotsu, .jf-row.big input.kyotsu[readonly] { background: #ffe8b8; }
+/* 共通の探す画面（FSD_得意先選択・FSD_商品名選択） */
+.find.big { width: 860px; max-width: 96vw; }
+.find-head .cap { font-weight: normal; font-size: 12px; margin-right: auto; }
+.find-head button { background: #f0f0f0; border: 2px outset #ddd; padding: 2px 12px; }
+.kana { display: flex; gap: 2px; padding: 4px 6px; background: #ece9d8; align-items: flex-start; }
+.kana button { width: 30px; height: 24px; background: #fff; border: 1px solid #999; font-size: 13px; padding: 0; }
+.kana button.on { color: #f00; font-weight: bold; border: 2px solid #f00; }
+.kana .kana-col { display: flex; flex-direction: column; gap: 1px; }
+.kana .kana-col .one { height: 20px; font-size: 12px; background: #f6f6f6; }
+.kana .all { width: 56px; margin-left: auto; }
+.find-filters { display: flex; gap: 6px; padding: 4px 6px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #ccc; }
+.find-filters input:not([type=checkbox]) { width: 180px; }
+.find-list thead th { position: sticky; top: 0; background: #993333; color: #fff; font-weight: normal; padding: 2px 6px; cursor: pointer; }
+.find-list thead th.on { background: #f00; }
+.find-list tr.cur td { background: #ffe8b8; }
+.find-list td.kn { color: #666; width: 60px; }
+.find-list .empty { padding: 8px; color: #777; }

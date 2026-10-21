@@ -145,34 +145,190 @@ export function Combo(props: {
   );
 }
 
-/** 名前から探す画面（Access の FSD_得意先選択・FSD_商品名選択） */
+/** カナのボタン（Access の探す画面と同じ。行ごとのまとめと、2 文字目からの 1 文字ずつ） */
+const カナ行: [string, string, string[]][] = [
+  ["ｱ", "ｱ-ｵ", ["ｲ", "ｳ", "ｴ", "ｵ"]],
+  ["ｶ", "ｶ-ｺ", ["ｷ", "ｸ", "ｹ", "ｺ"]],
+  ["ｻ", "ｻ-ｿ", ["ｼ", "ｽ", "ｾ", "ｿ"]],
+  ["ﾀ", "ﾀ-ﾄ", ["ﾁ", "ﾂ", "ﾃ", "ﾄ"]],
+  ["ﾅ", "ﾅ-ﾉ", ["ﾆ", "ﾇ", "ﾈ", "ﾉ"]],
+  ["ﾊ", "ﾊ-ﾎ", ["ﾋ", "ﾌ", "ﾍ", "ﾎ"]],
+  ["ﾏ", "ﾏ-ﾓ", ["ﾐ", "ﾑ", "ﾒ", "ﾓ"]],
+  ["ﾔ", "ﾔ-ﾖ", ["ﾕ", "ﾖ"]],
+  ["ﾗ", "ﾗ-ﾛ", ["ﾘ", "ﾙ", "ﾚ", "ﾛ"]],
+  ["ﾜ", "ﾜ-ﾝ", ["ﾝ"]],
+];
+
+type 一覧 = { id: number | string; name: string }[];
+
+/**
+ * 共通の探す画面（Access の FSD_得意先選択・FSD_商品名選択）。
+ * カナのボタン・文字・分類などで絞り、行をダブルクリック（または選んで［選択］）するとそのコードを返す。
+ */
 export function FindDialog(props: { kind: "tokui" | "shohin"; onPick: (code: number) => void; onClose: () => void }) {
+  const 商品 = props.kind === "shohin";
+  const [kana, setKana] = useState("ｱ-ﾝ"); // Access と同じく、開いたときは「全」（ｱ-ﾝ）
   const [w, setW] = useState("");
-  const [rows, setRows] = useState<{ コード: number; 名前: string; 補足: string }[]>([]);
+  const [col, setCol] = useState("商品名");
+  const [sel, setSel] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState(商品 ? "商品コード" : "ｶﾅ分類");
+  const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [cur, setCur] = useState<number | null>(null);
+  const [lists, setLists] = useState<Record<string, 一覧>>({});
+  const [pref, setPref] = useState<一覧>([]);
+
   useEffect(() => {
-    const h = setTimeout(() => api.get<any[]>("/api/juchu/form/find", { kind: props.kind, w }).then(setRows), 200);
+    api.get<Record<string, 一覧>>("/api/find/lists").then(setLists);
+  }, []);
+  useEffect(() => {
+    const h = setTimeout(
+      () =>
+        api
+          .get<any[]>(商品 ? "/api/find/shohin" : "/api/find/tokui", { kana, w, col, sort, ...sel })
+          .then((r) => {
+            setRows(r);
+            setCur(r[0]?.コード ?? null);
+          }),
+      200,
+    );
     return () => clearTimeout(h);
-  }, [w, props.kind]);
+  }, [kana, w, col, sort, sel, 商品]);
+
+  const 全部 = () => {
+    setKana("");
+    setW("");
+    setSel({});
+    setPref([]);
+  };
+  const 選ぶ = (k: string, v: string) => setSel((o) => ({ ...o, [k]: v }));
+  const head = 商品
+    ? ([["ｶﾅ分類", "ｶﾅ"], ["商品コード", "コード"], ["本社コード", "本社"], ["商品名", "商品名"], ["規格", "規格"], ["分類名", "分類"]] as const)
+    : ([["ｶﾅ分類", "ｶﾅ"], ["短縮コード", "コード"], ["短縮名", "短縮名"], ["得意先名", "得意先名"], ["住所", "住所"]] as const);
+  const 値 = (r: Record<string, any>, k: string) => (k === "商品コード" || k === "短縮コード" ? r.コード : r[k]);
+  const pick = (code: number | null) => code !== null && props.onPick(code);
+
   return (
     <div className="modal" onClick={props.onClose}>
-      <div className="find" onClick={(e) => e.stopPropagation()}>
+      <div className="find big" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === "Escape" && props.onClose()}>
         <div className="find-head">
-          {props.kind === "shohin" ? "商品名で探す" : "得意先を探す"}
-          <input autoFocus value={w} onChange={(e) => setW(e.target.value)} placeholder="名前の一部かコード" />
-          <button onClick={props.onClose}>やめる</button>
+          {商品 ? "商品名選択" : "得意先選択"}
+          <span className="cap">{kana ? `［${kana}］` : "すべて"}{w ? `「${w}」` : ""}</span>
+          <button onClick={() => pick(cur)} disabled={cur === null}>
+            選択
+          </button>
+          <button onClick={props.onClose}>キャンセル</button>
+        </div>
+        <div className="kana">
+          <button className={kana === "ｱ-ﾝ" ? "on" : ""} onClick={() => setKana("ｱ-ﾝ")}>
+            全
+          </button>
+          {カナ行.map(([label, range, singles]) => (
+            <div key={label} className="kana-col">
+              <button className={kana === range ? "on" : ""} onClick={() => setKana(range)}>
+                {label}
+              </button>
+              {singles.map((c) => (
+                <button key={c} className={"one" + (kana === c ? " on" : "")} onClick={() => setKana(c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          ))}
+          <button className="all" onClick={全部}>
+            すべて
+          </button>
+        </div>
+        <div className="find-filters">
+          {商品 ? (
+            <>
+              <select value={col} onChange={(e) => setCol(e.target.value)}>
+                {["商品名", "短縮名", "規格", "取引先名", "本社コード", "グループ商品コード"].map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+              <input autoFocus value={w} onChange={(e) => setW(e.target.value)} placeholder="で探す（文字の一部）" />
+              <select value={sel.bunrui ?? ""} onChange={(e) => 選ぶ("bunrui", e.target.value)}>
+                <option value="">分類</option>
+                {(lists.分類 ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <select value={sel.genryo ?? ""} onChange={(e) => 選ぶ("genryo", e.target.value)}>
+                <option value="">原料</option>
+                {(lists.原料 ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <label>
+                <input type="checkbox" checked={sel.old === "1"} onChange={(e) => 選ぶ("old", e.target.checked ? "1" : "")} />
+                旧コード
+              </label>
+            </>
+          ) : (
+            <>
+              <input autoFocus value={w} onChange={(e) => setW(e.target.value)} placeholder="得意先名の一部かコード" />
+              <select
+                value={sel.chiku ?? ""}
+                onChange={async (e) => {
+                  setSel((o) => ({ ...o, chiku: e.target.value, pref: "" }));
+                  setPref(e.target.value ? await api.get<一覧>("/api/find/pref", { chiku: e.target.value }) : []);
+                }}
+              >
+                <option value="">地区</option>
+                {(lists.地区 ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <select value={sel.pref ?? ""} onChange={(e) => 選ぶ("pref", e.target.value)} disabled={pref.length === 0}>
+                <option value="">都道府県</option>
+                {pref.map((o) => (
+                  <option key={o.name}>{o.name}</option>
+                ))}
+              </select>
+              <select value={sel.group ?? ""} onChange={(e) => 選ぶ("group", e.target.value)}>
+                <option value="">グループ</option>
+                {(lists.グループ ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>{o.name ?? o.id}</option>
+                ))}
+              </select>
+              <select value={sel.group3 ?? ""} onChange={(e) => 選ぶ("group3", e.target.value)}>
+                <option value="">グループ3</option>
+                {(lists.グループマスタ ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <select value={sel.hokan ?? ""} onChange={(e) => 選ぶ("hokan", e.target.value)}>
+                <option value="">保管：全部</option>
+                <option value="2">倉庫（出荷元）</option>
+                <option value="3">倉庫（出荷元でない）</option>
+              </select>
+            </>
+          )}
         </div>
         <div className="find-list">
           <table>
+            <thead>
+              <tr>
+                {head.map(([k, label]) => (
+                  <th key={k} className={sort === k ? "on" : ""} onClick={() => setSort(k)} title="押すとこの順に並べます">
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.コード} onClick={() => props.onPick(r.コード)}>
-                  <td className="num">{r.コード}</td>
-                  <td>{r.名前}</td>
-                  <td className="sub">{r.補足}</td>
+                <tr key={r.コード} className={cur === r.コード ? "cur" : ""} onClick={() => setCur(r.コード)} onDoubleClick={() => pick(r.コード)}>
+                  {head.map(([k]) => (
+                    <td key={k} className={k === "商品コード" || k === "短縮コード" ? "num" : k === "ｶﾅ分類" ? "kn" : ""}>
+                      {値(r, k)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
+          {rows.length === 0 && <p className="empty">当てはまるものがありません</p>}
         </div>
       </div>
     </div>
