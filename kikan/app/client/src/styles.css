@@ -893,3 +893,96 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .sd-grid input { width: 100%; box-sizing: border-box; }
 .sd-grid td:nth-child(4) { min-width: 220px; }
 .sd-note { font-size: 12px; padding: 6px 10px; max-width: 760px; }
+
+/* 積込確認書一式（横の A4 は .land） */
+.pv-page.land { width: 297mm; min-height: 210mm; page: land; }
+@page land { size: A4 landscape; margin: 0; }
+.pv-page .c { text-align: center; }
+.pv-page .r { text-align: right; }
+.pv-page .b { font-weight: bold; }
+.pv-page .kubun { font-size: 12pt; }
+/* 積込み前点検表 */
+.tk { font-size: 8pt; }
+.tk-head { display: flex; align-items: flex-end; }
+.tk-hl { width: 55mm; font-size: 7.5pt; }
+.tk-title { flex: 1; text-align: center; font-size: 13pt; }
+.tk-sha { width: 40mm; font-size: 8pt; }
+.tk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.tk-cap { font-size: 7pt; margin-top: 3mm; border-bottom: 1px solid #000; }
+.tk-t { width: 100%; border: 1px solid #000; }
+.tk-t th, .tk-t td { border: 1px solid #000; height: 6.5mm; padding: 0 1.5mm; font-weight: normal; font-size: 7.5pt; text-align: left; }
+.tk-t th { width: 42%; }
+.tk-t th.red { color: #e00000; }
+.tk-t th.small { font-size: 6pt; }
+.tk-t td.v { font-size: 9pt; }
+.tk-t td.big { font-size: 10pt; }
+.tk-t td.c { text-align: center; }
+.tk-t td.r { text-align: right; }
+.tk-t.chk td.box { width: 7mm; }
+.tk-t.chk td.slash { width: 7mm; background: linear-gradient(to top right, transparent 49%, #000 50%, transparent 51%); }
+.tk-t td.biko { height: 40mm; vertical-align: top; text-align: center; }
+.tk-sec { text-align: center; font-size: 10pt; margin-top: 3mm; }
+.tk-helmet { font-size: 10pt; margin: 1mm 0 1mm 4mm; position: relative; }
+.tk-helmet span { position: absolute; left: 82mm; top: -3mm; color: #e00000; font-size: 5.5pt; text-align: center; }
+.tk-note { font-size: 7.5pt; margin: 1mm 0; }
+.tk-note.red { color: #e00000; }
+.tk-foot { font-size: 7.5pt; margin-top: 1mm; }
+/* 積込み個数確認書 */
+.kk-head { display: flex; align-items: flex-end; }
+.kk-head .date { width: 70mm; font-family: "MS PMincho", serif; font-size: 12pt; }
+.kk-head .title { flex: 1; text-align: center; font-family: "MS PMincho", serif; font-size: 20pt; }
+.kk-head .time { width: 45mm; font-size: 7pt; text-align: right; align-self: flex-start; }
+.kk-sub { display: flex; justify-content: space-between; margin-top: 1mm; }
+.kk-sub .jikan { font-size: 10pt; font-weight: bold; margin-left: 5mm; }
+.kk-sub .bin { font-size: 13pt; font-weight: bold; margin: 2mm 0 0 4mm; }
+.kk-notes { border: 1px solid #000; border-radius: 3mm; padding: 1mm 4mm; font-size: 8pt; margin-right: 15mm; }
+.kk-sign { display: flex; justify-content: space-between; margin: 2mm 3mm 2mm 4mm; }
+.kk-sign span { font-size: 11pt; font-weight: bold; border-bottom: 1px solid #000; width: 110mm; }
+.kk-sign span + span { width: 115mm; text-align: center; }
+.kk-grid { width: 100%; }
+.kk-grid th { border: 1px solid #000; font-size: 9pt; font-weight: normal; }
+.kk-grid td { border: 1px solid #000; height: 7.5mm; font-size: 8.5pt; padding: 0 1mm; }
+.kk-grid td.todoke { font-size: 7pt; font-weight: bold; text-align: center; }
+.kk-grid td.name { font-weight: bold; }
+.kk-chui { margin-top: 2mm; font-size: 9pt; font-weight: bold; }
+.kk-foot { position: absolute; bottom: 9mm; left: 9mm; right: 9mm; display: flex; justify-content: space-between; font-weight: bold; font-size: 10pt; }
+.kk-foot table td { border: 1px solid #000; font-size: 8.5pt; font-weight: normal; padding: 0 3mm; }
+/* 集荷パレットチェックリスト */
+.ck-head { display: flex; align-items: flex-end; }
+.ck-head .title { flex: 1; text-align: center; font-size: 15pt; font-weight: bold; padding-left: 40mm; }
+.ck-head .time { width: 40mm; font-size: 7pt; text-align: right; }
+.ck-sub { display: flex; gap: 4mm; align-items: flex-start; }
+.ck-sub table { margin-left: 2mm; }
+.ck-sub th, .ck-sub td { border: 1px solid #000; width: 34mm; text-align: center; font-weight: normal; font-size: 10pt; height: 5.5mm; }
+.ck-sub .notes { font-size: 7.5pt; }
+.ck-sub .notes div { margin-bottom: 2mm; }
+.ck-block { margin-top: 2.5mm; }
+.ck-block .name { border: 1px solid #000; border-bottom: none; width: 95mm; margin-left: 6mm; padding: 0 1mm; font-size: 10pt; }
+.ck-block table { width: 100%; }
+.ck-block th, .ck-block td { border: 1px solid #000; font-weight: normal; font-size: 10pt; }
+.ck-block td { height: 9mm; }
+.ck-block th:first-child, .ck-block td:first-child { width: 6mm; }
+.ck-block td.box { width: 12mm; }
+/* 荷台積載イメージ図 */
+.sk-head { display: flex; align-items: flex-start; gap: 6mm; }
+.sk-head .bin { font-size: 9pt; width: 45mm; }
+.sk-head .bin .big { font-size: 11pt; margin-top: 1mm; }
+.sk-head .vol { color: #777; font-size: 10pt; margin-top: 4mm; width: 30mm; }
+.sk-head .title { font-size: 13pt; margin-top: 3mm; }
+.sk-head .len { margin-top: 3mm; text-align: center; font-size: 10pt; }
+.sk-head .len .plan { border-bottom: 1px solid #000; }
+.sk-head .len .base { color: #777; }
+.sk-head .rest { margin-top: 6mm; font-size: 10pt; }
+.sk-head .red { color: #e00000; }
+.sk-fb { display: flex; justify-content: space-between; width: 270mm; margin: 2mm 0 1mm 4mm; font-size: 13pt; }
+.sk-fb span { background: #eee; padding: 0 2mm; }
+.sk-area { position: relative; margin-left: 2mm; border-top: 2px solid #555; }
+.sk-over { position: absolute; left: 0; top: 0; background: #f0505f; }
+.sk-box { position: absolute; left: 0; top: 0; background: #f2f2f2; border-right: 4px solid #333; box-sizing: border-box; }
+.sk-line { position: absolute; left: 0; right: 0; border-top: 1px dotted #999; }
+.sk-line span { position: absolute; right: 2cm; top: -3.5mm; font-size: 6pt; color: #777; }
+.sk-name { position: absolute; top: 0; border-left: 1px solid #888; font-size: 8pt; padding-left: 0.5mm; box-sizing: border-box; overflow: hidden; }
+.sk-todoke { position: absolute; top: 0; border-left: 2px solid #000; }
+.sk-bar { position: absolute; bottom: 0; background: #fff; border: 1px solid #000; box-sizing: border-box; font-size: 7pt; text-align: center; line-height: 1.4; overflow: hidden; }
+.sk-no { position: relative; height: 12mm; margin-left: 2mm; }
+.sk-no div { position: absolute; top: 0.5mm; font-size: 6pt; color: #555; line-height: 1.3; padding-left: 1mm; }

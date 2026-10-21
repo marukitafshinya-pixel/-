@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog } from "../formParts";
-import { 帳票印刷 } from "./Chohyo";
+import { 帳票印刷, 積込確認書印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -29,7 +29,6 @@ const 印 = [
   { k: "送品案内書確認chk", name: "送品案内書\nチェック" },
   { k: "送品案内送付chk", name: "送品案内書\n印刷済み" },
 ];
-const まだ = () => alert("積込確認書は、これから作ります。");
 // 帳票の選び方ごとの帳票（Access の cmd表示_Click）
 const 帳票の種類: Record<number, string> = { 1: "nyuko", 2: "tsuchi", 3: "sohin_reizo", 4: "sohin_user", 5: "sohin_muji" };
 
@@ -51,6 +50,7 @@ export default function WsHoukoku() {
   const [備考, set備考] = useState("");
   const [印刷, set印刷] = useState<{ pages: Rec[]; 名前: string } | null>(null);
   const [差出人, set差出人] = useState<Rec[] | null>(null);
+  const [積込, set積込] = useState<Rec | null>(null);
 
   // 開いたとき：表を作り直す
   useEffect(() => {
@@ -105,6 +105,16 @@ export default function WsHoukoku() {
     }
   }
 
+  // 積込確認書印刷（Access の cmd_積込確認書印刷_Click）：便を選んでから
+  async function 積込確認書() {
+    if (!yuso) return alert("運送便を指定してください");
+    try {
+      set積込(await api.get<Rec>(`/api/ws/sekisai/${yuso}`));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+
   async function 差出人を開く() {
     set差出人(await api.get<Rec[]>("/api/ws/sashidashi"));
   }
@@ -133,7 +143,7 @@ export default function WsHoukoku() {
         <div className="hr-col">
           <div className="lbl">出荷日</div>
           <input className="date" value={date.replace(/-/g, "/")} readOnly onDoubleClick={() => setCal(true)} title="ダブルクリックでカレンダー" />
-          <button className="sekisai" onClick={() => (yuso ? まだ() : alert("運送便を指定してください"))}>積込確認書印刷</button>
+          <button className="sekisai" onClick={積込確認書}>積込確認書印刷</button>
         </div>
         <div className="hr-col">
           <div className="lbl">運送会社選択</div>
@@ -200,6 +210,7 @@ export default function WsHoukoku() {
         </div>
       </div>
       {印刷 && <帳票印刷 pages={印刷.pages} 名前={印刷.名前} onClose={() => set印刷(null)} />}
+      {積込 && <積込確認書印刷 s={積込} onClose={() => set積込(null)} />}
       {差出人 && (
         <div className="modal" onClick={() => set差出人(null)}>
           <div className="nt" onClick={(e) => e.stopPropagation()}>

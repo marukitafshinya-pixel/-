@@ -222,3 +222,302 @@ export function 帳票印刷(props: { pages: Rec[]; 名前: string; onClose: () 
     </div>
   );
 }
+
+// ---------------- 積込確認書一式（積込確認書印刷） ----------------
+const 丸数字 = (v: string | null | undefined) => v ?? "";
+const 月日曜 = (v: string | null) => {
+  const x = d(v);
+  return x ? `${x.getMonth() + 1}月${x.getDate()}日(${曜[x.getDay()]})` : "";
+};
+const 年月日曜日2 = 年月日曜日;
+const 期限2 = 期限;
+
+/** 積込み前点検表（R_車両点検表）。点検の欄は手で書く */
+function 積込み前点検表(props: { s: Rec }) {
+  const s = props.s;
+  const 丸 = "○　・　×";
+  const 左: [string, string, boolean?][] = [
+    ["設定温度(℃)", "℃"], ["予冷時間", "時間"], ["予冷温度(℃)", "℃"], ["現在温度(℃)", "℃"], ["最大積載量", ""],
+    ["冷凍機作動状態", 丸], ["温度記録機能", 丸], ["エンジンの停止", 丸, true], ["輪留め (タイヤ止め)", 丸], ["パレット落下防止装置", 丸],
+    ["ラッシングベルト", 丸], ["ラッシングバー", 丸], ["緩衝材", 丸],
+  ];
+  const 右: [string, string, boolean?][] = [
+    ["コンテナ清潔状態", 丸], ["冷凍機始動確認", 丸, true], ["", ""], ["", ""], ["結露防止対策", 丸], ["仕切り資材", 丸], ["点検表　異常の有無", ""],
+  ];
+  return (
+    <div className="pv-page tk">
+      <div className="tk-head">
+        <div className="tk-hl">運転手様　各位<br />下記項目について点検致します</div>
+        <div className="tk-title">積込み前点検表</div>
+        <div className="tk-sha">{s.社名}</div>
+      </div>
+      <div className="tk-two">
+        <div>
+          <div className="tk-cap">ドライバーさん確認用</div>
+          <table className="tk-t">
+            <tbody>
+              <tr><th>点検日</th><td className="v">{月日曜(s.便.出荷日)}</td></tr>
+              <tr><th>運送会社名</th><td className="v big">{s.便.運送会社名}</td></tr>
+              <tr><th>車両番号</th><td /></tr>
+              <tr><th>運転者名</th><td /></tr>
+              <tr><th>積込み開始時間</th><td className="c">{s.便.開始}</td></tr>
+              <tr><th>到着時間</th><td className="c">：</td></tr>
+              <tr><th>配車指定時間</th><td className="c">：</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div className="tk-cap">丸北点検者　確認用</div>
+          <table className="tk-t">
+            <tbody>
+              <tr><th>天気</th><td className="c">☀　☁　☂　☃</td></tr>
+              <tr><th>出荷場所</th><td className="v big">丸北北海道</td></tr>
+              <tr><th>点検者(丸北)</th><td /></tr>
+              <tr><th>積込み者</th><td /></tr>
+              <tr><th>温度(℃)</th><td className="r">℃</td></tr>
+              <tr><th>湿度</th><td className="r">%</td></tr>
+              <tr><th>積込み開始時間</th><td className="c">：</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="tk-sec">冷凍機コンテナ</div>
+      <div className="tk-helmet">ヘルメットの着用をお願い致します。<span>丸北<br />確認欄</span></div>
+      <div className="tk-two">
+        <table className="tk-t chk">
+          <tbody>
+            {左.map(([k, v, red], i) => (
+              <tr key={i}><th className={red ? "red" : ""}>{k}</th><td className={v === 丸 ? "c" : "r"}>{v}</td><td className={i === 1 || i === 2 ? "slash" : "box"} /></tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="tk-t chk">
+          <tbody>
+            {右.map(([k, v, red], i) => (
+              <tr key={i}><th className={red ? "red" : ""}>{k}</th><td className="c">{v}</td></tr>
+            ))}
+            <tr><td colSpan={2} className="biko">備考</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="tk-note red">車両に異常がある場合、点検者に報告お願いします</div>
+      <div className="tk-sec">積込終了後</div>
+      <div className="tk-two">
+        <table className="tk-t">
+          <tbody>
+            <tr><th className="small">ｼﾞｮﾙﾀﾞｰ、緩衝材等<br />梱材の積み忘れ確認</th><td /></tr>
+            <tr><th>積込完了後　温度(℃)</th><td /></tr>
+            <tr><th>出発前　温度(℃)</th><td /></tr>
+            <tr><th>ニチレイ大谷地着予想</th><td /></tr>
+          </tbody>
+        </table>
+        <table className="tk-t">
+          <tbody>
+            <tr><th>完了温度(℃)</th><td /></tr>
+            <tr><th>完了湿度</th><td className="r">%</td></tr>
+            <tr><th>完了時間</th><td className="c">：</td></tr>
+            <tr><th>出発時間</th><td className="c">：</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="tk-foot">※禁止事項：コンパネ使用禁止！。パレット輸送で緩衝材（最低22枚）の無いものは積込みできません。</div>
+      <div className="tk-foot">{s.社名}　作成　　作成日24．10．31</div>
+    </div>
+  );
+}
+
+/** 積込み個数確認書（R_積込み確認書ver2） */
+function 積込み個数確認書(props: { s: Rec }) {
+  const s = props.s;
+  let 前: unknown = null;
+  return (
+    <div className="pv-page land kk">
+      <div className="kk-head">
+        <div className="date">{年月日曜日2(s.便.出荷日)}</div>
+        <div className="title">{[..."積込み個数確認書"].join(" ")}</div>
+        <div className="time">{s.印刷日時}</div>
+      </div>
+      <div className="kk-sub">
+        <div>
+          <div className="jikan">開始予定時間　{s.便.開始}　　終了予定時間　{s.便.終了}　頃</div>
+          <div className="bin">{s.便.運送会社名}　{s.便.車番}</div>
+        </div>
+        <div className="kk-notes">
+          <div>※　積込時、品名、製造ロットの確認お願いします。</div>
+          <div>※　異常発見の場合は、すぐに積込担当者まで連絡お願い致します。</div>
+          <div>※　都合により時間帯が変更になる事が ありますのでご了承願います。</div>
+        </div>
+      </div>
+      <div className="kk-sign"><span>運転手氏名</span><span>丸北積込責任者</span></div>
+      <table className="kk-grid">
+        <colgroup>
+          <col style={{ width: "2.5%" }} /><col style={{ width: "14%" }} /><col style={{ width: "16%" }} /><col style={{ width: "5%" }} /><col style={{ width: "5.5%" }} />
+          <col style={{ width: "6.5%" }} /><col style={{ width: "3.8%" }} /><col style={{ width: "23.5%" }} /><col style={{ width: "11.5%" }} /><col style={{ width: "4.2%" }} /><col style={{ width: "5%" }} />
+        </colgroup>
+        <thead>
+          <tr><th>順</th><th>届け先</th><th>品名</th><th>規格</th><th>ケース</th><th>製造ﾛｯﾄ</th><th>区分</th><th>数量確認</th><th>備考</th><th>補足</th><th>残数</th></tr>
+        </thead>
+        <tbody>
+          {s.確認書.map((r: Rec, i: number) => {
+            const 同じ = r.届け先コード === 前;
+            前 = r.届け先コード;
+            return (
+              <tr key={i}>
+                <td className="c b">{r.順}</td>
+                <td className={同じ ? "c" : "todoke"}>{同じ ? "〃" : r.届け先}</td>
+                <td className="name">{r.商品名}</td>
+                <td className="c">{r.規格}</td>
+                <td className="r b">{r.ケース}</td>
+                <td className="c">{期限2(r.製造日)}</td>
+                <td className="c kubun">{丸数字(r.区分)}</td>
+                <td /><td>{r.備考}</td><td className="c b">{r.補足}</td><td />
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {s.注意事項 && <div className="kk-chui">{s.注意事項}</div>}
+      <div className="kk-foot">
+        <span>※ コンパネは、異物混入の恐れ（木片、木くず等）がある為、使用禁止です！</span>
+        <table><tbody><tr><td>4方ざし</td><td>使用</td><td>残</td><td>2方ざし</td><td>使用</td><td>残</td></tr></tbody></table>
+      </div>
+    </div>
+  );
+}
+
+/** 集荷パレットチェックリスト（R_集荷用チェックリスト）。1 枚に 6 行ずつ */
+function 集荷パレットチェックリスト(props: { s: Rec; 行: Rec[]; 最初: boolean }) {
+  const s = props.s;
+  return (
+    <div className="pv-page land ck">
+      {props.最初 && (
+        <>
+          <div className="ck-head">
+            <div className="title">集荷パレットチェックリスト</div>
+            <div className="time">{s.印刷日時}</div>
+          </div>
+          <div className="ck-sub">
+            <table>
+              <thead><tr><th>集荷日</th><th>運送会社名</th><th>車番</th><th>運転手名</th></tr></thead>
+              <tbody><tr><td>{s.便.出荷日?.replace(/-/g, "/")}</td><td className="b">{s.便.運送会社名}</td><td>{s.便.車番}</td><td /></tr></tbody>
+            </table>
+            <div className="notes">
+              <div>※商品、ロット、区分ごとに仕切り紙を入れてください。</div>
+              <div>※一パレットごとにケース数確認をお願いします。総個数（枚数）チェックの欄に記入してください。</div>
+            </div>
+          </div>
+        </>
+      )}
+      {props.行.map((r, i) => (
+        <div key={i} className="ck-block">
+          <div className="name">{r.商品名}</div>
+          <table>
+            <thead><tr><th>順</th><th>製造日</th><th>区分</th><th>総数</th><th>積載数</th><th colSpan={12}>総個数（枚数）チェック</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>{r.順}</td><td className="c">{期限2(r.製造日)}</td><td className="c kubun">{丸数字(r.区分)}</td><td className="c">{r.総数}</td><td />
+                {[...Array(12)].map((_, j) => <td key={j} className="box" />)}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const 色 = ["#000", "#000", "#f00", "#00f", "#7d7d00", "#7d0000", "#007d00", "#00007d", "#f0f", "#0ff"];
+
+/** 荷台積載イメージ図（R_グラフ作成(積込)ver2）。荷台を横から見た図。長さ・高さは Access と同じ縮尺（cm） */
+function 荷台積載イメージ図(props: { s: Rec }) {
+  const s = props.s;
+  const k = s.積載;
+  const 補正 = k.車両大区分 === "トレーラー" ? 2.2 : 2.5;
+  const 上 = k.車両大区分 === "トレーラー" ? 5.28 : 6;
+  const cm = (v: number) => `${(v * 補正) / 100}cm`;
+  let 左 = 0;
+  const 列 = k.列.map((r: Rec) => {
+    const x = { ...r, 左 };
+    左 += r.長さcm;
+    return x;
+  });
+  // 商品ごとの名前の帯（積順が変わるところから、その商品の列の終わりまで）
+  const 帯: Rec[] = [];
+  for (const r of 列) {
+    const last = 帯[帯.length - 1];
+    if (last && last.積込順 === r.積込順) last.幅 += r.長さcm;
+    else 帯.push({ 積込順: r.積込順, 商品名: r.商品名, 左: r.左, 幅: r.長さcm });
+  }
+  // 届け先の変わり目の線
+  const 線 = 列.filter((r: Rec, i: number) => i > 0 && r.届け先コード !== 列[i - 1].届け先コード).map((r: Rec) => r.左);
+  const 残り = k.荷台長 - k.長さ計;
+  const 超え = k.荷台長 < k.長さ計;
+  return (
+    <div className="pv-page land sk">
+      <div className="sk-head">
+        <div className="bin">
+          <div>{月日曜(s.便.出荷日)}</div>
+          <div className="big">{s.便.運送会社名}</div>
+          <div className="big">{s.便.車番}</div>
+        </div>
+        <div className="vol">
+          <div>{k.m3} m3</div>
+          <div>才数:{k.才数}</div>
+        </div>
+        <div className="title">荷台積載イメージ図（横）</div>
+        <div className="len">
+          <div className={`plan ${超え ? "red" : ""}`}>積載長予定 約 {k.長さ計} cm 以上</div>
+          <div className="base">荷台長基準 約 {k.荷台長} cm　前後</div>
+        </div>
+        <div className={`rest ${超え ? "red" : ""}`}>＝ 残り {残り} cm</div>
+      </div>
+      <div className="sk-fb"><span>前</span><span>後</span></div>
+      <div className="sk-area" style={{ height: `${上}cm` }}>
+        <div className="sk-over" style={{ width: 超え ? "28cm" : cm(k.長さ計), height: `${上}cm` }} />
+        <div className="sk-box" style={{ width: cm(k.荷台長), height: `${上}cm` }} />
+        {[40, 80, 120, 160, 200].map((h) => (
+          <div key={h} className="sk-line" style={{ bottom: cm(h) }}>{h === 120 || h === 160 ? <span>{h}cm</span> : null}</div>
+        ))}
+        {帯.map((b, i) => (
+          <div key={i} className="sk-name" style={{ left: cm(b.左), width: cm(b.幅), height: `${上}cm`, color: 色[b.積込順] ?? "#000" }}>{b.商品名}</div>
+        ))}
+        {線.map((x: number, i: number) => <div key={i} className="sk-todoke" style={{ left: cm(x), height: `${上}cm` }} />)}
+        {列.map((r: Rec) => (
+          <div key={r.No} className="sk-bar" style={{ left: cm(r.左), width: cm(r.長さcm), height: cm(r.段高さcm), color: 色[r.積込順] ?? "#000" }}>
+            {r.ケース}個{r.段数 === 1 ? "" : <><br />{r.段数} 段</>}
+          </div>
+        ))}
+      </div>
+      <div className="sk-no">
+        {列.map((r: Rec) => (
+          <div key={r.No} style={{ left: cm(r.左) }}>
+            {r.No}
+            {r.商品毎No === 1 ? <><br />{r.長さcm}cm</> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 積込確認書一式の印刷画面（Access と同じく 点検表 → 個数確認書 → チェックリスト → 積載イメージ図） */
+export function 積込確認書印刷(props: { s: Rec; onClose: () => void }) {
+  const s = props.s;
+  const 組: Rec[][] = [];
+  for (let i = 0; i < s.チェック.length; i += 6) 組.push(s.チェック.slice(i, i + 6));
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>積込確認書（{s.便.運送会社名} {s.便.車番}）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        <積込み前点検表 s={s} />
+        <積込み個数確認書 s={s} />
+        {組.map((g, i) => <集荷パレットチェックリスト key={i} s={s} 行={g} 最初={i === 0} />)}
+        <荷台積載イメージ図 s={s} />
+      </div>
+    </div>
+  );
+}
