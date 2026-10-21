@@ -99,6 +99,16 @@ export default function WsMain() {
     }
   }
 
+  // 積込確認（Access の 積込確認_Click）：✔で在庫に登録、外すと在庫から戻す
+  async function 積込確認(r: Rec, on: boolean) {
+    try {
+      await api.post("/api/ws/tsumikomi", { 出庫ID: r.出庫ID, 積込確認: on });
+      await load();
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+  }
+
   async function 新しい便() {
     const r = await api.post<{ 輸送ID: number }>("/api/ws/plan/new", { date });
     await 日付を移す(date, r.輸送ID);
@@ -344,6 +354,7 @@ export default function WsMain() {
                 <th>受注ID</th>
                 <th>年間ID</th>
                 <th>P数</th>
+                <th title="積込確認（✔で在庫に登録）">積込</th>
               </tr>
             </thead>
             <tbody>
@@ -375,6 +386,9 @@ export default function WsMain() {
                   <td className="r">{r.受注ID || ""}</td>
                   <td>{r.年間受注ID}</td>
                   <td className="r bold">{r.パレット使用枚数}</td>
+                  <td className="c">
+                    <input type="checkbox" checked={!!r.積込確認} onChange={(e) => 積込確認(r, e.target.checked)} />
+                  </td>
                 </tr>
               ))}
             </tbody>

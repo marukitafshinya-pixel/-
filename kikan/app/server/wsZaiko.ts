@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { PoolClient } from "pg";
-import { pool, t } from "./db.js";
+import { pool, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { cint } from "./hanmori.js";
 import { 一連で, 出荷の既定値, 特別項目, 賞味期限計算 } from "./ws.js";
@@ -16,7 +16,9 @@ const 商品区分 = t("ws_fe", "TM_商品区分");
 const 出荷場所条件 = t("ws_fe", "TM_出荷場所条件");
 const 本社依頼受注 = t("ws_fe", "TM_本社依頼受注");
 const ストックマスタ = t("ws", "TM_商品在庫ストックマスタ");
-const 倉庫 = t("ws_fe", "TD_倉庫"); // 倉庫管理の在庫の写し（WorkStation の画面側ファイルの表）
+const 倉庫 = t("ws_fe", "TD_倉庫");
+const 在庫変更 = t("ws", "TD_在庫変更");
+const 倉庫詳細設定 = t("ws_fe", "TD_倉庫詳細設定"); // 倉庫管理の在庫の写し（WorkStation の画面側ファイルの表）
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
@@ -341,4 +343,155 @@ export function wsZaikoRoutes(app: FastifyInstance) {
       return { ok: true };
     });
   });
+
+  // ---------------- 積込確認（明細の ✔）：在庫の登録・削除 ----------------
+  // Access の 積込確認_Click → C_出荷指定レコード在庫登録・C_出荷指定レコード在庫削除
+  app.post<{ Body: { 出庫ID: number; 積込確認: boolean } }>("/api/ws/tsumikomi", async (req, reply) => {
+    const id = n(req.body.出庫ID);
+    return 一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [id])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      const on = !!req.body.積込確認;
+      await c.query(`UPDATE ${出荷} SET "積込確認" = $2, "chk" = $2 WHERE "出庫ID" = $1`, [id, on]);
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_在庫.在庫ID'))`);
+      if (on) await 在庫登録(c, id);
+      else await 在庫削除(c, id);
+      return { ok: true };
+    });
+  });
+}
+
+/** 入庫できる届け先・名義か（Access の NewkoCondition） */
+async function 入庫できる(c: PoolClient, 届け先コード: unknown, 名義: unknown): Promise<boolean> {
+  if (届け先コード === null || 届け先コード === undefined) return false; // Access ではここでエラーになり、登録しない
+  const f = (await c.query(`SELECT "入庫フラグ" FROM ${得意先マスタ} WHERE "倉庫区分" = true AND "短縮コード" = $1 LIMIT 1`, [n(届け先コード)])).rows[0];
+  if (f && f.入庫フラグ === false) return true;
+  const r = await c.query(`SELECT 1 FROM ${倉庫詳細設定} WHERE "短縮コード" = $1 AND "名義コード" = $2 LIMIT 1`, [n(届け先コード), n(名義)]);
+  return r.rowCount! > 0;
+}
+
+/** 在庫の出庫ケース：登録済み（chk）の出荷 ＋ 在庫変更。実データの値と同じ決め方（在庫変更は全部足す） */
+async function 在庫の出庫ケース(c: PoolClient, 在庫ID: number): Promise<number> {
+  const r = await c.query(
+    `SELECT COALESCE((SELECT SUM("ケース") FROM ${出荷} WHERE "chk" = true AND "在庫ID" = $1), 0)
+          + COALESCE((SELECT SUM("ケース") FROM ${在庫変更} WHERE "在庫No" = $1), 0) AS n`,
+    [在庫ID],
+  );
+  return n(r.rows[0].n);
+}
+
+const 月を足す = (v: string | null, 月: number): string | null => {
+  if (!v) return null;
+  const d = new Date(v.slice(0, 10) + "T00:00:00Z");
+  const y = d.getUTCFullYear() + Math.floor((d.getUTCMonth() + 月) / 12);
+  const m = (d.getUTCMonth() + 月) % 12;
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m, Math.min(d.getUTCDate(), last))).toISOString().slice(0, 10);
+};
+const 最初の日 = "1899-12-30"; // Access の日付の 0
+
+/** 積込確認を付けたとき（Access の C_出荷指定レコード在庫登録） */
+async function 在庫登録(c: PoolClient, 出庫ID: number) {
+  const s = (await c.query(`SELECT * FROM ${出荷} WHERE "出庫ID" = $1`, [出庫ID])).rows[0];
+  const 出荷分在庫ID = n(s.在庫ID);
+  const 出荷分入庫ID = 出荷分在庫ID ? 0 : n(s.入庫ID);
+  let 変更日の最後: string = 最初の日;
+
+  // 1. 届け先が入庫できる倉庫なら、届け先の在庫として登録する（同じ出庫ID の在庫があれば直す）
+  if (await 入庫できる(c, s.届け先コード, s.入庫後名義ID)) {
+    let z = (await c.query(`SELECT * FROM ${在庫} WHERE "出庫ID" = $1 ORDER BY "在庫ID" LIMIT 1`, [出庫ID])).rows[0];
+    if (!z) {
+      const 在庫ID = n((await c.query(`SELECT COALESCE(MAX("在庫ID"), 0) + 1 AS n FROM ${在庫}`)).rows[0].n);
+      await c.query(
+        `INSERT INTO ${在庫} ("在庫ID", "短縮コード", "期", "出庫回数", "サービス区分", "未包装kg", "抽出区分", "出荷止め区分", "入庫ID", "グループコード",
+           "変更前在庫ID", "入庫区分", "ストック数", "訂正chk", "買取金額", "買取単価コード", "買取chk", "支払区分", "検査結果", "産地コード",
+           "手配元ID", "手配帳合ID", "大阪発注確認chk", "検体区分", "指定最終届け先コード", "検体取得", "パレット積載数", "合否判定ID", "登録時間")
+         VALUES ($1, 0, 0, 0, false, 0, false, false, 0, 0, 0, false, 0, false, 0, 0, false, 0, 0, 0, 0, 0, false, false, 0, false, 0, 0, $2)`,
+        [在庫ID, 日本の今().日時.replace(/\//g, "-")],
+      );
+      z = { 在庫ID };
+    }
+    const 入数 = n(s.入数);
+    const 入庫元数 = n(s.ケース);
+    const 出庫ケース = await 在庫の出庫ケース(c, z.在庫ID);
+    const 在庫ケース = 入庫元数 - 出庫ケース;
+    let 最終出庫日: string | null;
+    if (在庫ケース === 0) {
+      const m = (await c.query(`SELECT MAX("出荷日") AS s FROM ${出荷} WHERE "在庫ID" = $1`, [z.在庫ID])).rows[0].s ?? 最初の日;
+      変更日の最後 = (await c.query(`SELECT MAX("変更日") AS h FROM ${在庫変更} WHERE "在庫No" = $1`, [z.在庫ID])).rows[0].h ?? 最初の日;
+      最終出庫日 = m < 変更日の最後 ? 変更日の最後 : m;
+    } else 最終出庫日 = 月を足す(s.納品日, 60) ?? z.最終出庫日 ?? null;
+    const v: Record<string, unknown> = {
+      出庫ID: s.出庫ID, 倉庫ID: s.届け先コード, 倉庫名: s.届け先, 商品コード: s.商品コード, 商品区分: n(s.商品区分), 商品名: s.商品名, 規格: s.規格, 入数: s.入数,
+      入庫元数, 繰越ケース: 0, 繰越kg: 0, 製造ケース: 入庫元数, 製造kg: n(s.商品kg), 出庫ケース, 出荷kg: 出庫ケース * 入数, 在庫ケース, 在庫kg: 在庫ケース * 入数,
+      製造日: s.製造日, 賞味期限: s.賞味期限, 入庫日: s.納品日, 入庫後名義ID: s.入庫後名義ID, タグ: s.タグ, 製造工場ID: s.製造工場ID, 製造工場名: s.製造工場名, 最終出庫日,
+    };
+    const cols = Object.keys(v);
+    await c.query(`UPDATE ${在庫} SET ${cols.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "在庫ID" = $1`, [z.在庫ID, ...cols.map((k) => v[k])]);
+  }
+
+  // 2. 出荷した分を、もとの在庫（在庫ID があれば TD_在庫、なければ製造管理の TD_入庫）から引く
+  if (出荷分在庫ID) {
+    const z = (await c.query(`SELECT * FROM ${在庫} WHERE "在庫ID" = $1`, [出荷分在庫ID])).rows[0];
+    if (z) {
+      const 入数 = n(z.入数);
+      const 出庫ケース = await 在庫の出庫ケース(c, 出荷分在庫ID);
+      const 在庫ケース = n(z.入庫元数) - 出庫ケース;
+      let 最終出庫日 = 月を足す(z.入庫日, 60) ?? z.最終出庫日;
+      if (在庫ケース === 0) {
+        const m = (await c.query(`SELECT MAX("出荷日") AS s FROM ${出荷} WHERE "在庫ID" = $1`, [出荷分在庫ID])).rows[0].s ?? 最初の日;
+        最終出庫日 = m < 変更日の最後 ? 変更日の最後 : m;
+      }
+      await c.query(
+        `UPDATE ${在庫} SET "繰越ケース" = 0, "繰越kg" = 0, "製造ケース" = "入庫元数", "製造kg" = $2, "出庫ケース" = $3, "出荷kg" = $4,
+           "在庫ケース" = $5, "在庫kg" = $6, "最終出庫日" = $7 WHERE "在庫ID" = $1`,
+        [出荷分在庫ID, n(z.入庫元数) * 入数, 出庫ケース, 出庫ケース * 入数, 在庫ケース, 在庫ケース * 入数, 最終出庫日],
+      );
+    }
+  } else if (出荷分入庫ID) {
+    const z = (await c.query(`SELECT * FROM ${入庫} WHERE "入庫ID" = $1`, [出荷分入庫ID])).rows[0];
+    if (z) {
+      const 入数 = n(z.入数);
+      const 入庫元数 = n(z.ケース); // 入庫（生産計画）のときは、入庫元数にケースを入れる
+      const 出庫ケース = n((await c.query(`SELECT SUM("ケース") AS n FROM ${出荷} WHERE "chk" = true AND "入庫ID" = $1`, [出荷分入庫ID])).rows[0].n);
+      const 在庫ケース = 入庫元数 - 出庫ケース;
+      let 最終出庫日 = 月を足す(z.入庫日, 60) ?? z.最終出庫日;
+      if (在庫ケース === 0) {
+        const m = (await c.query(`SELECT MAX("出荷日") AS s FROM ${出荷} WHERE "入庫ID" = $1`, [出荷分入庫ID])).rows[0].s ?? 最初の日;
+        最終出庫日 = m < 変更日の最後 ? 変更日の最後 : m;
+      }
+      await c.query(
+        `UPDATE ${入庫} SET "入庫元数" = $2, "繰越ケース" = 0, "繰越kg" = 0, "製造ケース" = $2, "製造kg" = $3, "出庫ケース" = $4, "出荷kg" = $5,
+           "在庫ケース" = $6, "在庫kg" = $7, "最終出庫日" = $8 WHERE "入庫ID" = $1`,
+        [出荷分入庫ID, 入庫元数, 入庫元数 * 入数, 出庫ケース, 出庫ケース * 入数, 在庫ケース, 在庫ケース * 入数, 最終出庫日],
+      );
+    }
+  }
+}
+
+/** 積込確認を外したとき（Access の C_出荷指定レコード在庫削除）。登録した在庫は消さずに 0 にし、もとの在庫を数え直す */
+async function 在庫削除(c: PoolClient, 出庫ID: number) {
+  await c.query(
+    `UPDATE ${在庫} SET "繰越ケース" = 0, "繰越kg" = 0, "製造ケース" = 0, "製造kg" = 0, "出庫ケース" = 0, "出荷kg" = 0, "在庫ケース" = 0, "在庫kg" = 0
+     WHERE "在庫ID" = (SELECT MIN("在庫ID") FROM ${在庫} WHERE "出庫ID" = $1)`,
+    [出庫ID],
+  );
+  const s = (await c.query(`SELECT "在庫ID", "入庫ID" FROM ${出荷} WHERE "出庫ID" = $1`, [出庫ID])).rows[0];
+  const 出荷分在庫ID = n(s?.在庫ID);
+  if (出荷分在庫ID) {
+    const 出庫ケース = await 在庫の出庫ケース(c, 出荷分在庫ID);
+    await c.query(
+      `UPDATE ${在庫} SET "繰越ケース" = 0, "繰越kg" = 0, "製造ケース" = "入庫元数", "製造kg" = "入庫元数" * "入数", "出庫ケース" = $2::double precision, "出荷kg" = $2::double precision * "入数",
+         "在庫ケース" = "入庫元数" - $2::double precision, "在庫kg" = ("入庫元数" - $2::double precision) * "入数" WHERE "在庫ID" = $1`,
+      [出荷分在庫ID, 出庫ケース],
+    );
+  } else {
+    const 出荷分入庫ID = n(s?.入庫ID);
+    const 出庫ケース = n((await c.query(`SELECT SUM("ケース") AS n FROM ${出荷} WHERE "chk" = true AND "入庫ID" = $1`, [出荷分入庫ID])).rows[0].n);
+    await c.query(
+      `UPDATE ${入庫} SET "繰越ケース" = 0, "繰越kg" = 0, "製造ケース" = "入庫元数", "製造kg" = "入庫元数" * "入数", "出庫ケース" = $2::double precision, "出荷kg" = $2::double precision * "入数",
+         "在庫ケース" = "入庫元数" - $2::double precision, "在庫kg" = ("入庫元数" - $2::double precision) * "入数" WHERE "入庫ID" = $1`,
+      [出荷分入庫ID, 出庫ケース],
+    );
+  }
 }
