@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { api, ApiError, num } from "../api";
 
 type Rec = Record<string, any>;
-const 年月日 = (v: string | null | undefined) => (v ? v.slice(0, 10).replace(/-/g, "/") : "");
-const 月日 = (v: string | null | undefined) => (v ? `${Number(v.slice(5, 7))}月${v.slice(8, 10)}` : "");
 
 /**
  * 明細の商品コードを変えたときの在庫の読み込み（Access の CC_在庫商品日付参照）
@@ -58,54 +56,61 @@ export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number;
         <div className="zy">
           <div className="zy-msg">{商品名}{"\n"} の在庫を表示しますか？</div>
           <div className="zy-btns">
-            <button onClick={() => 一覧(false)} title="いまある在庫から選ぶ">在庫選択</button>
-            <button onClick={() => 一覧(true)} title="生産計画も含めて選ぶ">架空</button>
-            <button onClick={() => 入れる(null)} title="在庫を選ばずに商品だけ変える">強制</button>
+            <button onClick={() => 一覧(false)} title="いまある在庫から選ぶ">在庫から</button>
+            <button onClick={() => 一覧(true)} title="生産計画も含めて選ぶ">架空から</button>
+            <button onClick={() => 入れる(null)} title="在庫を選ばずに商品だけ変える">強制入力</button>
             <button onClick={() => props.onDone(false)}>キャンセル</button>
           </div>
         </div>
       </div>
     );
+  const 年月日2 = (v: string | null | undefined) => (v ? v.slice(2, 10).replace(/-/g, "/") : "");
+  const 入庫月日 = (v: string | null | undefined) => (v ? `${Number(v.slice(5, 7))}月${v.slice(8, 10)}日` : "");
   return (
     <div className="modal">
-      <div className="kb">
-        <div className="kb-head">
-          <b className="kb-title">在庫選択{plan ? "（生産計画を含む）" : ""}</b>
-          <span className="sp" />
+      <div className="kb zs">
+        <div className="zs-head">
           <button onClick={() => props.onDone(false)}>キャンセル</button>
+          <span className="zs-name">{rows[0]?.倉庫名 ?? ""}</span>
+          <span className="zs-name">{rows[0]?.商品名 ?? 商品名}</span>
         </div>
         <div className="kb-list">
-          <table className="ws-grid">
+          <table className="ws-grid zs-grid">
             <thead>
               <tr>
-                <th></th><th>製造日</th><th>賞味期限</th><th></th><th>出荷元</th><th>在庫C/S</th><th>在庫kg</th><th>入庫No</th><th>入庫日</th>
-                <th>入庫元数</th><th>商品名</th><th>入庫名義</th><th>検査区分</th><th>タグ</th><th>管理備考</th><th>備考</th>
+                <th>産地</th><th>入庫日</th><th>製造日</th><th className="y">賞味期限</th><th>区分</th><th>入庫No</th>
+                <th className="y">元数</th><th>C/S</th><th>Kg</th><th>備考</th><th>検査区分No</th><th>★</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.認識ID} className={r.架空実物 ? "plan" : ""}>
-                  <td className="c"><button className="kb-pick" onClick={() => 選ぶ(r)}>選択</button></td>
-                  <td className="bold">{年月日(r.製造日)}</td>
-                  <td>{年月日(r.賞味期限)}</td>
-                  <td className="red">{r.賞味期限通知}</td>
-                  <td>{r.倉庫名}</td>
+                <tr key={r.認識ID}>
+                  <td>{r.産地通称}</td>
+                  <td className="c">{入庫月日(r.入庫日)}</td>
+                  <td className="c">
+                    <div>{年月日2(r.製造日)}</div>
+                    {r.架空実物 && <div className="y">生産計画</div>}
+                  </td>
+                  <td className="c">
+                    <div>{年月日2(r.賞味期限)}</div>
+                    {r.賞味期限通知 && <div className="red">{r.賞味期限通知}</div>}
+                  </td>
+                  <td className="c tag">{r.タグ}</td>
+                  <td>{r.入庫No}</td>
+                  <td className="r y">{num(r.入庫元数)}</td>
                   <td className={"r" + (r.在庫ケース < 0 ? " red" : "")}>{num(r.在庫ケース)}</td>
                   <td className={"r" + (r.在庫kg < 0 ? " red" : "")}>{num(r.在庫kg)}</td>
-                  <td>{r.入庫No}</td>
-                  <td>{月日(r.入庫日)}</td>
-                  <td className="r">{num(r.入庫元数)}</td>
-                  <td>{r.商品名}</td>
-                  <td>{r.入庫名義}</td>
-                  <td>{r.検査区分}</td>
-                  <td>{r.タグ}</td>
-                  <td className={r.出荷止め区分 ? "red" : ""}>{r.出荷止め区分 ? "出荷止め " : ""}{r.管理備考}</td>
-                  <td className="note pre">{r.備考在庫}</td>
+                  <td className="memo">
+                    {r.出荷止め区分 && <div className="red">出荷止め {r.管理備考}</div>}
+                    {r.備考在庫}
+                  </td>
+                  <td className="ken">{r.検査区分}</td>
+                  <td className="c"><button className="zs-pick" onClick={() => 選ぶ(r)}>選択</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {rows.length === 0 && <p className="wsi-err">この倉庫の在庫はありません。</p>}
+          {rows.length === 0 && <p className="wsi-err">この出荷場所の在庫はありません。</p>}
         </div>
       </div>
     </div>

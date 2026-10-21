@@ -525,3 +525,15 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .zy-msg { padding: 18px; font-size: 16px; white-space: pre-line; text-align: center; }
 .zy-btns { display: flex; gap: 8px; justify-content: center; padding: 10px; background: #e8e8f0; }
 .zy-btns button { background: #fff; border: 2px outset #ddd; padding: 4px 14px; font-weight: bold; }
+
+/* 在庫選択（FSD_架空在庫選択） */
+.zs { width: 860px; background: #5a5a86; }
+.zs-head { display: flex; gap: 8px; align-items: center; padding: 6px; background: #eee; }
+.zs-head button { background: #fff; border: 2px outset #ddd; padding: 3px 12px; }
+.zs-name { background: #800080; color: #ffff80; font-weight: bold; padding: 3px 24px; border: 2px solid #444; }
+.zs-grid td { background: #5a5a86; color: #fff; font-weight: bold; vertical-align: top; }
+.zs-grid th.y, .zs-grid td.y, .zs-grid .y { color: #ffc000; }
+.zs-grid td.memo { background: #cff8ff; color: #00c; font-size: 11px; white-space: pre-line; min-width: 150px; font-weight: normal; }
+.zs-grid td.ken { background: #ffffa0; color: #333; min-width: 70px; }
+.zs-grid .red { color: #ff6060; }
+.zs-pick { background: #fff; color: #00c; border: 2px outset #ddd; font-weight: bold; width: 34px; padding: 2px; }

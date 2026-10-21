@@ -95,10 +95,11 @@ export function KibouDialog(props: {
   }
 
   async function OK() {
-    const 選んだ = rows.filter((r) => r.抽出区分).map((r) => r.認識ID);
+    // 出荷数（希望C/S で割り付けた数。割り付けていない行は在庫C/S）で行を作る
+    const 選んだ = rows.filter((r) => r.抽出区分).map((r) => ({ 認識ID: r.認識ID, ケース: r.実算ケース ? r.実算ケース : r.在庫ケース }));
     if (!選んだ.length) return props.onClose(false);
     try {
-      await api.post("/api/ws/kibou/add", { 輸送ID: props.輸送ID, shohin: props.shohin, soko: props.soko, 認識ID: 選んだ });
+      await api.post("/api/ws/kibou/add", { 輸送ID: props.輸送ID, shohin: props.shohin, soko: props.soko, 選んだ });
       props.onClose(true);
     } catch (e) {
       alert(e instanceof ApiError ? e.message : String(e));
@@ -156,7 +157,7 @@ export function KibouDialog(props: {
                   <td>{r.倉庫名}</td>
                   <td className={"r" + (r.在庫ケース < 0 ? " red" : "")}>{num(r.在庫ケース)}</td>
                   <td className={"r" + (r.在庫kg < 0 ? " red" : "")}>{num(r.在庫kg)}</td>
-                  <td className="r">{r.抽出区分 ? num(r.実算ケース) : ""}</td>
+                  <td className="r bold">{r.抽出区分 ? num(r.実算ケース ? r.実算ケース : r.在庫ケース) : ""}</td>
                   <td>{月日(r.入庫日)}</td>
                   <td className="r">{num(r.入庫元数)}</td>
                   <td>{r.商品名}</td>

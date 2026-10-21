@@ -231,12 +231,14 @@ export function wsZaikoRoutes(app: FastifyInstance) {
   );
 
   // 選んだ在庫から出荷の行を作る（Access の C_架空製造日別出荷データ表示Ver2 の後半）
-  app.post<{ Body: { 輸送ID: number; shohin?: number; soko?: number; 認識ID: string[] } }>("/api/ws/kibou/add", async (req, reply) => {
+  // ケースは画面の「出荷数」（希望C/S で割り付けた数）。Access は在庫C/S 全部で作るが、利用者の希望で出荷数にした
+  app.post<{ Body: { 輸送ID: number; shohin?: number; soko?: number; 選んだ: { 認識ID: string; ケース: number }[] } }>("/api/ws/kibou/add", async (req, reply) => {
     const 輸送ID = n(req.body.輸送ID);
     return 一連で(async (c) => {
       const plan = (await c.query(`SELECT "出荷計画日", "集荷日" FROM ${輸送計画} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
       if (!plan) return reply.code(404).send({ error: "この便はありません" });
-      const 選んだ = new Set(req.body.認識ID.map(String));
+      const 数 = new Map(req.body.選んだ.map((x) => [String(x.認識ID), n(x.ケース)]));
+      const 選んだ = new Set(数.keys());
       const all = await 在庫見込み(c, { 商品コード: n(req.body.shohin), 倉庫ID: n(req.body.soko), 計画: true });
       // 作業用の表に入った順（在庫 → 生産計画）で入れる
       const rows = all
@@ -250,11 +252,15 @@ export function wsZaikoRoutes(app: FastifyInstance) {
         const 手配元ID = 場所?.手配元ID ?? r.倉庫ID;
         const 手配帳合ID = 場所?.手配帳合ID ?? r.倉庫ID;
         const 名 = async (code: unknown) => (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(code)])).rows[0]?.短縮名 ?? null;
-        const m = (await c.query(`SELECT "特別検査区分" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(r.商品コード)])).rows[0];
+        const ケース = 数.get(String(r.認識ID)) ?? n(r.在庫ケース);
+        const m = (await c.query(`SELECT "特別検査区分", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(r.商品コード)])).rows[0];
+        // 重量：在庫C/S 全部なら在庫kg、ちがうときは ケース×入数（入数が 0・空ならマスタの入数）
+        const 入数 = n(r.入数) || n(m?.入数);
+        const 商品kg = ケース === n(r.在庫ケース) ? r.在庫kg : ケース * 入数;
         const v: Record<string, unknown> = {
           ...出荷の既定値,
           出庫ID: next++, 輸送ID, 出荷日: plan.出荷計画日, 商品コード: r.商品コード, 商品名: r.商品名, 規格: r.規格, 入数: r.入数,
-          ケース: r.在庫ケース, パレット使用枚数: await パレット計算(c, r.商品コード, n(r.在庫ケース)), 商品kg: r.在庫kg, 製造日: r.製造日,
+          ケース, パレット使用枚数: await パレット計算(c, r.商品コード, ケース), 商品kg, 製造日: r.製造日,
           入庫前名義ID: r.入庫後名義ID, 入庫No: r.入庫No ?? null,
           賞味期限: r.賞味期限 ?? (await 賞味期限計算(c, r.製造日, r.商品コード)),
           入庫ID: r.入庫ID, 倉庫ID: r.倉庫ID, 倉庫名: r.倉庫名,
