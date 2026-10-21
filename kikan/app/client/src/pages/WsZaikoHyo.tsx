@@ -126,16 +126,20 @@ export function WsHokan() {
   const [合言葉, set合言葉] = useState<string | null>(null);
   const [間違い, set間違い] = useState(0);
   const [履歴, set履歴] = useState<Rec[] | null>(null);
+  const [振替, set振替] = useState<number | null>(null);
 
   useEffect(() => {
     api.get<選択肢[]>("/api/ws/hokan/kubun").then(setKubun);
   }, []);
-  // 保管庫を変えたら商品の一覧を作り直し、いちばん小さい商品コードを出す（Access の cmb_倉庫_AfterUpdate）
+  // 保管庫を変えたら商品の一覧を作り直し、いちばん小さい商品コードを出す（Access の cmb_倉庫_AfterUpdate）。
+  // 在庫表から開いたときや、在庫表示を変えたときは、いまの商品のまま
+  const [前の保管庫, set前の保管庫] = useState(soko);
   useEffect(() => {
     api.get<{ 短縮名: string }>(`/api/ws/hokan/name/${soko}`).then((r) => setSokoName(r.短縮名));
     api.get<選択肢[]>("/api/ws/hokan/shohin", { soko, mode }).then((list) => {
       setShohins(list);
-      if (shohin === null || !list.some((x) => x.id === shohin)) setShohin(list[0]?.id ?? null);
+      if (shohin === null || soko !== 前の保管庫) setShohin(list[0]?.id ?? null);
+      set前の保管庫(soko);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [soko, mode]);
@@ -213,9 +217,10 @@ export function WsHokan() {
           <div className="lbl">商品名</div>
           <div className="row">
             <select value={shohin ?? ""} onChange={(e) => setShohin(Number(e.target.value))}>
+              {shohin !== null && i < 0 && <option value={shohin}>{shohin}</option>}
               {shohins.map((s) => <option key={s.id} value={s.id}>{s.id}</option>)}
             </select>
-            <span className="name blue">{shohins[i]?.name ?? ""}</span>
+            <span className="name blue">{shohins[i]?.name ?? rows[0]?.商品名 ?? ""}</span>
           </div>
         </div>
         <div className="zh-col">
@@ -238,7 +243,7 @@ export function WsHokan() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.在庫ID}>
-                <td className="c"><button className="hk-furi" disabled title="在庫訂正（振替）はこのあと作ります">振<br />替</button></td>
+                <td className="c"><button className="hk-furi" onClick={() => set振替(r.在庫ID)} title="在庫振替（在庫訂正）">振<br />替</button></td>
                 <td>{日(r, "入庫日", "bold")}</td>
                 <td>
                   <select value={r.商品区分 ?? ""} disabled={ro} onChange={(e) => 直す(r, "商品区分", Number(e.target.value))}>
@@ -288,6 +293,15 @@ export function WsHokan() {
           <button onClick={() => nav(-1)}>閉じる</button>
         </div>
       </div>
+      {振替 !== null && (
+        <FurikaeDialog
+          在庫ID={振替}
+          onClose={async (変えた) => {
+            set振替(null);
+            if (変えた) await load();
+          }}
+        />
+      )}
       {履歴 && (
         <div className="modal" onClick={() => set履歴(null)}>
           <div className="nt" onClick={(e) => e.stopPropagation()}>
@@ -313,6 +327,116 @@ export function WsHokan() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** 在庫振替（Access の FSD_在庫訂正）。在庫の 1 ロットから、破損・原料・サンプルなどで数を落とす。製品化・原料化・出荷停止は別の在庫の行に振り替える */
+function FurikaeDialog(props: { 在庫ID: number; onClose: (変えた: boolean) => void }) {
+  const [d, setD] = useState<{ 在庫: Rec; rows: Rec[]; 振替先: 選択肢[]; 今日: string } | null>(null);
+  const [新, set新] = useState<{ 変更日: string; ケース: string; 移動先ID: number; 備考: string }>({ 変更日: "", ケース: "0", 移動先ID: 0, 備考: "" });
+  const load = () => api.get<any>(`/api/ws/furikae/${props.在庫ID}`).then((r) => {
+    setD(r);
+    set新((x) => ({ ...x, 変更日: x.変更日 || r.今日 }));
+  });
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.在庫ID]);
+  if (!d) return null;
+  const z = d.在庫;
+  const 月日 = (v: string | null | undefined) => (v ? `${v.slice(5, 7)}月${v.slice(8, 10)}日` : "");
+  const 失敗 = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
+
+  async function 直す(h: Rec, 項目: string, 値: unknown) {
+    try {
+      await api.post("/api/ws/furikae/save", { 変更No: h.変更No, 項目, 値 });
+      await load();
+    } catch (e) {
+      失敗(e);
+    }
+  }
+  async function 足す() {
+    try {
+      await api.post("/api/ws/furikae/add", { 在庫ID: z.在庫ID, 変更日: 新.変更日, ケース: Number(新.ケース) || 0, 移動先ID: 新.移動先ID, 備考: 新.備考 });
+      set新({ 変更日: d!.今日, ケース: "0", 移動先ID: 0, 備考: "" });
+      await load();
+    } catch (e) {
+      失敗(e);
+    }
+  }
+  async function 登録(h: Rec) {
+    if (!confirm("在庫振替を行います。よろしいですか？")) return;
+    try {
+      const r = await api.post<{ 通知: number }>("/api/ws/furikae/toroku", { 変更No: h.変更No });
+      alert(`変更により、出荷計画に${r.通知} 件の変更通知を送ります。`);
+      props.onClose(true); // Access と同じく、登録したら閉じる
+    } catch (e) {
+      失敗(e);
+    }
+  }
+  const 先 = (id: number) => d.振替先.find((x) => x.id === id)?.name ?? "";
+  return (
+    <div className="modal">
+      <div className="fk">
+        <div className="fk-head">
+          <div className="fk-memo">{z.管理備考}</div>
+          <div className="fk-kv">
+            <span>保管庫</span><b>{z.倉庫名}</b>
+            <span>商品名</span><b>{z.商品名}</b>
+            <span>製造/賞味</span><b><i>{年月日2(z.製造日)}</i><i className="o">{年月日2(z.賞味期限)}</i></b>
+            <span>入庫名義</span><b className="c">{z.名義名 ? `${z.名義名} 名義` : ""}</b>
+            <span>入庫No</span><b>{z.入庫No}</b>
+          </div>
+        </div>
+        <table className="fk-sum">
+          <thead><tr><th>No.</th><th>入庫元数</th><th>数量</th><th>Kg</th><th>入庫日</th><th>特筆備考</th></tr></thead>
+          <tbody><tr><td className="r">{z.在庫ID}</td><td className="r">{num(z.入庫元数)}</td><td className="r">{num(z.在庫ケース)}</td><td className="r">{num(z.在庫kg)}</td><td>{月日(z.入庫日)}</td><td>{z.備考在庫}</td></tr></tbody>
+        </table>
+        <div className="fk-list">
+          <table className="fk-grid">
+            <thead><tr><th>登録</th><th>変更日</th><th>数量</th><th>Kg</th><th>振替先</th><th>備考</th></tr></thead>
+            <tbody>
+              {d.rows.map((h) => (
+                <tr key={h.変更No}>
+                  <td className="c"><button className="fk-btn" disabled={h.変更Check} onClick={() => 登録(h)}>登録</button></td>
+                  <td className="day">{h.変更Check ? 月日(h.変更日) : <Field value={h.変更日} kind="date" className="fk-d" onCommit={(v) => { const x = parseDate(v); if (x) 直す(h, "変更日", x); }} />}</td>
+                  <td className="r">{h.変更Check ? num(h.ケース) : <Field value={h.ケース} kind="num" className="fk-n" onCommit={(v) => 直す(h, "ケース", Number(v) || 0)} />}</td>
+                  <td className="r">{num(h.商品kg)}</td>
+                  <td className="saki">
+                    {h.変更Check ? <b>{先(h.移動先ID) || h.移動先名}</b> : (
+                      <select value={h.移動先ID ?? 0} onChange={(e) => 直す(h, "移動先ID", Number(e.target.value))}>
+                        {d.振替先.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                      </select>
+                    )}
+                    {h.変更Check && <div className="red small">登録済み</div>}
+                  </td>
+                  <td>{h.変更Check ? h.備考 : <Field value={h.備考} className="fk-memo2" onCommit={(v) => 直す(h, "備考", v || null)} />}</td>
+                </tr>
+              ))}
+              <tr className="new">
+                <td className="c"><button className="fk-btn" onClick={足す} title="この行を足します（登録はまだしません）">追加</button></td>
+                <td><Field value={新.変更日} kind="date" className="fk-d" onCommit={(v) => { const x = parseDate(v); if (x) set新({ ...新, 変更日: x }); }} /></td>
+                <td><input className="fk-n r" value={新.ケース} onChange={(e) => set新({ ...新, ケース: e.target.value })} /></td>
+                <td />
+                <td>
+                  <select value={新.移動先ID} onChange={(e) => set新({ ...新, 移動先ID: Number(e.target.value) })}>
+                    {d.振替先.map((x) => <option key={x.id} value={x.id} title={(x as any).備考}>{x.name}</option>)}
+                  </select>
+                </td>
+                <td><input className="fk-memo2" value={新.備考} onChange={(e) => set新({ ...新, 備考: e.target.value })} /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="fk-foot">
+          <div className="box">
+            <button className="green" disabled title="帳票（④）で作ります">Exel出力</button>
+            <button className="blue" disabled title="帳票（④）で作ります">伝票印刷</button>
+            <button onClick={() => props.onClose(false)}>閉じる</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

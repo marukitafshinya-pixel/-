@@ -669,3 +669,35 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .hk-foot .v { background: #fff; border: 1px solid #888; min-width: 70px; text-align: right; padding: 1px 6px; }
 .hk-foot .sp { flex: 1; }
 .ws-furi { margin: 10px 6px; }
+
+/* 在庫振替（FSD_在庫訂正） */
+.fk { background: #dedcc8; border: 1px solid #666; width: 760px; max-height: 90vh; display: flex; flex-direction: column; }
+.fk-head { display: flex; gap: 20px; padding: 8px; }
+.fk-memo { width: 170px; min-height: 120px; background: #fff; border: 1px solid #999; font-size: 12px; white-space: pre-line; padding: 4px; }
+.fk-kv { display: grid; grid-template-columns: 80px 230px; gap: 4px; align-items: center; }
+.fk-kv span { background: #3a3a8a; color: #fff; font-weight: bold; text-align: center; padding: 1px; }
+.fk-kv b { background: #4a4ac0; color: #fff; padding: 1px 6px; display: flex; gap: 6px; }
+.fk-kv b i { font-style: normal; flex: 1; text-align: center; }
+.fk-kv b i.o { color: #ffd080; }
+.fk-kv b.c { justify-content: center; }
+.fk-sum { border-collapse: collapse; width: 100%; }
+.fk-sum th { background: #333399; color: #ffff80; }
+.fk-sum td { background: #4a4ac0; color: #fff; padding: 1px 6px; }
+.fk-list { overflow: auto; background: #c96a95; padding: 4px 0 30px; }
+.fk-grid { border-collapse: collapse; background: #fff; }
+.fk-grid th { background: #000080; color: #fff; padding: 1px 8px; }
+.fk-grid td { border: 1px solid #999; padding: 2px 4px; vertical-align: top; }
+.fk-grid td.day { color: #00c; font-weight: bold; }
+.fk-grid td.saki { color: #00c; text-align: center; min-width: 100px; }
+.fk-grid .red { color: #d00; }
+.fk-grid .small { font-size: 10px; }
+.fk-grid tr.new td { background: #f6f6f6; }
+.fk-btn { background: #fff; color: #00c; border: 2px outset #ddd; padding: 4px 6px; }
+.fk-d { width: 96px; }
+.fk-n { width: 56px; }
+.fk-memo2 { width: 300px; }
+.fk-foot { display: flex; justify-content: flex-end; padding: 6px; }
+.fk-foot .box { display: flex; gap: 4px; padding: 3px; border: 2px solid #555; }
+.fk-foot button { background: #fff; border: 2px outset #ddd; font-weight: bold; padding: 2px 10px; }
+.fk-foot .green { color: #080; }
+.fk-foot .blue { color: #00c; }
