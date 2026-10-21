@@ -498,3 +498,24 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .wsy .tg button.on { border-style: inset; background: #ffe080; font-weight: bold; }
 .ws-grid tr.picked td { background: #ffffc0; }
 .ws-grid td.note { font-size: 11px; max-width: 200px; }
+
+/* 希望在庫表示（FSD_希望在庫表示） */
+.kb { background: #fff; border: 1px solid #666; width: 96vw; max-height: 86vh; display: flex; flex-direction: column; }
+.kb-head { display: flex; gap: 10px; align-items: center; padding: 5px 8px; background: #d8e4f0; flex-wrap: wrap; }
+.kb-head:first-child { background: #333399; color: #fff; }
+.kb-title { font-size: 16px; margin-right: 10px; }
+.kb-kv { display: inline-flex; gap: 5px; align-items: center; }
+.kb-kv > span { font-size: 12px; }
+.kb-kv input { width: 60px; }
+.kb-head button { background: #fff; border: 2px outset #ddd; padding: 2px 10px; }
+.kb-head button.on { border-style: inset; background: #ffe080; }
+.kb-head button.ok { font-weight: bold; color: #00c; padding: 2px 20px; }
+.kb-head .sp { flex: 1; }
+.kb-list { overflow: auto; }
+.kb-list tr.plan td { background: #f4f8ff; }
+.kb-list tr.picked td { background: #ffffc0; }
+.kb-list td.red { color: #d00; }
+.kb-list td.pre { white-space: pre-line; font-size: 11px; }
+.kb-pick { width: 42px; height: 20px; background: #eee; border: 2px outset #ddd; color: #00f; font-weight: bold; font-size: 11px; }
+.kb-pick.on { border-style: inset; background: #cfe0ff; }
+.kb-memo { width: 120px; }

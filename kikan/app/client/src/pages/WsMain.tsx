@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate } from "../formParts";
+import { KibouDialog, type 希望在庫 } from "./WsKibou";
 
 type Rec = Record<string, any>;
 type 選択肢 = Record<string, { id: number; name: string }[]>;
@@ -37,6 +38,10 @@ export default function WsMain() {
   const [通知, set通知] = useState(0);
   const [cal, setCal] = useState(false);
   const [leftTab, setLeftTab] = useState<"届順" | "備考">("届順");
+  // 検索実行の条件（Access の cmb_商品検索表示・cmb_抽出倉庫。保存しない欄）
+  const [検索商品, set検索商品] = useState<number | null>(null);
+  const [検索倉庫, set検索倉庫] = useState<number | null>(null);
+  const [希望, set希望] = useState<希望在庫 | null>(null);
 
   useEffect(() => {
     api.get<選択肢>("/api/ws/choices").then(setCh);
@@ -80,6 +85,19 @@ export default function WsMain() {
   }
   const 運送会社名 = async (code: string) => (code.trim() ? (await api.get<any>(`/api/ws/unso/${code}`)).短縮名 : null);
   const n = (v: string) => (v.trim() === "" ? null : Number(v));
+
+  // 検索実行（Access の cmd_検索_Click → C_架空製造日別出荷データ表示Ver2）
+  async function 検索実行() {
+    if (!検索商品 && !検索倉庫) return alert("検索条件が入力されていません。");
+    try {
+      const r = await api.get<希望在庫>("/api/ws/kibou", { shohin: String(検索商品 ?? ""), soko: String(検索倉庫 ?? "") });
+      const kg = r.rows.reduce((a, x) => a + (x.在庫kg ?? 0), 0);
+      if (!confirm(`合計${r.rows.length}件\n重量 ${kg ? num(kg) : ""} kgまでを表示します`)) return;
+      set希望(r);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+  }
 
   async function 新しい便() {
     const r = await api.post<{ 輸送ID: number }>("/api/ws/plan/new", { date });
@@ -185,14 +203,14 @@ export default function WsMain() {
           </div>
           <div className="ws-kv">
             <span>品名</span>
-            <Field value="" kind="num" kyotsu="shohin" readOnly />
+            <Field value={検索商品} kind="num" kyotsu="shohin" onCommit={(v) => set検索商品(n(v))} />
           </div>
           <div className="ws-kv">
             <span>倉庫</span>
-            <Field value="" kind="num" kyotsu="tokui" readOnly />
+            <Field value={検索倉庫} kind="num" kyotsu="tokui" onCommit={(v) => set検索倉庫(n(v))} />
           </div>
           <div className="ws-row">
-            <button className="small" disabled title="在庫の割り当て（③で作ります）">検索実行</button>
+            <button className="small" disabled={!輸送ID} onClick={検索実行}>検索実行</button>
             <button className="small" disabled={!輸送ID} onClick={() => nav(`/ws/import?id=${輸送ID}`)}>インポート処理</button>
           </div>
           {sel("運賃計算区分", "運賃区分")}
@@ -381,6 +399,19 @@ export default function WsMain() {
           onPick={(d) => {
             setCal(false);
             日付を移す(d);
+          }}
+        />
+      )}
+      {希望 && 輸送ID && (
+        <KibouDialog
+          data={希望}
+          輸送ID={輸送ID}
+          出荷予定日={String(p.出荷計画日 ?? date).slice(0, 10)}
+          shohin={検索商品 ?? 0}
+          soko={検索倉庫 ?? 0}
+          onClose={(added) => {
+            set希望(null);
+            if (added) load();
           }}
         />
       )}

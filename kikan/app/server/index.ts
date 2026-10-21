@@ -14,6 +14,7 @@ import { hacchuRoutes } from "./hacchu.js";
 import { juchuMasterRoutes } from "./juchuMaster.js";
 import { findRoutes } from "./find.js";
 import { wsRoutes } from "./ws.js";
+import { wsZaikoRoutes } from "./wsZaiko.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -30,6 +31,7 @@ await app.register(async (a) => hacchuRoutes(a));
 await app.register(async (a) => juchuMasterRoutes(a));
 await app.register(async (a) => findRoutes(a));
 await app.register(async (a) => wsRoutes(a));
+await app.register(async (a) => wsZaikoRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");

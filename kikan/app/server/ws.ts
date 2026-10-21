@@ -48,7 +48,7 @@ async function 特別項目(c: PoolClient, 区分: 0 | 1, 備考: string, code: 
 }
 
 /** 製造日から賞味期限を出す（Access の KigenSum） */
-async function 賞味期限計算(c: PoolClient, 製造日: string | null, 商品コード: unknown): Promise<string | null> {
+export async function 賞味期限計算(c: PoolClient, 製造日: string | null, 商品コード: unknown): Promise<string | null> {
   if (!製造日) return null;
   const r = await c.query(`SELECT "品質保持期間", "賞味期限日付差" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [Number(商品コード ?? 0)]);
   const 期間 = Number(r.rows[0]?.品質保持期間 ?? 0);
@@ -121,7 +121,7 @@ async function 受注残数(c: PoolClient, 受注ID: number) {
   );
 }
 
-async function 一連で<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+export async function 一連で<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const c = await pool.connect();
   try {
     await c.query("BEGIN");
@@ -577,7 +577,7 @@ const 写す項目 = [
 ];
 
 /** WorkStation の出荷に新しく入れるときの初めの値（Access の表の既定値。今のデータで、取り込んだ行がみなこの値） */
-const 出荷の既定値: Record<string, unknown> = {
+export const 出荷の既定値: Record<string, unknown> = {
   入庫ID: 0, 在庫ID: 0, サンプル区分: false, 出荷区分: false, chk: false, 計画変更chk: false, 請求先コード: 0, 個別運賃: 0, 地区コード: 0,
   買取単価コード: 0, 買取chk: false, 買取金額: 0, パレット枚数: 0, 入庫フラグ: false, 完了フラグ: false, 抽出区分: false, 受注確認: false,
   出荷元数: 0, 破損個数: 0, 受注グループ: 0, 輸送履歴読込chk: false, ユーザーchk: false, 帳票グループ化: 0, 積込確認: false, 破損出庫ID: 0,
