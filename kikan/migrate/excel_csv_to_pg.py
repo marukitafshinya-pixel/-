@@ -31,8 +31,10 @@ def read_text(path):
 
 
 def psql(pgurl, sql, stdin=None):
-    return subprocess.run(["psql", pgurl, "-v", "ON_ERROR_STOP=1", "-q", "-At", "-c", sql],
-                          input=stdin, capture_output=True, check=True).stdout.decode()
+    r = subprocess.run(["psql", pgurl, "-v", "ON_ERROR_STOP=1", "-q", "-At", "-c", sql], input=stdin, capture_output=True)
+    if r.returncode != 0:
+        raise SystemExit("PostgreSQL のエラー: " + r.stderr.decode(errors="replace").strip()[:2000])
+    return r.stdout.decode()
 
 
 def qname(full):
@@ -59,9 +61,30 @@ def fix(v, typ):
         return {"TRUE": "true", "FALSE": "false", "-1": "true", "0": "false"}.get(v.upper(), v)
     if typ.startswith("timestamp") or typ == "date":
         return fix_date(v)
-    if typ in ("integer", "smallint", "bigint", "double precision", "numeric", "real"):
-        return v.replace(",", "").replace("¥", "")
+    if typ.split("(")[0] in ("integer", "smallint", "bigint", "double precision", "numeric", "real", "money"):
+        return re.sub(r"[,¥￥\\]", "", v)
     return v
+
+
+def 型を推す(values):
+    """--like の表にない項目は、入っている値から型を決める（TRUE/FALSE→真偽、日付→日時、数→数、ほか→文字）"""
+    vs = [v for v in values if v != ""]
+    if not vs:
+        return "text"
+    num = [re.sub(r"[,¥￥\\]", "", v) for v in vs]
+    if all(v.upper() in ("TRUE", "FALSE") for v in vs):
+        return "boolean"
+    try:
+        for v in vs:
+            fix_date(v)
+        return "timestamp"
+    except ValueError:
+        pass
+    if all(re.fullmatch(r"-?\d+", v) for v in num):
+        return "integer" if all(abs(int(v)) < 2**31 for v in num) else "bigint"
+    if all(re.fullmatch(r"-?\d+(\.\d+)?", v) for v in num):
+        return "double precision"
+    return "text"
 
 
 def main():
@@ -81,7 +104,7 @@ def main():
 
     rows = list(csv.reader(io.StringIO(read_text(a.csv))))
     head, body = rows[0], [r for r in rows[1:] if any(r)]
-    cols = [(h, types.get(h, "text")) for h in head]
+    cols = [(h, types.get(h) or 型を推す([r[i] for r in body if i < len(r)])) for i, h in enumerate(head)]
 
     schema = a.table.split(".", 1)[0]
     psql(pgurl, f'CREATE SCHEMA IF NOT EXISTS "{schema}"; DROP TABLE IF EXISTS {qname(a.table)}; '
