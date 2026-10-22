@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { api, ApiError } from "../api";
+import { api, ApiError, num } from "../api";
 
 // マスタ管理（Access の「Accessマスタ管理」：F_マスタ一覧・FM_商品マスタ・FM_商品登録・FM_得意先マスタ・FM_得意先登録）
 type Rec = Record<string, any>;
@@ -55,6 +55,7 @@ export function MasterMenu() {
       <button onClick={() => nav("/master/user")}>ユーザーマスタ登録</button>
       <button onClick={() => nav("/master/misettei")}>ユーザーマスタ未設定登録</button>
       <button onClick={() => nav("/master/calendar")}>カレンダー設定</button>
+      <button onClick={() => nav("/master/sakujo")}>古いデータを消す</button>
       <button className="close" onClick={() => nav("/")}>閉じる</button>
     </div>
   );
@@ -949,6 +950,129 @@ export function MisetteiList() {
         </tbody>
       </table>
       {開く != null && <UserCard id={開く} o={o} 既定={{}} 名前={名前} onClose={(変えた) => { set開く(null); if (変えた) 読む(); }} />}
+    </div>
+  );
+}
+
+// ---------------- 古いデータを消す ----------------
+const まとまり一覧 = [
+  { id: "受注出荷", name: "受注・出荷・便（輸送計画）" },
+  { id: "在庫入庫", name: "在庫・入庫（製造）・在庫訂正" },
+  { id: "倉庫管理", name: "倉庫管理の出荷・便・在庫・在庫訂正" },
+];
+export function SakujoPage() {
+  const nav = useNavigate();
+  const [年数, set年数] = useState(2);
+  const [選ぶ, set選ぶ] = useState<string[]>(まとまり一覧.map((x) => x.id));
+  const [d, setD] = useState<Rec | null>(null);
+  const [書き出した, set書き出した] = useState(false);
+  const [動作中, set動作中] = useState(false);
+  const [結果, set結果] = useState<Rec | null>(null);
+  const [数え中, set数え中] = useState(false);
+  const 数える = () => {
+    set数え中(true);
+    set書き出した(false);
+    return api
+      .get<Rec>("/api/mst/sakujo", { years: 年数, kinds: 選ぶ.join(",") })
+      .then(setD, エラー)
+      .finally(() => set数え中(false));
+  };
+  useEffect(() => {
+    数える();
+  }, [年数, 選ぶ.join(",")]);
+  const 表: Rec[] = d?.表 ?? [];
+  const 合計 = 表.reduce((a, x) => a + n(x.件数), 0);
+
+  async function 書き出す() {
+    const pass = await 合言葉を聞く();
+    if (!pass) return;
+    set動作中(true);
+    try {
+      const r = await fetch("/api/mst/sakujo/excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pass, years: 年数, kinds: 選ぶ }),
+        credentials: "same-origin",
+      });
+      if (!r.ok) throw new ApiError(r.status, (await r.json().catch(() => ({}))).error ?? "書き出せませんでした");
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `消したデータ_${d?.消す日 ?? ""}より前.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      set書き出した(true);
+    } catch (e) {
+      エラー(e);
+    } finally {
+      set動作中(false);
+    }
+  }
+  async function 消す() {
+    if (!confirm(`${d?.消す日} より前のデータ ${num(合計)} 件を消します。消したデータは元に戻せません（書き出した Excel に残っています）。よろしいですか？`)) return;
+    const pass = await 合言葉を聞く();
+    if (!pass) return;
+    set動作中(true);
+    try {
+      const r = await api.post<Rec>("/api/mst/sakujo/run", {
+        pass, years: 年数, kinds: 選ぶ, 件数: Object.fromEntries(表.map((x) => [x.名前, x.件数])),
+      });
+      set結果(r.結果);
+      await 数える();
+    } catch (e) {
+      エラー(e);
+    } finally {
+      set動作中(false);
+    }
+  }
+  return (
+    <div className="ms sk2">
+      <div className="ms-head">
+        <div className="ms-name">古いデータを消す</div>
+        <label className="ms-box">
+          <span>残す年数</span>
+          <select value={年数} onChange={(e) => set年数(Number(e.target.value))}>
+            {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y} 年</option>)}
+          </select>
+        </label>
+        <div className="ms-btns"><button onClick={() => nav("/master")}>閉じる</button></div>
+      </div>
+      <div className="hb-note">
+        {d?.消す日 ? `${d.消す日.replace(/-/g, "/")} より前のデータを消します。` : ""}
+        在庫が残っているロットと、それにつながる出荷・入庫・在庫訂正・受注・便は消しません。消す前に Excel に書き出してください（書き出すまで［削除］は押せません）。
+      </div>
+      <div className="sk2-kinds">
+        {まとまり一覧.map((x) => (
+          <label key={x.id}>
+            <input type="checkbox" checked={選ぶ.includes(x.id)} onChange={(e) => set選ぶ((a) => (e.target.checked ? [...a, x.id] : a.filter((y) => y !== x.id)))} />
+            {x.name}
+          </label>
+        ))}
+      </div>
+      <table className="ms-grid">
+        <thead><tr><th>データ</th><th>消す件数</th><th>今の件数</th><th>消したあと</th></tr></thead>
+        <tbody>
+          {表.map((x) => (
+            <tr key={x.名前}>
+              <td>{x.名前}</td><td className="r b">{num(x.件数)}</td><td className="r">{num(x.全部)}</td><td className="r">{num(x.全部 - x.件数)}</td>
+            </tr>
+          ))}
+          {表.length > 0 && <tr className="sum"><td>合計</td><td className="r b">{num(合計)}</td><td /><td /></tr>}
+        </tbody>
+      </table>
+      <div className="sk2-btns">
+        {数え中 && <span>件数を数えています…</span>}
+        <button onClick={書き出す} disabled={動作中 || 数え中 || !合計}>① Excel に書き出す</button>
+        <button className="red" onClick={消す} disabled={動作中 || 数え中 || !合計 || !書き出した}>② 削除</button>
+        {書き出した && <span className="ok">書き出しました。ファイルを保存したことを確かめてから［削除］を押してください。</span>}
+      </div>
+      {結果 && (
+        <div className="sk2-result">
+          消しました：{Object.entries(結果).filter(([, v]) => n(v)).map(([k, v]) => `${k} ${num(v as number)} 件`).join("、") || "0 件"}
+        </div>
+      )}
     </div>
   );
 }

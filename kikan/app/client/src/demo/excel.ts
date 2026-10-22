@@ -2,3 +2,6 @@
 export async function 受注検索のExcel(): Promise<never> {
   throw new Error("見本版では Excel 出力は使えません。");
 }
+export async function 古いデータのExcel(): Promise<never> {
+  throw new Error("見本版では Excel 出力は使えません。");
+}

@@ -1318,3 +1318,13 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .mc-row { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px dotted #ccc; padding: 0 3px; }
 .mc-row.past { color: #2a7a3a; }
 .mi-grid td { font-size: 12px; white-space: nowrap; }
+.sk2-kinds { display: flex; gap: 18px; margin: 8px 0; }
+.sk2-kinds label { display: flex; gap: 4px; align-items: center; }
+.sk2 .ms-grid tr.sum td { font-weight: bold; background: #f2f2f2; }
+.sk2-btns { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.sk2-btns button { padding: 6px 16px; }
+.sk2-btns button.red { background: #c33; color: #fff; border: 1px solid #a00; }
+.sk2-btns button:disabled { opacity: 0.5; }
+.sk2-btns .ok { color: #070; }
+.sk2-result { margin-top: 10px; font-weight: bold; }
+.ms-grid td.r { text-align: right; } .ms-grid td.c { text-align: center; } .ms-grid td.b { font-weight: bold; }

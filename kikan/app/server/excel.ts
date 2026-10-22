@@ -58,3 +58,21 @@ export async function 受注検索のExcel(rows: Record<string, unknown>[]): Pro
   }
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
+
+/** 古いデータを消す前の控え：表ごとに 1 枚のシート（1 行目が見出し） */
+export async function 古いデータのExcel(シート: { 名前: string; rows: Record<string, unknown>[] }[]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  for (const s of シート) {
+    const ws = wb.addWorksheet(s.名前.slice(0, 31));
+    const cols = s.rows.length ? Object.keys(s.rows[0]) : [];
+    if (!cols.length) {
+      ws.addRow(["（消す行はありません）"]);
+      continue;
+    }
+    const head = ws.addRow(cols);
+    head.font = { bold: true };
+    for (const r of s.rows) ws.addRow(cols.map((c) => (r[c] instanceof Date ? r[c] : r[c] ?? null)));
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+  }
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
