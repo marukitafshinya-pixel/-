@@ -1370,3 +1370,46 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .kn-grid .navy-t { color: #00008b; font-weight: bold; }
 .kn-grid .kigen { color: #d00; }
 .kn-grid .nowrap { white-space: nowrap; }
+/* 在庫商品パレット確認（FS_在庫商品パレット確認） */
+.zp { min-height: 100vh; background: #e4eef8; padding: 8px 12px; }
+.zp-grid td.zp-a, .zp-grid th.zp-a { padding: 0 1px; }
+.zp-grid input.zp-c { width: 32px; text-align: right; padding: 1px 2px; }
+.zp-grid input.zp-n { width: 40px; }
+.zp-grid tr.ok td { background: #eaf8ea; }
+.zp-grid .zp-ok { color: #080; font-weight: bold; }
+.zp-grid .zp-ng { color: #d00; font-weight: bold; }
+.zp-ptitle { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+@media print {
+  .zp { background: #fff; padding: 0; }
+  .zp-list { max-height: none; overflow: visible; }
+  .zp-grid { font-size: 9px; }
+  .zp-grid input { border: none; background: transparent; font-size: 9px; }
+  .zp-grid input.zp-c { width: 18px; }
+  .zp-grid th { position: static; }
+  @page { size: A4 landscape; margin: 8mm; }
+}
+.print-only { display: none; }
+@media print { .print-only { display: block; } }
+/* パレット配置図（AF_パレット配置図） */
+.pz { min-height: 100vh; background: #e4eef8; padding: 8px 12px; }
+.pz-body { display: flex; gap: 14px; align-items: flex-start; }
+.pz-map { border-collapse: separate; border-spacing: 3px; }
+.pz-slot { width: 150px; height: 82px; background: #fff; border: 2px solid #557; vertical-align: top; padding: 2px 4px; position: relative; cursor: default; }
+.pz-slot.pz-gap { border-left-width: 4px; }
+.pz-slot.pz-target { background: #fffbe0; cursor: pointer; }
+.pz-slot:hover { border-color: #1f3b8f; }
+.pz-none { width: 150px; }
+.pz-name { position: absolute; right: 3px; top: 1px; font-size: 10px; color: #99a; }
+.pz-text { white-space: pre-wrap; font-size: 11px; line-height: 1.25; max-height: 78px; overflow: hidden; }
+.pz-slot textarea { width: 100%; height: 76px; font-size: 11px; box-sizing: border-box; }
+.pz-list { max-height: calc(100vh - 110px); overflow: auto; }
+.pz-list .kn-grid td { font-size: 12px; }
+.pz-row { cursor: grab; }
+.pz-row.sel td { background: #cfe0ff; }
+.pz-row.plan td { color: #777; }
+@media print {
+  .pz { background: #fff; padding: 0; }
+  .pz-slot { border: 1px solid #000; }
+  .pz-name { color: #666; }
+  @page { size: A4 landscape; margin: 8mm; }
+}
