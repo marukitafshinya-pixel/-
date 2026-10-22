@@ -157,6 +157,43 @@ export function wsKensaRoutes(app: FastifyInstance) {
     });
   });
 
+  // ---------------- 検査結果待ち在庫一覧（Access の FM_検査待ち在庫） ----------------
+
+  // 商品区分が 1・2・3・5 の在庫（在庫が 0 の行も出す。Access と同じ）
+  app.get("/api/ws/kensamachi", async () =>
+    q(
+      `SELECT z."在庫ID", z."倉庫ID", z."倉庫名", z."入庫日"::date::text AS "入庫日", z."商品区分", z."入庫後名義ID", m."短縮名" AS "名義名", z."規格", z."入数",
+              z."製造日"::date::text AS "製造日", z."賞味期限"::date::text AS "賞味期限", z."商品名", z."検査区分", z."入庫元数", z."繰越ケース", z."製造ケース",
+              z."出庫ケース", z."在庫ケース", z."在庫kg", z."賞味期限通知"
+       FROM ${在庫} z LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = z."入庫後名義ID"
+       WHERE z."商品区分" IN (1, 2, 3, 5)
+       ORDER BY z."倉庫ID", z."製造日", z."商品コード", z."賞味期限", z."入庫日", z."タグ", z."在庫ID"`,
+    ),
+  );
+
+  // 直す（［修正］のあと）。商品区分は出荷に通知（ZaikoPlanChange）。
+  // 菌検査状態の［済み］［待ち］は商品区分を 0・3 にし、その在庫の出荷の商品区分も同じにする（flm_商品区分_AfterUpdate）
+  app.post<{ Body: { 合言葉: string; 在庫ID: number; 項目: string; 値: unknown } }>("/api/ws/kensamachi/save", async (req, reply) => {
+    if (!合言葉が合う(req.body.合言葉)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
+    const 項目 = req.body.項目;
+    if (!["商品区分", "菌検査状態", "検査区分"].includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
+    return 一連で(async (c) => {
+      const z = (await c.query(`SELECT "在庫ID" FROM ${在庫} WHERE "在庫ID" = $1 FOR UPDATE`, [n(req.body.在庫ID)])).rows[0];
+      if (!z) return reply.code(404).send({ error: "この在庫はありません" });
+      if (項目 === "検査区分") {
+        await c.query(`UPDATE ${在庫} SET "検査区分" = $2 WHERE "在庫ID" = $1`, [z.在庫ID, req.body.値 === "" ? null : req.body.値]);
+        return { ok: true, 通知: null };
+      }
+      const 区分 = 項目 === "菌検査状態" ? (n(req.body.値) === 0 ? 0 : 3) : n(req.body.値);
+      await c.query(`UPDATE ${在庫} SET "商品区分" = $2 WHERE "在庫ID" = $1`, [z.在庫ID, 区分]);
+      if (項目 === "菌検査状態") {
+        await c.query(`UPDATE ${出荷} SET "商品区分" = $2 WHERE "在庫ID" = $1`, [z.在庫ID, 区分]);
+        return { ok: true, 商品区分: 区分, 通知: null };
+      }
+      return { ok: true, 商品区分: 区分, 通知: await 出荷に知らせる(c, z.在庫ID) };
+    });
+  });
+
   // ---------------- サンプル登録 ----------------
 
   app.get("/api/ws/sample", async () => ({

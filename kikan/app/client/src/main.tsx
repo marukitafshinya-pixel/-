@@ -28,7 +28,7 @@ import WsPallet from "./pages/WsPallet";
 import WsKoshin from "./pages/WsKoshin";
 import WsHibetsu from "./pages/WsHibetsu";
 import WsTeishi from "./pages/WsTeishi";
-import { WsKensa, WsSample } from "./pages/WsKensa";
+import { WsKensa, WsKensaMachi, WsSample } from "./pages/WsKensa";
 import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList, UnsoForm, UnsoList, UserList, CalendarPage, MisetteiList, SakujoPage } from "./pages/Master";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
@@ -72,6 +72,7 @@ function App() {
       <Route path="/ws/teishi" element={<WsTeishi />} />
       <Route path="/ws/kensa" element={<WsKensa />} />
       <Route path="/ws/sample" element={<WsSample />} />
+      <Route path="/ws/kensamachi" element={<WsKensaMachi />} />
       <Route path="/master" element={<MasterMenu />} />
       <Route path="/master/shohin" element={<ShohinList />} />
       <Route path="/master/shohin/:code" element={<ShohinForm />} />

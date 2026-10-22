@@ -1366,3 +1366,7 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 #busy-indicator .busy-text { font-size: 16px; font-weight: bold; color: #333; }
 @keyframes busy-spin { to { transform: rotate(360deg); } }
 @media print { #busy-indicator { display: none !important; } }
+.kn-grid button.on { background: #1f3b8f; color: #fff; }
+.kn-grid .navy-t { color: #00008b; font-weight: bold; }
+.kn-grid .kigen { color: #d00; }
+.kn-grid .nowrap { white-space: nowrap; }

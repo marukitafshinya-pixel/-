@@ -265,3 +265,108 @@ export function WsSample() {
     </div>
   );
 }
+
+/**
+ * 検査結果待ち在庫一覧（Access の FM_検査待ち在庫）。メニューの「検査待ち在庫」から開く。
+ * 商品区分が 菌検査待ち（1〜3）・出荷停止（5）の在庫を出す。［修正］でパスワードを入れると、商品区分・検査区分・菌検査状態を直せる。
+ */
+export function WsKensaMachi() {
+  const nav = useNavigate();
+  const [rows, setRows] = useState<Rec[]>([]);
+  const [区分, set区分] = useState<Opt[]>([]);
+  const [合言葉, set合言葉] = useState<string | null>(null);
+  const [間違い, set間違い] = useState(0);
+
+  async function 読む() {
+    try {
+      setRows(await api.get<Rec[]>("/api/ws/kensamachi"));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  useEffect(() => {
+    読む();
+    api.get<{ 商品区分: Opt[] }>("/api/ws/kensa/opts").then((o) => set区分(o.商品区分), エラー);
+  }, []);
+
+  async function 修正() {
+    if (合言葉 !== null) return;
+    const p = prompt("パスワードを入力してください");
+    if (p === null) return;
+    const r = await api.post<{ ok: boolean }>("/api/ws/kensa/unlock", { 合言葉: p }).catch((e) => (エラー(e), null));
+    if (!r) return;
+    if (r.ok) {
+      set合言葉(p);
+      alert("修正可能になりました");
+    } else {
+      const k = 間違い + 1;
+      set間違い(k);
+      alert(`パスワードが違います!!\n${k} 回目`);
+      if (k > 2) nav("/"); // Access と同じく 3 回まちがえると閉じる
+    }
+  }
+
+  async function 直す(r: Rec, 項目: string, 値: unknown) {
+    try {
+      const res = await api.post<{ 商品区分?: number; 通知: number | null }>("/api/ws/kensamachi/save", { 合言葉, 在庫ID: r.在庫ID, 項目, 値 });
+      if (res.通知 !== null) alert(`変更により、出荷計画に${res.通知} 件の変更通知を送ります。`);
+      setRows((x) => x.map((y) => (y.在庫ID === r.在庫ID ? { ...y, ...(項目 === "検査区分" ? { 検査区分: 値 } : { 商品区分: res.商品区分 }) } : y)));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  const ro = 合言葉 === null;
+  const 日 = (v: string | null) => (v ? v.replace(/-/g, "/") : "");
+  const ケース計 = rows.reduce((a, r) => a + Number(r.在庫ケース ?? 0), 0);
+
+  return (
+    <div className="kn">
+      <div className="kn-head">
+        <div className="kn-title">検査結果待ち在庫一覧</div>
+        <div className="kn-btns">
+          <button onClick={読む} title="直した結果で出し直す">出し直す</button>
+          <button onClick={修正} className={ro ? "" : "on"}>{ro ? "修正" : "修正中"}</button>
+          <button onClick={() => nav(-1)}>閉じる</button>
+        </div>
+      </div>
+      <div className="kn-list">
+        <table className="kn-grid">
+          <thead>
+            <tr>
+              <th>入庫日</th><th>商品区分</th><th>名義</th><th>規格/入数</th><th>製造・賞味</th><th>商品名</th><th>検査区分</th>
+              <th>元数</th><th>繰越</th><th>製造</th><th>出庫</th><th>在庫</th><th>菌検査状態</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && <tr><td colSpan={13} className="c none">検査待ちの在庫はありません</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.在庫ID} className={r.商品区分 === 5 ? "teishi" : r.商品区分 >= 1 && r.商品区分 <= 3 ? "machi" : ""}>
+                <td className="c">{日(r.入庫日)}</td>
+                <td>
+                  <select value={r.商品区分 ?? ""} disabled={ro} onChange={(e) => 直す(r, "商品区分", Number(e.target.value))}>
+                    {区分.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+                  </select>
+                </td>
+                <td className="small">{r.入庫後名義ID}<div className="gray">{r.名義名}</div></td>
+                <td className="c"><b>{r.規格}</b><div>{r.入数}</div></td>
+                <td><div className="navy-t">{日(r.製造日)}</div><div className="orange small">{日(r.賞味期限)}</div></td>
+                <td className="name">{r.商品名}<div className="small gray">{r.倉庫名}</div>{r.賞味期限通知 && <div className="small kigen">{r.賞味期限通知}</div>}</td>
+                <td><Field value={r.検査区分} className="kn-s" readOnly={ro} onCommit={(v) => 直す(r, "検査区分", v)} /></td>
+                <td className="r">{num(r.入庫元数)}</td>
+                <td className="r">{num(r.繰越ケース)}</td>
+                <td className="r">{num(r.製造ケース)}</td>
+                <td className="r">{num(r.出庫ケース)}</td>
+                <td className="r"><b>{num(r.在庫ケース)}</b><div className="small gray">{num(r.在庫kg)}</div></td>
+                <td className="c nowrap">
+                  <button className={r.商品区分 === 0 ? "on" : ""} disabled={ro} onClick={() => 直す(r, "菌検査状態", 0)}>済み</button>
+                  <button className={r.商品区分 === 3 ? "on" : ""} disabled={ro} onClick={() => 直す(r, "菌検査状態", 3)}>待ち</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="kn-foot">{rows.length} 件　在庫ケース計 {num(ケース計)}　［済み］で製品に、［待ち］で菌検査待ち(ソテー)にして、その在庫の出荷にも写します。</div>
+    </div>
+  );
+}
