@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate } from "../formParts";
 import { KibouDialog, type 希望在庫 } from "./WsKibou";
-import { 輸送依頼書印刷 } from "./Chohyo";
+import { 輸送依頼書印刷, 出荷予定明細票印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
 type 選択肢 = Record<string, { id: number; name: string }[]>;
@@ -45,6 +45,8 @@ export default function WsMain() {
   const [希望, set希望] = useState<希望在庫 | null>(null);
   const [通知一覧, set通知一覧] = useState(false);
   const [依頼書, set依頼書] = useState<Rec | null>(null);
+  const [予定, set予定] = useState<{ 開始: string; 終了: string; 便だけ: boolean } | null>(null);
+  const [予定票, set予定票] = useState<Rec | null>(null);
 
   useEffect(() => {
     api.get<選択肢>("/api/ws/choices").then(setCh);
@@ -281,7 +283,7 @@ export default function WsMain() {
             <div className="ws-btns">
               <button className="red" onClick={削除} disabled={!輸送ID} title="この便を消し、明細を便からはずす">割付解除</button>
               <button disabled={!輸送ID} onClick={() => nav(`/ws/yomikomi?id=${輸送ID}`)} title="受注読込（FSD_受注選択）">配車割付</button>
-              <button className="blue" disabled title="④で作ります">輸送印刷</button>
+              <button className="blue" onClick={() => set予定({ 開始: date, 終了: date, 便だけ: false })} title="出荷予定明細票（R_出荷予定明細票）">輸送印刷</button>
               <button onClick={() => nav("/")}>閉じる</button>
             </div>
           </div>
@@ -429,6 +431,33 @@ export default function WsMain() {
         />
       )}
       {依頼書 && <輸送依頼書印刷 y={依頼書} onClose={() => set依頼書(null)} />}
+      {予定 && (
+        <div className="modal" onClick={() => set予定(null)}>
+          <div className="yt-dlg" onClick={(e) => e.stopPropagation()}>
+            <div className="head">出荷予定明細票</div>
+            <label>出荷日 <input type="date" value={予定.開始} onChange={(e) => set予定({ ...予定, 開始: e.target.value })} /></label>
+            <label>〜 <input type="date" value={予定.終了} onChange={(e) => set予定({ ...予定, 終了: e.target.value })} /></label>
+            <label className="chk"><input type="checkbox" checked={予定.便だけ} disabled={!輸送ID} onChange={(e) => set予定({ ...予定, 便だけ: e.target.checked })} /> いま開いている便だけ</label>
+            <div className="btns">
+              <button
+                className="blue"
+                onClick={async () => {
+                  try {
+                    set予定票(await api.post<Rec>("/api/ws/yotei", 予定.便だけ ? { 輸送ID } : { 開始: 予定.開始, 終了: 予定.終了 }));
+                    set予定(null);
+                  } catch (e) {
+                    alert(e instanceof ApiError ? e.message : String(e));
+                  }
+                }}
+              >
+                印刷表示
+              </button>
+              <button onClick={() => set予定(null)}>閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {予定票 && <出荷予定明細票印刷 y={予定票} onClose={() => set予定票(null)} />}
       {通知一覧 && (
         <NoticeDialog
           onClose={() => set通知一覧(false)}

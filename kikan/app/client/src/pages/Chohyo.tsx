@@ -693,3 +693,67 @@ export function パレット積込印刷(props: { p: Rec; onClose: () => void })
     </div>
   );
 }
+
+// ---------------- 出荷予定明細票（R_出荷予定明細票） ----------------
+const 月日2 = (v: string | null) => (v ? `${Number(v.slice(5, 7))}月${v.slice(8, 10)}日` : "");
+const kg整数 = (v: number) => Math.round(v).toLocaleString("ja-JP");
+
+function 出荷予定明細票ページ(props: { p: Rec; 社名: string; 作成時間: string }) {
+  const p = props.p;
+  return (
+    <div className="pv-page land yt">
+      <div className="yt-top">
+        <div className="title">{[..."出荷予定明細票"].join(" ")}</div>
+        <div className="time">{props.作成時間}</div>
+      </div>
+      <div className="yt-line">
+        <div className="day">出荷予定日 {年月日曜日(p.出荷日)}</div>
+        <div className="no">No{p.No}</div>
+      </div>
+      <div className="yt-sha">{props.社名}</div>
+      <div className="yt-line2">
+        <span className="u">運送業者 {p.運送会社名}</span>
+        <span className="u">車番{p.車番}号車</span>
+        <span className="sum"><span>合計</span><span>{kg整数(p.kg)} kg</span></span>
+      </div>
+      <table className="yt-grid">
+        <colgroup><col style={{ width: "3%" }} /><col style={{ width: "7%" }} /><col style={{ width: "3%" }} /><col style={{ width: "4.5%" }} /><col style={{ width: "17%" }} /><col style={{ width: "4.5%" }} /><col style={{ width: "19%" }} /><col style={{ width: "5%" }} /><col style={{ width: "4.5%" }} /><col style={{ width: "5.8%" }} /><col style={{ width: "6%" }} /><col style={{ width: "6%" }} /><col style={{ width: "3%" }} /><col style={{ width: "12.2%" }} /></colgroup>
+        <thead>
+          <tr><th>積順</th><th>出荷元</th><th>名義</th><th>コード</th><th>入庫先</th><th>コード</th><th>品名</th><th>規格</th><th>ケース</th><th>kg</th><th>賞味期限</th><th>着日</th><th>区分</th><th>備考</th></tr>
+        </thead>
+        <tbody>
+          {p.行.map((r: Rec, i: number) => (
+            <tr key={i}>
+              <td className="c b">{r.積順}</td><td className="small">{r.出荷元}</td><td className="c b">{r.名義}</td><td className="r">{r.コード}</td>
+              <td className="small">{r.入庫先}</td><td className="r">{r.商品コード}</td><td className="small">{r.商品名}</td><td className="c">{r.規格}</td>
+              <td className="r">{r.ケース}</td><td className="r">{kg整数(r.kg)}</td><td className="c">{期限(r.賞味期限)}</td><td className="c">{月日2(r.着日)}</td>
+              <td className="c kubun">{r.区分}</td><td className="small">{r.備考}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="yt-note">
+        <div>※ コンパネは、異物混入の恐れ(木片、木くず等)がある為、使用禁止です！</div>
+        <div>※ 名義表示 F:ふらの M:大阪 H:北海道</div>
+      </div>
+    </div>
+  );
+}
+
+/** 出荷予定明細票の印刷画面 */
+export function 出荷予定明細票印刷(props: { y: Rec; onClose: () => void }) {
+  const pages: Rec[] = props.y.pages ?? [];
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>出荷予定明細票（{pages.length} 枚）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        {pages.length === 0 && <div className="pv-none">データがありません</div>}
+        {pages.map((p, i) => <出荷予定明細票ページ key={i} p={p} 社名={props.y.社名} 作成時間={props.y.作成時間} />)}
+      </div>
+    </div>
+  );
+}

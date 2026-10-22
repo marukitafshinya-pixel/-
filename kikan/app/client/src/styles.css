@@ -1108,3 +1108,41 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .ko-sec.yuso tr { cursor: pointer; }
 .ko-sec.yuso tr.cur td { background: #8a8acc; }
 .ko-sec.yuso td.c:nth-child(2) { background: #6a6a9c; }
+
+/* 出荷予定明細票（横の A4） */
+.yt { font-size: 8.5pt; display: flex; flex-direction: column; }
+.yt-top { position: relative; text-align: center; }
+.yt-top .title { font-size: 20pt; font-family: "MS PMincho", serif; }
+.yt-top .time { position: absolute; right: 0; top: 0; font-size: 7pt; }
+.yt-line { display: flex; justify-content: space-between; font-size: 11pt; font-weight: bold; margin-top: 1mm; }
+.yt-line .no { text-decoration: underline; font-weight: normal; }
+.yt-sha { text-align: right; font-size: 12pt; }
+.yt-line2 { display: flex; align-items: flex-end; gap: 30mm; margin: 1mm 0 1mm 22mm; font-size: 11pt; font-weight: bold; }
+.yt-line2 .u { text-decoration: underline; }
+.yt-line2 .sum { margin-left: auto; margin-right: 12mm; border: 1px solid #000; display: flex; gap: 14mm; padding: 0.5mm 2mm; font-size: 9.5pt; min-width: 55mm; justify-content: space-between; }
+.yt-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.yt-grid td { overflow-wrap: anywhere; }
+.yt-grid th, .yt-grid td { border: 1px solid #000; padding: 0.3mm 1mm; vertical-align: top; }
+.yt-grid th { font-size: 7.5pt; }
+.yt-grid td { font-weight: bold; height: 9mm; }
+.yt-grid td.small { font-size: 7.5pt; }
+.yt-note { margin-top: auto; font-size: 8pt; font-weight: bold; line-height: 2; }
+.pv-page.land.yt { height: 210mm; }
+.yt-dlg { background: #fff; padding: 14px 18px; border-radius: 6px; display: flex; flex-direction: column; gap: 10px; min-width: 300px; }
+.yt-dlg .head { font-weight: bold; font-size: 16px; }
+.yt-dlg .btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* 日別の在庫 */
+.hb { padding: 10px 14px; }
+.hb-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hb-top h2 { margin: 0 12px 0 0; }
+.hb-top .day { font-weight: bold; font-size: 15px; }
+.hb-top .right { margin-left: auto; }
+.hb-note { margin: 6px 0; color: #555; font-size: 13px; }
+.hb h3 { margin: 14px 0 6px; font-size: 15px; }
+.hb h3 .filter { font-weight: normal; font-size: 13px; margin-left: 10px; }
+.hb-soko tbody tr { cursor: pointer; }
+.hb-soko tr.cur td { background: #ffe9a8; }
+.hb-soko tr.sum td { font-weight: bold; background: #f2f2f2; }
+.hb-ugoki td.plus { color: #0a6b2d; font-weight: bold; }
+.hb-ugoki td.minus { color: #b00020; font-weight: bold; }

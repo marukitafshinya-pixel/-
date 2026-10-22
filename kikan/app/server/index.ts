@@ -23,6 +23,8 @@ import { wsChohyoRoutes } from "./wsChohyo.js";
 import { wsSekisaiRoutes } from "./wsSekisai.js";
 import { wsPalletRoutes } from "./wsPallet.js";
 import { wsKoshinRoutes } from "./wsKoshin.js";
+import { wsHibetsuRoutes } from "./wsHibetsu.js";
+import { wsYoteiRoutes } from "./wsYotei.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -48,6 +50,8 @@ await app.register(async (a) => wsChohyoRoutes(a));
 await app.register(async (a) => wsSekisaiRoutes(a));
 await app.register(async (a) => wsPalletRoutes(a));
 await app.register(async (a) => wsKoshinRoutes(a));
+await app.register(async (a) => wsHibetsuRoutes(a));
+await app.register(async (a) => wsYoteiRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");
