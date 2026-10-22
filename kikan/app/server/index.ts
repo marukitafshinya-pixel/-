@@ -30,6 +30,7 @@ import { wsKensaRoutes } from "./wsKensa.js";
 import { wsZaikoPalletRoutes } from "./wsZaikoPallet.js";
 import { wsHaichiRoutes } from "./wsHaichi.js";
 import { wsMastersRoutes } from "./wsMasters.js";
+import { wsOsakaRoutes } from "./wsOsaka.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -64,6 +65,7 @@ await app.register(async (a) => wsKensaRoutes(a));
 await app.register(async (a) => wsZaikoPalletRoutes(a));
 await app.register(async (a) => wsHaichiRoutes(a));
 await app.register(async (a) => wsMastersRoutes(a));
+await app.register(async (a) => wsOsakaRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 

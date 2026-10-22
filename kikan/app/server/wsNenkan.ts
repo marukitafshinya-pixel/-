@@ -280,6 +280,22 @@ function 合言葉が違う(合言葉: unknown): string | null {
 }
 
 // 編集で直せる項目と、直したあとに受注残数を出し直すか
+/**
+ * 受注元数を変えたときに、その行の出荷済み・見込み・残を出し直す（Access と同じく、製造日は見ない）。
+ * r は受注元数を入れたあとの行。大阪 月間受注登録（kg で入れる）からも使う
+ */
+export async function 受注の出荷を出し直す(c: Db, r: Rec): Promise<Rec> {
+  const w = `"グループ商品コード" = $1 AND "出荷日" BETWEEN $2::date AND $3::date AND "運賃振分区分" = $4 AND "届け先コード" = $5`;
+  const a = [n(r.商品コード), r.集計開始日, r.集計終了日, n(r.運賃振分区分), n(r.届け先コード)];
+  const 済み = await 合計(c, 出荷レコード, `"chk" = true AND ${w}`, a);
+  const 見込み = await 合計(c, 出荷レコード, `"chk" = false AND ${w}`, a);
+  return {
+    受注出荷済み数: 済み,
+    受注出荷見込み数: 見込み,
+    受注残数: n(r.年間前月繰越数) + n(r.年間調整数) + n(r.受注元数) - (済み + 見込み),
+  };
+}
+
 const 直せる項目: Record<string, "数" | "文字"> = { 年間前月繰越数: "数", 年間調整数: "数", 受注元数: "数", 備考: "文字", 運賃振分区分: "数" };
 
 export function wsNenkanRoutes(app: FastifyInstance) {
@@ -331,14 +347,7 @@ export function wsNenkanRoutes(app: FastifyInstance) {
       if (!r) return reply.code(404).send({ error: "この行はありません。" });
       r[req.body.項目] = 値;
       const set: Rec = { [req.body.項目]: 値 };
-      if (req.body.項目 === "受注元数") {
-        // 受注元数のときは出荷済み・見込みも出し直す（Access と同じく、製造日は見ない）
-        const w = `"グループ商品コード" = $1 AND "出荷日" BETWEEN $2::date AND $3::date AND "運賃振分区分" = $4 AND "届け先コード" = $5`;
-        const a = [n(r.商品コード), r.集計開始日, r.集計終了日, n(r.運賃振分区分), n(r.届け先コード)];
-        set.受注出荷済み数 = await 合計(c, 出荷レコード, `"chk" = true AND ${w}`, a);
-        set.受注出荷見込み数 = await 合計(c, 出荷レコード, `"chk" = false AND ${w}`, a);
-        Object.assign(r, set);
-      }
+      if (req.body.項目 === "受注元数") Object.assign(set, await 受注の出荷を出し直す(c, r));
       if (req.body.項目 !== "備考" && req.body.項目 !== "運賃振分区分")
         set.受注残数 = n(r.年間前月繰越数) + n(r.年間調整数) + n(r.受注元数) - (n(r.受注出荷済み数) + n(r.受注出荷見込み数));
       const keys = Object.keys(set);

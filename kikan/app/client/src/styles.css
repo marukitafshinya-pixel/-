@@ -1415,3 +1415,33 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 }
 .kn-grid input.ms-cell { width: 100%; box-sizing: border-box; }
 .kn-grid textarea.ms-cell { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; resize: vertical; }
+/* 大阪 月間受注登録（F_受注検索_大阪受注登録） */
+.os { min-height: 100vh; background: #c0c0c0; padding: 6px 10px; }
+.os-head { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; }
+.os-title { font-size: 22px; color: #f90; background: #777; border: 2px solid #fff; padding: 2px 8px; width: 100%; max-width: 220px; }
+.os-month { background: #333; color: #fff; border: 2px solid #fff; padding: 0 0 4px; }
+.os-month .lbl, .os-way .lbl { background: #800080; color: #fff; text-align: center; padding: 1px 8px; }
+.os-month .row { display: flex; gap: 3px; align-items: center; padding: 4px 6px 0; }
+.os-month button { min-width: 24px; padding: 0 4px; }
+.os-month button.on, .os-way button.on, .os-btns button.on { background: #800080; color: #fff; }
+.os-day { background: #cff; color: #000; min-width: 90px; padding: 1px 6px; display: inline-block; }
+.os-way { display: flex; flex-direction: column; gap: 4px; background: #333; border: 2px solid #fff; padding: 0 4px 4px; }
+.os-way .lbl { background: #4a86e8; color: #ff0; font-size: 16px; margin: 0 -4px; }
+.os-right { display: flex; flex-direction: column; gap: 6px; margin-left: 20px; }
+.os-btns { background: #333; padding: 4px; display: flex; gap: 6px; }
+.os-btns button { font-weight: bold; }
+.os-btns button.blue { color: #1f5fff; }
+.os-msg { background: #fde; border: 1px solid #999; min-height: 60px; font-size: 20px; text-align: center; padding: 6px 30px; }
+.os-list { background: #7a70bd; min-height: calc(100vh - 210px); margin-top: 10px; overflow: auto; padding-bottom: 8px; }
+.os-grid { border-collapse: collapse; }
+.os-grid th { background: #800080; color: #fff; font-weight: normal; padding: 2px 8px; position: sticky; top: 0; }
+.os-grid td { background: #fff; border: 1px solid #aaa; padding: 1px 3px; }
+.os-grid td.name { min-width: 200px; }
+.os-grid .gray { color: #666; }
+.os-grid input.os-code { width: 60px; }
+.os-grid input.os-kg { width: 80px; }
+.os-grid input.os-biko { width: 160px; }
+.os-add { margin: 6px; }
+.os-foot { margin-top: 4px; display: flex; gap: 0; }
+.os-foot .lbl { background: #800080; color: #ff0; padding: 1px 20px; }
+.os-foot .v { background: #fff; min-width: 60px; padding: 1px 8px; text-align: right; }

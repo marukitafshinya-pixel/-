@@ -32,6 +32,7 @@ import { WsKensa, WsKensaMachi, WsSample } from "./pages/WsKensa";
 import WsZaikoPallet from "./pages/WsZaikoPallet";
 import WsHaichi from "./pages/WsHaichi";
 import WsMaster from "./pages/WsMasters";
+import WsOsaka from "./pages/WsOsaka";
 import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList, UnsoForm, UnsoList, UserList, CalendarPage, MisetteiList, SakujoPage } from "./pages/Master";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
@@ -82,6 +83,7 @@ function App() {
       <Route path="/ws/aite-todoke" element={<WsMaster kind="todoke" key="todoke" />} />
       <Route path="/ws/shuka-pallet" element={<WsMaster kind="pallet" key="pallet" />} />
       <Route path="/ws/stock" element={<WsMaster kind="stock" key="stock" />} />
+      <Route path="/ws/osaka" element={<WsOsaka />} />
       <Route path="/master" element={<MasterMenu />} />
       <Route path="/master/shohin" element={<ShohinList />} />
       <Route path="/master/shohin/:code" element={<ShohinForm />} />

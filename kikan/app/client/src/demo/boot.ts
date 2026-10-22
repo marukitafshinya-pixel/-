@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, master, sakujo] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, master, sakujo] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -71,6 +71,7 @@ async function main() {
     import("../../../server/wsZaikoPallet"),
     import("../../../server/wsHaichi"),
     import("../../../server/wsMasters"),
+    import("../../../server/wsOsaka"),
     import("../../../server/master"),
     import("../../../server/sakujo"),
   ]);
@@ -99,6 +100,7 @@ async function main() {
   wsZaikoPallet.wsZaikoPalletRoutes(fakeApp);
   wsHaichi.wsHaichiRoutes(fakeApp);
   wsMasters.wsMastersRoutes(fakeApp);
+  wsOsaka.wsOsakaRoutes(fakeApp);
   master.masterRoutes(fakeApp);
   sakujo.sakujoRoutes(fakeApp);
   fetchを回す();
