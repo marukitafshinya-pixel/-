@@ -71,11 +71,10 @@ export function wsOsakaRoutes(app: FastifyInstance) {
       }
       if (項目 === "届け先コード") v.届け先 = (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(値)])).rows[0]?.短縮名 ?? null;
       if (項目 === "受注元KG") {
-        // 受注元KG_AfterUpdate：受注元数 ＝ kg ÷ 入数。前の値が 0 でなく、数が変わったら備考に書き足す（Access の書き方のまま）
+        // 受注元KG_AfterUpdate：受注元数 ＝ kg ÷ 入数。
+        // Access は備考に「○→○kgに訂正」を書き足していたが、製造の変動が多く訂正のコメントは必要なときに手で入れるので、書き足さない（利用者の指示）
         const 入数 = n(r.入数);
         v.受注元数 = 入数 ? cint(n(値) / 入数) : null;
-        const 前 = n(r.受注元KG);
-        if (前 !== 0 && 前 !== v.受注元数) v.備考 = `${r.備考 ?? ""} ${前}→${v.受注元数}kgに訂正`;
         // 年間受注割振りの受注数（ケース）と同じ値なので、あちらでケースを入れたときと同じく出荷済み・見込み・残も出し直す
         Object.assign(v, await 受注の出荷を出し直す(c, { ...r, 受注元数: v.受注元数 }));
       }
