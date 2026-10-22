@@ -260,13 +260,13 @@ export function wsKoshinRoutes(app: FastifyInstance) {
   );
 
   // 印の付け外し（入庫・便）
-  // 入庫は数量確定していないと選べない（Access の FS_登録_入庫 の 抽出区分_Click）
+  // 入庫は数量確定していないと選べない（Access の FS_登録_入庫 の 抽出区分_Click。数量確定フラグは -1 が確定）
   app.post<{ Body: { 種類: "入庫" | "便"; id: number; 値: boolean } }>("/api/ws/koshin/chk", async (req, reply) => {
     const b = req.body;
     if (b.種類 === "入庫") {
       const r = (await pool.query(`SELECT "商品名", "製造日", "数量確定フラグ" FROM ${入庫} WHERE "入庫ID" = $1`, [n(b.id)])).rows[0];
       if (!r) return reply.code(404).send({ error: "この入庫はありません。" });
-      if (b.値 && r.数量確定フラグ !== true) {
+      if (b.値 && Number(r.数量確定フラグ) !== -1) {
         const d = 日付(r.製造日)?.replace(/-/g, "/") ?? "";
         return reply.code(400).send({ error: `${r.商品名} 製造日${d} の確認が完了されていません!\n確認してから登録お願いします。` });
       }
@@ -282,7 +282,7 @@ export function wsKoshinRoutes(app: FastifyInstance) {
     const 今日 = 日本の今().日付;
     if (req.body.種類 === "入庫")
       await pool.query(
-        `UPDATE ${入庫} SET "抽出区分" = CASE WHEN "数量確定フラグ" = true THEN $2 ELSE false END WHERE "chk" = false AND "入庫日" <= $1::date`,
+        `UPDATE ${入庫} SET "抽出区分" = CASE WHEN "数量確定フラグ" = -1 THEN $2 ELSE false END WHERE "chk" = false AND "入庫日" <= $1::date`,
         [今日, !!req.body.値],
       );
     else if (req.body.種類 === "便")
