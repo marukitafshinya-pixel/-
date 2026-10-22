@@ -19,7 +19,7 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   // 丸北WorkStation（Access の WorkStation のメインメニュー）。作ったものから足していく
   { title: "丸北WorkStation", items: [{ label: "出荷明細票", to: "/ws" }, { label: "在庫表", to: "/ws/zaikohyo" }, { label: "保管庫詳細", to: "/ws/hokan" }, { label: "出荷停止在庫", to: "/ws/teishi" }, { label: "在庫更新", to: "/ws/koshin" }, { label: "日別の在庫", to: "/ws/hibetsu" }, { label: "パレット輸送割付", to: "/ws/pallet" }] },
   // マスタ管理（Access の「Accessマスタ管理」）
-  { title: "マスタ管理", items: [{ label: "商品マスタ", to: "/master/shohin" }, { label: "得意先マスタ", to: "/master/tokui" }, { label: "運送会社マスタ", to: "/master/unso" }, { label: "ユーザーマスタ", to: "/master/user" }, { label: "マスタ選択", to: "/master" }] },
+  { title: "マスタ管理", items: [{ label: "商品マスタ", to: "/master/shohin" }, { label: "得意先マスタ", to: "/master/tokui" }, { label: "運送会社マスタ", to: "/master/unso" }, { label: "ユーザーマスタ", to: "/master/user" }, { label: "カレンダー設定", to: "/master/calendar" }, { label: "マスタ選択", to: "/master" }] },
 ];
 
 export default function Menu({ user, onLogout }: { user: User; onLogout: () => void }) {

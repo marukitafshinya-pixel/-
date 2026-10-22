@@ -135,9 +135,12 @@ export function findRoutes(app: FastifyInstance) {
   });
 
   // カレンダー（Access の FSD_日付選択。祝日・休日は TM_イベントスケジュール と C_CalenderScadule と同じ決め方）
-  app.get<{ Querystring: { year: string; month: string } }>("/api/calendar", async (req) => {
-    const y = Number(req.query.year);
-    const m = Number(req.query.month);
+  app.get<{ Querystring: { year: string; month: string } }>("/api/calendar", async (req) => カレンダーの日(Number(req.query.year), Number(req.query.month)));
+}
+
+/** 表示する月の 1 日の週の日曜日から 42 日分の、日付・祝日（休日）・色（Access の C_CalenderScadule と同じ決め方） */
+export async function カレンダーの日(y: number, m: number) {
+  {
     const ev = await q<any>(`SELECT * FROM ${イベント} ORDER BY "ID"`);
     const first = new Date(Date.UTC(y, m - 1, 1));
     const start = new Date(first.getTime() - first.getUTCDay() * 86400000); // 月初めの週の日曜日から 42 日
@@ -192,5 +195,5 @@ export function findRoutes(app: FastifyInstance) {
       });
     }
     return days;
-  });
+  }
 }

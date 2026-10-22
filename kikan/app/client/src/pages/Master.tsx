@@ -53,6 +53,7 @@ export function MasterMenu() {
       <button onClick={() => nav("/master/tokui")}>得意先マスタ登録</button>
       <button onClick={() => nav("/master/unso")}>運送会社マスタ登録</button>
       <button onClick={() => nav("/master/user")}>ユーザーマスタ登録</button>
+      <button onClick={() => nav("/master/calendar")}>カレンダー設定</button>
       <button className="close" onClick={() => nav("/")}>閉じる</button>
     </div>
   );
@@ -738,7 +739,9 @@ export function UserList() {
   );
 }
 
-/** ユーザーカード（FM_ユーザーカード・FM_ユーザーカード_新規）：1 行を直す・足す */
+/** ユーザーカード（FM_ユーザーカード・FM_ユーザーカード_新規）：1 行を直す・足す。いただいたスクリーンショットと同じ項目・並び */
+const 振分 = [{ id: 1, name: "北海道工場" }, { id: 629, name: "大阪丸北" }];
+const もらい単位 = [{ id: 0, name: "kg建て" }, { id: 1, name: "個建て" }];
 function UserCard(props: { id: number | "new"; o: Rec; 既定: Rec; 名前: (c: unknown) => string; onClose: (変えた: boolean) => void }) {
   const 新規 = props.id === "new";
   const [v, setV] = useState<Rec>(新規 ? { ...props.既定 } : {});
@@ -755,52 +758,110 @@ function UserCard(props: { id: number | "new"; o: Rec; 既定: Rec; 名前: (c: 
       エラー(e);
     }
   }
-  function 閉じる() {
+  function キャンセル() {
     if (!confirm("保存されませんが、よろしいですか？")) return;
     props.onClose(false);
   }
   const P = { v, set, ro: false };
   const 得意先: 選択肢[] = props.o.得意先 ?? [];
-  const 商品: 選択肢[] = props.o.商品 ?? [];
-  const コード欄 = (h: string, k: string, opts: 選択肢[]) => (
-    <div className="row"><span className="lbl">{h}</span><入力 {...P} k={k} num cls="s" /><選ぶ {...P} k={k} opts={opts} /></div>
-  );
+  const 商品: Rec[] = props.o.商品 ?? [];
+  const 分類 = (props.o.分類 ?? []) as 選択肢[];
+  const 取扱名一覧: string[] = props.o.取扱名 ?? [];
   return (
     <div className="modal">
-      <div className="uc" onClick={(e) => e.stopPropagation()}>
-        <div className="uc-head">
-          <b>ユーザーカード{新規 ? "（新規）" : `（ID ${props.id}）`}</b>
-          <div className="mf-btns"><button onClick={登録}>登録</button><button onClick={閉じる}>閉じる</button></div>
+      <div className="uc2" onClick={(e) => e.stopPropagation()}>
+        <div className="uc2-top">
+          <span className="h">ID</span><span className="id">{新規 ? "（新規）" : props.id}</span>
+          <div className="btns"><button onClick={登録}>登録</button><button onClick={キャンセル}>キャンセル</button></div>
         </div>
-        <div className="mf-sec">
-          {コード欄("受注元", "受注元ID", 得意先)}
-          <div className="row"><span className="lbl">取引先グループ</span><選ぶ {...P} k="取引先グループID" opts={(props.o.グループ ?? []).map((g: Rec) => ({ id: g.id, name: g.name }))} /></div>
-          {コード欄("取引先", "取引先ID", 得意先)}
-          {コード欄("受注先", "受注先ID", 得意先)}
-          {コード欄("商品", "商品コード", 商品)}
-          {コード欄("届け先", "届け先コード", 得意先)}
-          {コード欄("集荷場所", "倉庫ID", 得意先)}
-          {コード欄("指定名義", "入庫名義ID", 得意先)}
-          <div className="row">
-            <span className="lbl">運賃請求先</span><選ぶ {...P} k="運賃請求ID" opts={請求先} />
-            <span className="lbl">扱い</span><選ぶ {...P} k="運賃振分区分" opts={請求先} />
-          </div>
-          <div className="row"><span className="lbl">輸送扱い区分</span><選ぶ {...P} k="輸送扱い区分" opts={props.o.輸送扱い ?? []} /></div>
-          <div className="row"><span className="lbl">取扱区分名</span><入力 {...P} k="取扱名" /></div>
-          <div className="row"><span className="lbl">もらい運賃</span><入力 {...P} k="もらい運賃" num cls="s" /><span className="lbl">個建</span><入力 {...P} k="もらい運賃個建" num cls="s" /><span className="lbl">キロ立替運賃</span><入力 {...P} k="キロ立替運賃" num cls="s" /></div>
-          {コード欄("売上請求先", "売上請求先ID", 得意先)}
-          <div className="row"><span className="lbl">備考</span><textarea value={v.備考 ?? ""} onChange={(e) => set("備考", e.target.value)} /></div>
-          <div className="row"><span className="lbl">新ダンボール備考</span><入力 {...P} k="新ダンボール備考" cls="w" /></div>
-          <div className="row">
-            <切替 {...P} k="特定条件" 文字="特定条件" />
-            <切替 {...P} k="指定冷蔵庫" 文字="指定冷蔵庫" />
-            <切替 {...P} k="横持区分" 文字="横持" />
-            <切替 {...P} k="重複" 文字="重複" />
-            <切替 {...P} k="新ダンボール初回案内" 文字="新ダンボール初回案内" />
-            <切替 {...P} k="未完了chk" 文字="未完了（一覧に出さない）" />
-          </div>
-          {!新規 && <div className="row gray">登録日 {日(v.登録日)}　更新日 {日(v.更新日)}　最終出荷日 {日(v.最終出荷日)}</div>}
+        <div className="uc2-block">
+          <div className="r"><span className="h">受注元</span><選ぶ {...P} k="受注元ID" opts={得意先} cls="w" /></div>
+          <div className="r"><span className="h">取引先グループ</span><選ぶ {...P} k="取引先グループID" opts={(props.o.グループ ?? []).map((g: Rec) => ({ id: g.id, name: g.name }))} cls="w" /></div>
         </div>
+        <div className="uc2-block">
+          <div className="r"><span className="h">取引先</span><選ぶ {...P} k="取引先ID" opts={得意先} cls="w" /></div>
+          <div className="r"><span className="h">受注先</span><選ぶ {...P} k="受注先ID" opts={得意先} cls="w" /></div>
+          <div className="r"><span className="h">届け先</span><選ぶ {...P} k="届け先コード" opts={得意先} cls="w" /></div>
+          <div className="r"><span className="h">ユーザー区分</span><選ぶ {...P} k="ユーザー区分" opts={props.o.ユーザー区分 ?? []} cls="w" ro={true} /></div>
+        </div>
+        <div className="uc2-block">
+          <div className="r"><span className="h">入庫名義</span><入力 {...P} k="入庫名義ID" num cls="code" /><span className="name">{props.名前(v.入庫名義ID)}</span></div>
+        </div>
+        <hr />
+        <div className="uc2-grid">
+          <span className="h">コード</span><span className="h wide">科目</span><span className="h">商品分類</span><span />
+          <span className="h">商品名</span>
+          <span className="pair"><入力 {...P} k="商品コード" num cls="code" /><span className="name">{商品.find((x) => x.id === n(v.商品コード))?.name ?? ""}</span></span>
+          <span className="gray">{分類.find((x) => x.id === n(商品.find((y) => y.id === n(v.商品コード))?.分類ID))?.name ?? ""}</span>
+          <span className="tate"><span className="h">立替運賃</span><入力 {...P} k="キロ立替運賃" num /></span>
+          <span className="h">出荷場所</span>
+          <span className="pair"><入力 {...P} k="倉庫ID" num cls="code" /><span className="name">{props.名前(v.倉庫ID)}</span></span>
+          <span /><span />
+        </div>
+        <div className="uc2-block">
+          <div className="r"><span className="h">扱い</span><選ぶ {...P} k="運賃振分区分" opts={振分} /></div>
+          <div className="r"><span className="h">運賃請求先</span><選ぶ {...P} k="運賃請求ID" opts={振分} /></div>
+        </div>
+        <div className="uc2-block">
+          <div className="r">
+            <span className="h">取扱区分</span>
+            <input list="uc2-toriatsukai" value={v.取扱名 ?? ""} onChange={(e) => setV((a) => ({ ...a, 取扱名: e.target.value, 取扱区分: !!e.target.value }))} />
+            <datalist id="uc2-toriatsukai">{取扱名一覧.map((x) => <option key={x} value={x} />)}</datalist>
+            <input type="checkbox" checked={!!v.取扱区分} readOnly />
+          </div>
+          <div className="r"><span className="h">立替運賃</span><入力 {...P} k="キロ立替運賃" num /></div>
+          <div className="r"><span className="h">もらい単位</span><選ぶ {...P} k="もい運賃単位" opts={もらい単位} 空き={false} /></div>
+          <div className="r"><span className="h">もらい運賃</span><入力 {...P} k="もらい運賃" num /></div>
+        </div>
+        <div className="uc2-biko">
+          <div className="h">備考</div>
+          <textarea value={v.備考 ?? ""} onChange={(e) => set("備考", e.target.value)} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------- カレンダー設定（F_マルチカレンダー） ----------------
+const 曜日名 = ["日", "月", "火", "水", "木", "金", "土"];
+export function CalendarPage() {
+  const nav = useNavigate();
+  const now = new Date(Date.now() + 9 * 3600 * 1000);
+  const [年, set年] = useState(now.getUTCFullYear());
+  const [月, set月] = useState(now.getUTCMonth() + 1);
+  const [種類, set種類] = useState(0);
+  const [日, set日] = useState<Rec[]>([]);
+  const 今日 = now.toISOString().slice(0, 10);
+  useEffect(() => {
+    api.get<Rec[]>("/api/mst/calendar", { year: 年, month: 月, mode: 種類 }).then(set日, エラー);
+  }, [年, 月, 種類]);
+  const 年一覧 = Array.from({ length: 7 }, (_, i) => now.getUTCFullYear() - 3 + i);
+  return (
+    <div className="mc">
+      <div className="mc-top">
+        <select value={年} onChange={(e) => set年(Number(e.target.value))}>{年一覧.map((y) => <option key={y} value={y}>{y}</option>)}</select>年
+        <select value={月} onChange={(e) => set月(Number(e.target.value))}>{Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{String(m).padStart(2, "0")}</option>)}</select>月
+        {["予定全体", "休日設定", "製造", "資材"].map((x, i) => (
+          <button key={x} className={種類 === i ? "on" : ""} onClick={() => set種類(i)}>{x}</button>
+        ))}
+        <button className="close" onClick={() => nav("/master")}>閉じる</button>
+      </div>
+      <div className="mc-grid">
+        {曜日名.map((w, i) => <div key={w} className={`mc-w ${i === 0 ? "sun" : i === 6 ? "sat" : ""}`}>{w}</div>)}
+        {日.map((d) => {
+          const 曜 = new Date(d.date + "T00:00:00Z").getUTCDay();
+          const cls = d.holiday ? "hol" : 曜 === 0 ? "hol" : 曜 === 6 ? "sat" : "";
+          return (
+            <div key={d.date} className={`mc-day ${d.inMonth ? "" : "out"} ${d.date === 今日 ? "today" : ""} ${曜 === 0 ? "sunday" : ""}`}>
+              <div className={`mc-head ${cls} ${d.date === 今日 ? "today" : ""}`}>{d.inMonth ? `${Number(d.date.slice(8))}日` : `${Number(d.date.slice(5, 7))}月${Number(d.date.slice(8))}日`}{d.holiday ? `　${d.holiday}` : ""}</div>
+              <div className="mc-body">
+                {(d.中身 ?? []).map((x: Rec, i: number) => (
+                  <div key={i} className={`mc-row ${d.date < 今日 ? "past" : ""}`}><span>{x.a}</span><span>{x.b}</span></div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

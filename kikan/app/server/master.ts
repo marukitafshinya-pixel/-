@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で } from "./ws.js";
+import { カレンダーの日 } from "./find.js";
 
 // マスタ管理（Access の「Accessマスタ管理」画面側ファイル：F_マスタ一覧・FM_商品マスタ・FM_商品登録(_新規)・F_商品マスタ登録選択・
 // FM_得意先マスタ・FM_得意先登録(_新規追加)）。
@@ -23,6 +24,9 @@ const 地区コード = t("master_fe", "TM_地区コード");
 const 運送会社マスタ = t("kyotsu", "TM_運送会社マスタ");
 const 名義条件 = t("kyotsu", "TM_入庫先商品別名義条件");
 const 取引先グループ = t("master_fe", "TMU_取引先グループマスタ");
+const イベント = t("kyotsu", "TM_イベントスケジュール");
+const 予定 = t("master_fe", "TD_予定");
+const 新規生産計画 = t("kyoyu", "TD_新規生産計画");
 const 運賃扱い = t("master", "TM_運賃扱いマスタ");
 const 配達区分 = t("master_fe", "TM_配達区分");
 const 輸送計画の表 = [t("ws", "TD_輸送計画"), t("soko", "TD_輸送計画")];
@@ -117,10 +121,10 @@ const 運送会社の項目 = [
 const ユーザーの項目 = [
   "受注元ID", "取引先グループID", "取引先ID", "受注先ID", "届け先コード", "ユーザー区分", "商品コード", "倉庫ID", "運賃請求ID", "運賃振分区分",
   "入庫名義ID", "備考", "重複", "特定条件", "指定冷蔵庫", "輸送扱い区分", "もい運賃単位", "もらい運賃", "もらい運賃個建", "キロ立替運賃",
-  "新ダンボール初回案内", "新ダンボール備考", "取扱名", "横持区分", "売上請求先ID", "未完了chk",
+  "新ダンボール初回案内", "新ダンボール備考", "取扱名", "取扱区分", "横持区分", "売上請求先ID", "未完了chk",
 ] as const;
-/** 運賃請求先・扱いの選択肢（Access の画面の値リスト：丸北・大阪） */
-const 請求先の名前: Record<number, string> = { 1: "丸北", 629: "大阪" };
+/** 運賃請求先の名前（Access のユーザーカードの値リスト：1＝北海道工場・629＝大阪丸北。選ぶと運賃請求先に入る） */
+const 請求先の名前: Record<number, string> = { 1: "北海道工場", 629: "大阪丸北" };
 
 /** Access の 商品登録 の［登録］で確かめる項目（製造場所がないときは「入数」の知らせが「製造場所」に置き換わるのも Access と同じ） */
 function 商品の足りない項目(v: Rec): string {
@@ -411,9 +415,9 @@ export function masterRoutes(app: FastifyInstance) {
     グループ: await q(`SELECT "取引先ID" AS id, "取引先名" AS name, "受注区分" FROM ${取引先グループ} ORDER BY "ID"`),
     得意先: await q(`SELECT "短縮コード" AS id, "短縮名" AS name FROM ${得意先マスタ} ORDER BY "短縮コード"`),
     商品: await q(`SELECT "商品コード" AS id, "商品名" AS name, "分類ID" FROM ${商品マスタ} ORDER BY "商品コード"`),
-    輸送扱い: [
-      { id: 1, name: "自社直送" }, { id: 2, name: "本社 直送" }, { id: 3, name: "自社横持ち" }, { id: 4, name: "本社 横持ち" },
-    ],
+    分類: await q(`SELECT "分類ID" AS id, "分類名" AS name FROM ${商品分類} ORDER BY "分類ID"`),
+    ユーザー区分: await q(`SELECT "得意先区分コード" AS id, "区分名" AS name FROM ${得意先区分} ORDER BY "得意先区分コード"`),
+    取扱名: (await q(`SELECT DISTINCT "取扱名" FROM ${名義条件} WHERE COALESCE("取扱名", '') <> '' ORDER BY 1`)).map((r: Rec) => r.取扱名),
   }));
   app.get<{ Querystring: { group?: string; shohin?: string; todoke?: string } }>("/api/mst/user", async (req) =>
     q(
@@ -451,6 +455,7 @@ export function masterRoutes(app: FastifyInstance) {
       if ("取引先グループID" in v)
         v.取引先グループ名 = (await c.query(`SELECT "取引先名" FROM ${取引先グループ} WHERE "取引先ID" = $1 LIMIT 1`, [n(v.取引先グループID)])).rows[0]?.取引先名 ?? null;
       if ("運賃請求ID" in v) v.運賃請求先 = 請求先の名前[n(v.運賃請求ID)] ?? null;
+      // 取扱区分名を入れると取扱区分に印が付く（Access の 取扱名_AfterUpdate）
       if ("取扱名" in v) v.取扱区分 = !!v.取扱名;
       await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_入庫先商品別名義条件'))`);
       const 今日 = 日本の今().日付;
@@ -473,4 +478,27 @@ export function masterRoutes(app: FastifyInstance) {
       return { ID: id };
     }),
   );
+
+  // ---------------- カレンダー設定（F_マルチカレンダー。見るだけ） ----------------
+  // 予定全体＝TD_予定（完了していないもの）、休日設定＝イベントスケジュール（分類項目・件名）、製造＝新規生産計画（丸北北海道・kg の多い順）、資材＝なし
+  // Access と同じく、月の 1 日の週の日曜日から 35 日（5 週）を出す
+  app.get<{ Querystring: { year: string; month: string; mode?: string } }>("/api/mst/calendar", async (req) => {
+    const y = n(req.query.year);
+    const m = n(req.query.month);
+    const 日 = (await カレンダーの日(y, m)).slice(0, 35);
+    const from = 日[0].date;
+    const to = 日[34].date;
+    const mode = n(req.query.mode);
+    let 行: Rec[] = [];
+    if (mode === 0)
+      行 = await q(`SELECT "日付"::date::text AS d, "備考" AS a, "件数" AS b FROM ${予定} WHERE "完了チェック" = false AND "日付" BETWEEN $1::date AND $2::date ORDER BY "ID"`, [from, to]);
+    else if (mode === 1)
+      行 = await q(`SELECT "日付"::date::text AS d, "分類項目" AS a, "件名" AS b FROM ${イベント} WHERE "日付" BETWEEN $1::date AND $2::date ORDER BY "分類項目"`, [from, to]);
+    else if (mode === 2 && (await pool.query(`SELECT to_regclass($1) AS r`, [新規生産計画])).rows[0].r)
+      行 = await q(
+        `SELECT "製造日"::date::text AS d, "商品名" AS a, "商品kg" AS b FROM ${新規生産計画} WHERE "製造日" BETWEEN $1::date AND $2::date AND "倉庫ID" = 11 ORDER BY "商品kg" DESC`,
+        [from, to],
+      );
+    return 日.map((x) => ({ ...x, 中身: 行.filter((r) => r.d === x.date).map((r) => ({ a: r.a ?? "", b: r.b ?? "" })) }));
+  });
 }

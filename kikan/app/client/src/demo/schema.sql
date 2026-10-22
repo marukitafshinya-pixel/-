@@ -531,7 +531,7 @@ CREATE TABLE housou_fe."TM_X線マスタ" (
     "備考" character varying(255)
 );
 
-CREATE TABLE housou_fe."TM_イベントスケジュール" (
+CREATE TABLE kyotsu."TM_イベントスケジュール" (
     "ID" integer,
     "件名" character varying(50),
     "開始日" character varying(50),
@@ -546,6 +546,22 @@ CREATE TABLE housou_fe."TM_イベントスケジュール" (
     "日付" timestamp without time zone,
     "特定年度" integer
 );
+
+CREATE VIEW housou_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE housou_fe."TM_カレンダー特定商品" (
     "商品コード" integer,
@@ -1729,21 +1745,21 @@ CREATE TABLE juchu_fe."TM_ふらのソース受注マスタ" (
     "フィールド1" integer
 );
 
-CREATE TABLE juchu_fe."TM_イベントスケジュール" (
-    "ID" integer,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean,
-    "使用不可" boolean,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
+CREATE VIEW juchu_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE juchu_fe."TM_丸北商品届け先別売上単価マスタ" (
     "取引元コード" integer,
@@ -2868,21 +2884,21 @@ CREATE TABLE keikaku."TD_資材登録" (
     chk boolean
 );
 
-CREATE TABLE keikaku."TM_イベントスケジュール" (
-    "ID" integer,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean,
-    "使用不可" boolean,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
+CREATE VIEW keikaku."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE keikaku."TM_エリアコード" (
     "地区コード" integer,
@@ -3749,21 +3765,21 @@ CREATE TABLE master."TD_商品分類" (
     "分類名" character varying(50)
 );
 
-CREATE TABLE master."TM_イベントスケジュール" (
-    "ID" integer,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean,
-    "使用不可" boolean,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
+CREATE VIEW master."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE master."TM_ダンボール寸法マスタ" (
     "資材ID" integer,
@@ -5184,31 +5200,21 @@ CREATE TABLE seizo_fe."TD_商品分類" (
     "分類名" character varying(50)
 );
 
-CREATE TABLE seizo_fe."TM_イベントスケジュール" (
-    "ID" integer NOT NULL,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean NOT NULL,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean NOT NULL,
-    "使用不可" boolean NOT NULL,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
-
-CREATE SEQUENCE seizo_fe."TM_イベントスケジュール_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE seizo_fe."TM_イベントスケジュール_ID_seq" OWNED BY seizo_fe."TM_イベントスケジュール"."ID";
+CREATE VIEW seizo_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE seizo_fe."TM_ダンボール寸法マスタ" (
     "資材ID" integer,
@@ -7324,31 +7330,21 @@ CREATE SEQUENCE soko_fe."TD_訂正履歴_ID_seq"
 
 ALTER SEQUENCE soko_fe."TD_訂正履歴_ID_seq" OWNED BY soko_fe."TD_訂正履歴"."ID";
 
-CREATE TABLE soko_fe."TM_イベントスケジュール" (
-    "ID" integer NOT NULL,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean NOT NULL,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean NOT NULL,
-    "使用不可" boolean NOT NULL,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
-
-CREATE SEQUENCE soko_fe."TM_イベントスケジュール_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE soko_fe."TM_イベントスケジュール_ID_seq" OWNED BY soko_fe."TM_イベントスケジュール"."ID";
+CREATE VIEW soko_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE soko_fe."TM_カレンダー" (
     "ID" integer NOT NULL,
@@ -9399,31 +9395,21 @@ CREATE TABLE tehai_fe."TD_架空在庫" (
     "合否判定" character varying(255)
 );
 
-CREATE TABLE tehai_fe."TM_イベントスケジュール" (
-    "ID" integer NOT NULL,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean NOT NULL,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean NOT NULL,
-    "使用不可" boolean NOT NULL,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
-
-CREATE SEQUENCE tehai_fe."TM_イベントスケジュール_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE tehai_fe."TM_イベントスケジュール_ID_seq" OWNED BY tehai_fe."TM_イベントスケジュール"."ID";
+CREATE VIEW tehai_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE VIEW tehai_fe."TM_入庫先商品別名義条件" AS
  SELECT "ID",
@@ -10390,31 +10376,21 @@ CREATE SEQUENCE web_fe."TM_elixxi倉庫コードマスタ_ID_seq"
 
 ALTER SEQUENCE web_fe."TM_elixxi倉庫コードマスタ_ID_seq" OWNED BY web_fe."TM_elixxi倉庫コードマスタ"."ID";
 
-CREATE TABLE web_fe."TM_イベントスケジュール" (
-    "ID" integer NOT NULL,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean NOT NULL,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean NOT NULL,
-    "使用不可" boolean NOT NULL,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
-
-CREATE SEQUENCE web_fe."TM_イベントスケジュール_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE web_fe."TM_イベントスケジュール_ID_seq" OWNED BY web_fe."TM_イベントスケジュール"."ID";
+CREATE VIEW web_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE web_fe."TM_ニチレイ大谷地積み日指定表示マスタ" (
     "得意先短縮コード" integer,
@@ -13402,21 +13378,21 @@ CREATE TABLE ws_fe."TM_もらい運賃マスタ仮" (
     "No" integer
 );
 
-CREATE TABLE ws_fe."TM_イベントスケジュール" (
-    "ID" integer,
-    "件名" character varying(50),
-    "開始日" character varying(50),
-    "期間" integer,
-    "分類項目" character varying(50),
-    "改正祝日法" boolean,
-    "特定月" integer,
-    "特定週" integer,
-    "特定曜日" character varying(50),
-    "区分" boolean,
-    "使用不可" boolean,
-    "日付" timestamp without time zone,
-    "特定年度" integer
-);
+CREATE VIEW ws_fe."TM_イベントスケジュール" AS
+ SELECT "ID",
+    "件名",
+    "開始日",
+    "期間",
+    "分類項目",
+    "改正祝日法",
+    "特定月",
+    "特定週",
+    "特定曜日",
+    "区分",
+    "使用不可",
+    "日付",
+    "特定年度"
+   FROM kyotsu."TM_イベントスケジュール";
 
 CREATE TABLE ws_fe."TM_エリアコード" (
     "地区コード" integer,
@@ -15282,8 +15258,6 @@ ALTER TABLE ONLY housou_fe."TM_ロボット積み付けマスタold" ALTER COLUM
 
 ALTER TABLE ONLY housou_fe."T_パレット在庫管理 のコピー" ALTER COLUMN "ID" SET DEFAULT nextval('housou_fe."T_パレット在庫管理 のコピー_ID_seq"'::regclass);
 
-ALTER TABLE ONLY seizo_fe."TM_イベントスケジュール" ALTER COLUMN "ID" SET DEFAULT nextval('seizo_fe."TM_イベントスケジュール_ID_seq"'::regclass);
-
 ALTER TABLE ONLY seizo_fe."TM_テープマスタ" ALTER COLUMN "テープID" SET DEFAULT nextval('seizo_fe."TM_テープマスタ_テープID_seq"'::regclass);
 
 ALTER TABLE ONLY seizo_fe."TM_原料マスタ" ALTER COLUMN "原料分類ID" SET DEFAULT nextval('seizo_fe."TM_原料マスタ_原料分類ID_seq"'::regclass);
@@ -15309,8 +15283,6 @@ ALTER TABLE ONLY soko_fe."TD_月別倉庫支払経費" ALTER COLUMN "ID" SET DEF
 ALTER TABLE ONLY soko_fe."TD_積込順" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TD_積込順_ID_seq"'::regclass);
 
 ALTER TABLE ONLY soko_fe."TD_訂正履歴" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TD_訂正履歴_ID_seq"'::regclass);
-
-ALTER TABLE ONLY soko_fe."TM_イベントスケジュール" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TM_イベントスケジュール_ID_seq"'::regclass);
 
 ALTER TABLE ONLY soko_fe."TM_カレンダー" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TM_カレンダー_ID_seq"'::regclass);
 
@@ -15392,8 +15364,6 @@ ALTER TABLE ONLY soko_fe."オブジェクト一覧" ALTER COLUMN "ID" SET DEFAUL
 
 ALTER TABLE ONLY soko_fe."テーブル1" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."テーブル1_ID_seq"'::regclass);
 
-ALTER TABLE ONLY tehai_fe."TM_イベントスケジュール" ALTER COLUMN "ID" SET DEFAULT nextval('tehai_fe."TM_イベントスケジュール_ID_seq"'::regclass);
-
 ALTER TABLE ONLY tehai_fe."TM_冷凍区分" ALTER COLUMN "冷凍ID" SET DEFAULT nextval('tehai_fe."TM_冷凍区分_冷凍ID_seq"'::regclass);
 
 ALTER TABLE ONLY tehai_fe."TM_出荷場所条件" ALTER COLUMN "ID" SET DEFAULT nextval('tehai_fe."TM_出荷場所条件_ID_seq"'::regclass);
@@ -15431,8 +15401,6 @@ ALTER TABLE ONLY web_fe."M_Webアドレス操作" ALTER COLUMN "ID" SET DEFAULT 
 ALTER TABLE ONLY web_fe."TM_WebM" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_WebM_ID_seq"'::regclass);
 
 ALTER TABLE ONLY web_fe."TM_elixxi倉庫コードマスタ" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_elixxi倉庫コードマスタ_ID_seq"'::regclass);
-
-ALTER TABLE ONLY web_fe."TM_イベントスケジュール" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_イベントスケジュール_ID_seq"'::regclass);
 
 ALTER TABLE ONLY web_fe."TM_参照アドレス" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_参照アドレス_ID_seq"'::regclass);
 

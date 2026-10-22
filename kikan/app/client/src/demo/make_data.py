@@ -88,10 +88,10 @@ def copy_table(table):
 
 # ---------------- 区分などの一覧表（写す） ----------------
 for tb in [
-    "juchu_fe.TM_イベントスケジュール", "juchu_fe.TM_単位マスタ", "juchu_fe.TM_受注区分",
+    "kyotsu.TM_イベントスケジュール", "juchu_fe.TM_単位マスタ", "juchu_fe.TM_受注区分",
     "juchu_fe.TM_商品区分", "juchu_fe.TM_地区コード", "juchu_fe.TM_得意先区分", "juchu_fe.TM_枝処理マスタ",
     "juchu_fe.TD_商品分類",
-    "ws_fe.TM_イベントスケジュール", "ws_fe.TM_エリアコード", "ws_fe.TM_パレット調整区分", "ws_fe.TM_冷凍区分",
+    "ws_fe.TM_エリアコード", "ws_fe.TM_パレット調整区分", "ws_fe.TM_冷凍区分",
     "ws_fe.TM_合否判定", "ws_fe.TM_商品区分", "ws_fe.TM_商品状態マスタ", "ws_fe.TM_商品輸送区分", "ws_fe.TM_地区コード",
     "ws_fe.TM_得意先区分", "ws_fe.TM_混載区分", "ws_fe.TM_訂正科目マスタ", "ws_fe.TM_車両区分", "ws_fe.TM_輸送区分", "ws_fe.TM_運賃分類マスタ",
     "ws_fe.TM_運賃輸送区分", "ws_fe.TM_配達区分",
