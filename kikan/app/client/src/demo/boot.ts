@@ -6,7 +6,7 @@ import { はじめる } from "./db";
 import { fakeApp, fetchを回す } from "./fakeServer";
 
 // サーバーの合言葉（見本版では demo）
-(globalThis as any).process = { env: { JUCHU_DELETE_PASSWORD: "demo", JUCHU_EDIT_PASSWORD: "demo", JUCHU_MASTER_PASSWORD: "demo" } };
+(globalThis as any).process = { env: { JUCHU_DELETE_PASSWORD: "demo", JUCHU_EDIT_PASSWORD: "demo", JUCHU_MASTER_PASSWORD: "demo", MASTER_PASSWORD: "demo" } };
 
 // Artifacts の画面では alert・confirm・prompt の窓が出ない（confirm はいつも「いいえ」になる）。
 // 見本版では、知らせをページの右下に出し、確かめる窓はいつも OK、入力の窓は初めの値（合言葉は demo）で進める。
@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, master] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -67,6 +67,7 @@ async function main() {
     import("../../../server/wsHibetsu"),
     import("../../../server/wsYotei"),
     import("../../../server/wsTeishi"),
+    import("../../../server/master"),
   ]);
   authRoutes(fakeApp);
   juchu.juchuRoutes(fakeApp);
@@ -89,6 +90,7 @@ async function main() {
   wsHibetsu.wsHibetsuRoutes(fakeApp);
   wsYotei.wsYoteiRoutes(fakeApp);
   wsTeishi.wsTeishiRoutes(fakeApp);
+  master.masterRoutes(fakeApp);
   fetchを回す();
 
   const banner = document.getElementById("demo-banner")!;

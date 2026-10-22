@@ -1188,3 +1188,85 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .ts-foot .lbl { background: #666; color: #fff; padding: 2px 8px; font-size: 12px; }
 .ts-foot .v { background: #fff; border: 1px solid #000; padding: 2px 10px; min-width: 70px; text-align: right; font-weight: bold; }
 .ts-foot .day { color: #555; font-size: 12px; }
+
+/* マスタ管理（Accessマスタ管理） */
+.ms-menu { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; padding: 24px 40px; }
+.ms-menu .ms-title { font-size: 26px; font-weight: bold; color: #c0c; background: #cff; border: 1px solid #888; padding: 4px 30px; }
+.ms-menu button { width: 280px; padding: 12px; font-size: 16px; background: #e6eeff; border: 1px solid #99b; border-radius: 4px; }
+.ms-menu button.close { width: auto; padding: 6px 20px; }
+.ms { padding: 8px 10px; background: #fff; }
+.ms-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.ms-name { font-size: 22px; font-weight: bold; color: #fff; background: #3a7bd5; padding: 4px 14px; border: 2px solid #9cf; }
+.ms-box { display: flex; flex-direction: column; background: #3c3c78; color: #fff; padding: 2px 8px; font-size: 13px; }
+.ms-box input { width: 220px; }
+.ms-box b { font-size: 16px; text-align: center; }
+.ms-btns { display: flex; gap: 6px; margin-left: auto; background: #ddd; padding: 6px; border: 1px solid #999; }
+.ms-grid { border-collapse: collapse; font-size: 13px; }
+.ms-grid th { background: #1f1f9a; color: #fff; padding: 3px 6px; border: 1px solid #889; position: sticky; top: 0; }
+.ms-grid td { border: 1px solid #ccc; padding: 2px 6px; }
+.ms-grid td.code { background: #2a5b9a; color: #ff6; font-weight: bold; }
+.ms-grid td.name { font-weight: bold; min-width: 240px; }
+.ms-grid td.small { font-size: 11px; }
+.ms-grid td.stop { background: #2a5b9a; color: #ff0; font-weight: bold; }
+.ms-grid tr.hit td { outline: 2px solid #f80; }
+.ms-grid button.link { background: none; border: none; color: #00c; font-weight: bold; text-decoration: underline; cursor: pointer; }
+.ms-dlg { background: #fff; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 360px; max-height: 80vh; overflow: auto; border-radius: 6px; }
+.ms-dlg .head { font-weight: bold; font-size: 16px; }
+.ms-pick tr { cursor: pointer; }
+.ms-pick tr:hover td { background: #ffe9a8; }
+.ms-tg { padding: 3px 10px; background: #fff; border: 1px solid #999; border-radius: 3px; }
+.ms-tg.on { background: #3a7bd5; color: #fff; font-weight: bold; }
+.mf { background: #d4d0c8; min-height: 100vh; padding: 8px; font-size: 13px; }
+.mf-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.mf .lbl { background: #c8c8c8; border: 1px solid #999; padding: 2px 8px; min-width: 92px; display: inline-block; text-align: center; }
+.mf .code { background: #234e8f; color: #ff6; font-weight: bold; padding: 2px 14px; min-width: 60px; text-align: right; display: inline-block; }
+.mf .code.big { font-size: 16px; }
+.mf-btns { display: flex; gap: 6px; background: #999; padding: 4px; margin-left: 20px; }
+.mf-ro { color: #a00; font-weight: bold; }
+.mf-body { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr) 240px; gap: 8px; }
+.mf-sec { border: 1px solid #999; background: #e8e8e8; padding: 8px; margin: 0; }
+.mf-sec legend { color: #fff; background: #555; padding: 1px 12px; font-weight: bold; }
+.mf-sec legend.hissu { background: #e85; }
+.mf-sec legend.shizai { background: #885; }
+.mf-sec.wide { grid-column: 1 / 3; }
+.mf-sec .row { display: flex; align-items: center; gap: 6px; margin: 4px 0; flex-wrap: wrap; }
+.mf-sec input { padding: 2px 4px; }
+.mf-sec input.s { width: 70px; }
+.mf-sec input.w { flex: 1; min-width: 200px; }
+.mf-sec textarea { flex: 1; min-height: 44px; }
+.mf-sec select { max-width: 320px; }
+.mf-sec .sub { color: #036; }
+.mf-sec .sub-h { margin-top: 8px; font-weight: bold; }
+.mf-sec .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.mf input[readonly], .mf textarea[readonly] { background: #f4f4f4; }
+.tk2-grid td { vertical-align: top; }
+.tk2-grid td .short { color: #36c; text-align: center; font-size: 12px; }
+.tk2-grid td.kana { color: #36c; }
+.tk2-grid td .chiku { background: #bbb; color: #ff0; }
+.tk2-grid td .gray { color: #888; }
+.tk2-grid td.addr { max-width: 240px; }
+.tk2-grid td .b { font-weight: bold; }
+.tk2-grid button.teisei { font-size: 12px; line-height: 1.1; color: #36c; }
+.tk2-grid button.map { font-size: 11px; margin-top: 2px; }
+.tk2-grid td.etc .flags span { display: inline-block; margin-right: 4px; font-size: 11px; color: #999; border: 1px solid #ccc; padding: 0 3px; }
+.tk2-grid td.etc .flags span.on { color: #fff; background: #3a7bd5; border-color: #3a7bd5; }
+.tk2-grid td.etc .grp { font-size: 11px; margin-right: 4px; }
+.tk2-grid td.etc .grpname { background: #888; color: #ff0; font-weight: bold; padding: 0 6px; font-size: 12px; }
+.tk2-grid tr.off td { color: #aaa; }
+.tf { background: #f1e3d3; min-height: 100vh; padding: 10px; font-size: 13px; display: grid; grid-template-columns: minmax(520px, 2fr) 320px; gap: 12px 24px; align-content: start; }
+.tf-top { grid-column: 1 / 3; display: flex; align-items: center; gap: 16px; }
+.tf-name { font-size: 22px; font-weight: bold; color: #c0c; background: #cff; border: 1px solid #888; padding: 2px 16px; }
+.tf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-content: start; }
+.tf-grid .cell { display: flex; flex-direction: column; }
+.tf-grid .cell.w2 { grid-column: span 2; }
+.tf .h { background: #9b2d5f; color: #ffd; text-align: center; padding: 1px 4px; }
+.tf-grid .cell input, .tf-grid .cell select, .tf-grid .cell textarea { padding: 3px 4px; }
+.tf-grid .cell textarea { min-height: 60px; }
+.tf-grid .code { background: #234e8f; color: #fff; text-align: right; padding: 3px 8px; font-weight: bold; }
+.tf-grid .gray { background: #888; color: #ff0; padding: 3px 6px; min-height: 22px; }
+.tf-side { display: flex; flex-direction: column; gap: 8px; }
+.tf-side select { background: #cfc; padding: 3px; }
+.tf-side .tgs { display: flex; flex-direction: column; gap: 6px; border: 1px solid #aaa; padding: 8px; background: #f8f8f8; }
+.tf-side .ms-tg { padding: 6px; }
+.tf input[readonly], .tf textarea[readonly] { background: #f4f4f4; }
+@media print { .ms-head .ms-btns { display: none; } }

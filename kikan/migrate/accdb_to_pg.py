@@ -18,7 +18,8 @@ import subprocess
 import sys
 
 ENV = dict(os.environ, LC_ALL="C.UTF-8", LANG="C.UTF-8")
-SKIP = re.compile(r"^(MSys|~|f_[0-9A-F]{32}_)")
+# 個人の住所録（TM_専務専用住所録）は移さない決まり
+SKIP = re.compile(r"^(MSys|~|f_[0-9A-F]{32}_|TM_専務専用住所録$)")
 
 
 def run(cmd, **kw):

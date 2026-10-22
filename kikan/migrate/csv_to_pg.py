@@ -115,7 +115,8 @@ def main():
                 if name != d[1]:
                     dest_of[name] = (local_schema, name)
     for name, info in tables.items():
-        if name.startswith("MSys") or name in ("貼り付けエラー", "名前の自動修正保存エラー"):
+        # 個人の住所録（TM_専務専用住所録）は移さない決まり
+        if name.startswith("MSys") or name in ("貼り付けエラー", "名前の自動修正保存エラー", "TM_専務専用住所録"):
             continue
         path = os.path.join(a.dir, name + ".csv")
         schema, table = dest_of[name]

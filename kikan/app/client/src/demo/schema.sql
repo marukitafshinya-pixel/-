@@ -14187,3 +14187,129 @@ CREATE UNIQUE INDEX "T_elixxi一時入庫データ_ID_idx" ON web_fe."T_elixxi�
 ALTER TABLE ONLY app.sessions
     ADD CONSTRAINT sessions_login_fkey FOREIGN KEY (login) REFERENCES app.users(login) ON DELETE CASCADE;
 
+
+-- マスタ管理の画面側ファイル（Accessマスタ管理FE）の一覧表
+CREATE SCHEMA master_fe;
+CREATE TABLE master_fe."TM_web出力判別区分" (
+    "ID" integer NOT NULL,
+    "web出力区分" integer,
+    "出力区分名" character varying(255)
+);
+CREATE SEQUENCE master_fe."TM_web出力判別区分_ID_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE master_fe."TM_web出力判別区分_ID_seq" OWNED BY master_fe."TM_web出力判別区分"."ID";
+CREATE TABLE master_fe."TM_テープマスタ" (
+    "テープID" integer NOT NULL,
+    "テープ上" character varying(50),
+    "テープ下" character varying(50),
+    "備考" character varying(255)
+);
+CREATE SEQUENCE master_fe."TM_テープマスタ_テープID_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE master_fe."TM_テープマスタ_テープID_seq" OWNED BY master_fe."TM_テープマスタ"."テープID";
+CREATE TABLE master_fe."TM_ハイ積みマスタ" (
+    "ハイ積みID" integer NOT NULL,
+    "パレットコード" integer,
+    "パレット名" character varying(50),
+    "総数" integer,
+    "区分" character varying(50),
+    "ハイ" integer,
+    "パレット段数" integer,
+    "備考" character varying(50),
+    "ハイ積み備考" character varying(50),
+    "SPID2" integer,
+    "SPID3" integer,
+    "SPID4" integer,
+    "SPID5" integer,
+    "SPID6" integer
+);
+CREATE SEQUENCE master_fe."TM_ハイ積みマスタ_ハイ積みID_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE master_fe."TM_ハイ積みマスタ_ハイ積みID_seq" OWNED BY master_fe."TM_ハイ積みマスタ"."ハイ積みID";
+CREATE TABLE master_fe."TM_仕入マスタ" (
+    "ID" integer NOT NULL,
+    "取引先コード" integer,
+    "資材会社名" character varying(50),
+    "会社名" character varying(255),
+    "仕入コード" character varying(50),
+    "品番" character varying(50),
+    "資材コード" character varying(50),
+    "識別条件" character varying(50),
+    "本社コード" character varying(255),
+    "商品名" character varying(255),
+    "単位ID" integer,
+    "単位" character varying(255),
+    "単価" double precision,
+    "商品コード" integer,
+    "原料コード" integer,
+    "分類ID" integer,
+    "入庫分類" integer,
+    "材質" character varying(50),
+    "到着日数" character varying(50),
+    "生産地コード" integer,
+    "生産地" character varying(50)
+);
+CREATE SEQUENCE master_fe."TM_仕入マスタ_ID_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE master_fe."TM_仕入マスタ_ID_seq" OWNED BY master_fe."TM_仕入マスタ"."ID";
+CREATE TABLE master_fe."TM_商品区分" (
+    "区分ID" integer NOT NULL,
+    "区分名" character varying(50),
+    "区分隠語" character varying(255),
+    "検査日数" integer
+);
+CREATE TABLE master_fe."TM_地区コード" (
+    "地区コード" integer,
+    "地区名" character varying(50),
+    "十二コード" integer,
+    "十二地区" character varying(50),
+    "都道府県名" character varying(50),
+    "都道府県コード" integer
+);
+CREATE TABLE master_fe."TM_得意先区分" (
+    "得意先区分コード" integer,
+    "区分名" character varying(50),
+    "備考" character varying(50)
+);
+CREATE TABLE master_fe."TM_産地マスタ" (
+    "産地コード" integer NOT NULL,
+    "通称" character varying(50),
+    "国籍" character varying(50),
+    "都道府県" character varying(255),
+    "市町村" character varying(255),
+    "備考" character varying(255)
+);
+CREATE SEQUENCE master_fe."TM_産地マスタ_産地コード_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE master_fe."TM_産地マスタ_産地コード_seq" OWNED BY master_fe."TM_産地マスタ"."産地コード";
+ALTER TABLE ONLY master_fe."TM_web出力判別区分" ALTER COLUMN "ID" SET DEFAULT nextval('master_fe."TM_web出力判別区分_ID_seq"'::regclass);
+ALTER TABLE ONLY master_fe."TM_テープマスタ" ALTER COLUMN "テープID" SET DEFAULT nextval('master_fe."TM_テープマスタ_テープID_seq"'::regclass);
+ALTER TABLE ONLY master_fe."TM_ハイ積みマスタ" ALTER COLUMN "ハイ積みID" SET DEFAULT nextval('master_fe."TM_ハイ積みマスタ_ハイ積みID_seq"'::regclass);
+ALTER TABLE ONLY master_fe."TM_仕入マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('master_fe."TM_仕入マスタ_ID_seq"'::regclass);
+ALTER TABLE ONLY master_fe."TM_産地マスタ" ALTER COLUMN "産地コード" SET DEFAULT nextval('master_fe."TM_産地マスタ_産地コード_seq"'::regclass);
+CREATE UNIQUE INDEX "TM_仕入マスタ_資材コード_idx" ON master_fe."TM_仕入マスタ" USING btree ("資材コード");

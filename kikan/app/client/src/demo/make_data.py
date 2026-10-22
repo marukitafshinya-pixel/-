@@ -95,8 +95,16 @@ for tb in [
     "ws_fe.TM_合否判定", "ws_fe.TM_商品区分", "ws_fe.TM_商品状態マスタ", "ws_fe.TM_商品輸送区分", "ws_fe.TM_地区コード",
     "ws_fe.TM_得意先区分", "ws_fe.TM_混載区分", "ws_fe.TM_訂正科目マスタ", "ws_fe.TM_車両区分", "ws_fe.TM_輸送区分", "ws_fe.TM_運賃分類マスタ",
     "ws_fe.TM_運賃輸送区分", "ws_fe.TM_配達区分",
+    "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ",
+    # マスタ管理の選択肢
+    "master_fe.TM_商品区分", "master_fe.TM_テープマスタ", "master_fe.TM_ハイ積みマスタ", "master_fe.TM_産地マスタ",
+    "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード",
 ]:
     copy_table(tb)
+# マスタ管理の資材（段ボール・計量袋・パット）は仕入先の名前が入るので、作り物にする
+for i, (bunrui, hinban, name, shiki) in enumerate([(10, "A-1", "見本段ボール 小", "A"), (10, "A-7", "見本段ボール 大", "A"), (10, "パット大", "見本パット", "P"),
+                                                   (11, "白10kg", "見本袋 10kg", "白"), (11, "白5kg", "見本袋 5kg", "白")], 1):
+    ins("master_fe.TM_仕入マスタ", ID=i, 取引先コード=1, 仕入コード=str(i), 品番=hinban, 商品名=name, 分類ID=bunrui, 識別条件=shiki, 資材コード=str(i))
 
 # 取引先名の入る一覧表は、作り物にする
 for sc in ["juchu_fe", "ws_fe"]:

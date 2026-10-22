@@ -80,6 +80,10 @@
     {
       "file": "data/手配出力用カレンダー.accdb",
       "schema": "tehai_fe"
+    },
+    {
+      "file": "data/Accessマスタ管理FE.accdb",
+      "schema": "master_fe"
     }
   ]
 }
