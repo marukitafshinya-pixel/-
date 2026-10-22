@@ -1067,18 +1067,44 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .pi-list td, .pi-list th { padding: 0 1mm; border-right: 1px solid #000; }
 .pi-list td.kubun { font-size: 9pt; }
 
-/* 在庫更新（Access の FM_在庫更新） */
-.ko { display: flex; flex-direction: column; height: 100vh; background: #dedcc8; font-size: 13px; }
-.ko-top { display: flex; align-items: center; gap: 16px; padding: 6px 10px; }
-.ko-top .title { font-size: 20px; font-weight: bold; background: #000080; color: #fff; padding: 2px 16px; }
-.ko-top .info { flex: 1; }
-.ko-top .btns { display: flex; gap: 6px; background: #444; padding: 6px; }
-.ko-top .btns button { background: #fff; border: 2px outset #ddd; padding: 4px 18px; font-weight: bold; }
-.ko-top .btns .go { color: #0050c0; }
-.ko-top .btns .red { color: #d00; }
-.ko-body { flex: 1; display: grid; grid-template-columns: 3fr 2fr; gap: 10px; padding: 0 10px 10px; overflow: auto; }
-.ko-box { background: #fff; border: 1px solid #888; overflow: auto; }
-.ko-box .cap { display: flex; justify-content: space-between; background: #000080; color: #fff; padding: 3px 6px; font-weight: bold; position: sticky; top: 0; }
-.ko-box .cap button { margin-left: 4px; font-size: 11px; }
-.ko-box tr.on td { background: #fff3b0; }
-.ko-none { padding: 8px; }
+/* 在庫更新処理（Access の FM_在庫更新） */
+.ko { display: flex; flex-direction: column; height: 100vh; background: #fff; font-size: 13px; }
+.ko-top { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
+.ko-top .title { font-size: 22px; font-weight: bold; color: #1a5a8a; background: #4ecbd8; border: 3px solid #333; padding: 0 10px; letter-spacing: 2px; }
+.ko-top .msg { background: #ffe0ee; border: 1px solid #999; padding: 2px 10px; font-size: 15px; width: 330px; }
+.ko-top .close { margin-left: 18px; background: #fff; border: 3px outset #999; padding: 2px 22px; font-weight: bold; box-shadow: 4px 4px 0 #333; }
+.ko-body { flex: 1; display: grid; grid-template-columns: 200px 1fr; gap: 6px; padding: 0 8px 8px; overflow: auto; }
+.ko-left { display: flex; flex-direction: column; gap: 6px; }
+.ko-ctrl { background: #333; border: 2px solid #ccc; padding: 10px 26px; display: flex; flex-direction: column; gap: 4px; }
+.ko-ctrl button { background: #fff; color: #1a50c0; border: 1px solid #aaa; border-radius: 4px; padding: 3px; font-weight: bold; margin-bottom: 4px; }
+.ko-ctrl button.gray { color: #aaa; }
+.ko-ctrl .lbl { background: #555; color: #fff; text-align: center; margin: 4px 8px 0; font-weight: bold; }
+.ko-ctrl .v { background: #fff; text-align: center; font-weight: bold; font-size: 12px; }
+.ko-ctrl .v.mizu { background: #3ff; color: #00c; }
+.ko-detail { flex: 1; background: #000080; color: #fff; min-height: 220px; }
+.ko-detail table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.ko-detail th { text-align: left; font-weight: normal; border-right: 1px solid #fff; border-bottom: 1px solid #fff; }
+.ko-detail td { border-right: 1px solid #fff; }
+.ko-right { display: flex; flex-direction: column; gap: 6px; }
+.ko-sec { background: #444; border: 2px solid #ccc; padding: 4px 6px; min-height: 220px; }
+.ko-sec .bar { display: flex; gap: 4px; align-items: center; margin-bottom: 2px; }
+.ko-sec .bar button { background: #fff; color: #1a50c0; border: 1px solid #aaa; padding: 1px 12px; }
+.ko-sec .bar button + button { color: #aaa; }
+.ko-sec .tag { margin-left: 18px; font-weight: bold; padding: 1px 12px; border: 2px solid #000; }
+.ko-sec.seisan .tag { background: #ff0; color: #000; }
+.ko-sec.yuso .tag { background: #800060; color: #fff; }
+.ko-sec .cnt { background: #3ff; color: #00c; font-weight: bold; font-size: 15px; padding: 0 30px; min-width: 120px; text-align: center; }
+.ko-sec table { border-collapse: collapse; }
+.ko-sec th { color: #fff; font-weight: normal; padding: 0 6px; border: 1px solid #ccc; }
+.ko-sec.seisan th { background: #008080; }
+.ko-sec.yuso th { background: #8b2d5f; }
+.ko-sec td { background: #6a6a9c; color: #ffe060; border: 1px solid #ccc; padding: 0 4px; }
+.ko-sec td.c { background: #444; text-align: center; }
+.ko-sec td.r { text-align: right; }
+.ko-sec.seisan td:nth-child(2) { min-width: 80px; }
+.ko-sec.seisan td:nth-child(3) { min-width: 170px; }
+.ko-sec.yuso td:nth-child(3) { min-width: 190px; }
+.ko-sec.yuso td:nth-child(4) { min-width: 180px; }
+.ko-sec.yuso tr { cursor: pointer; }
+.ko-sec.yuso tr.cur td { background: #8a8acc; }
+.ko-sec.yuso td.c:nth-child(2) { background: #6a6a9c; }

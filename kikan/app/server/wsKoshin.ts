@@ -4,6 +4,7 @@ import { pool, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で, 賞味期限計算 } from "./ws.js";
 import { 入庫できる } from "./wsZaiko.js";
+import { 並びの鍵, 鍵で比べる } from "./narabi.js";
 
 // 丸北WorkStation の在庫更新（Access の FM_在庫更新・CC_ZaikoUpdate）。
 // 製造管理の入庫（出来高）のうち印を付けたものを在庫に入れ、印を付けた便のまだ登録していない出荷を在庫から引き、在庫を集計する。
@@ -240,10 +241,8 @@ export function wsKoshinRoutes(app: FastifyInstance) {
       );
       const 入庫一覧 = (
         await c.query(
-          `SELECT i."入庫ID", i."抽出区分", i."入庫日", i."倉庫ID", COALESCE(i."倉庫名", u."短縮名") AS "倉庫名", i."商品コード", i."商品名", i."規格",
-             i."ケース", i."商品kg", i."製造日", i."タグ", i."数量確定フラグ"
-           FROM ${入庫} i LEFT JOIN ${得意先マスタ} u ON u."短縮コード" = i."倉庫ID"
-           WHERE i."chk" = false AND i."入庫日" <= $1::date ORDER BY i."入庫日", i."倉庫ID", i."商品コード", i."入庫ID"`,
+          `SELECT "入庫ID", "抽出区分", "入庫日", "倉庫ID", "倉庫名", "商品コード", "商品名", "規格", "ケース", "商品kg", "製造日", "タグ", "数量確定フラグ"
+           FROM ${入庫} WHERE "chk" = false AND "入庫日" <= $1::date ORDER BY "入庫ID"`,
           [今日],
         )
       ).rows;
@@ -255,18 +254,58 @@ export function wsKoshinRoutes(app: FastifyInstance) {
           [今日],
         )
       ).rows;
-      const u = (await c.query(`SELECT "更新時間" FROM ${利用者} ORDER BY "ID" LIMIT 1`)).rows[0];
-      return { 今日, 入庫一覧, 便一覧, 前回: u?.更新時間 ?? null };
+      const u = (await c.query(`SELECT "更新時間", "前回更新日" FROM ${利用者} ORDER BY "ID" LIMIT 1`)).rows[0];
+      return { 今日, 入庫一覧, 便一覧, 前回: u?.更新時間 ?? null, 前回更新日: 日付(u?.前回更新日) };
     }),
   );
 
   // 印の付け外し（入庫・便）
+  // 入庫は数量確定していないと選べない（Access の FS_登録_入庫 の 抽出区分_Click）
   app.post<{ Body: { 種類: "入庫" | "便"; id: number; 値: boolean } }>("/api/ws/koshin/chk", async (req, reply) => {
     const b = req.body;
-    if (b.種類 === "入庫") await pool.query(`UPDATE ${入庫} SET "抽出区分" = $2 WHERE "入庫ID" = $1 AND "chk" = false`, [n(b.id), !!b.値]);
+    if (b.種類 === "入庫") {
+      const r = (await pool.query(`SELECT "商品名", "製造日", "数量確定フラグ" FROM ${入庫} WHERE "入庫ID" = $1`, [n(b.id)])).rows[0];
+      if (!r) return reply.code(404).send({ error: "この入庫はありません。" });
+      if (b.値 && r.数量確定フラグ !== true) {
+        const d = 日付(r.製造日)?.replace(/-/g, "/") ?? "";
+        return reply.code(400).send({ error: `${r.商品名} 製造日${d} の確認が完了されていません!\n確認してから登録お願いします。` });
+      }
+      await pool.query(`UPDATE ${入庫} SET "抽出区分" = $2 WHERE "入庫ID" = $1 AND "chk" = false`, [n(b.id), !!b.値]);
+    }
     else if (b.種類 === "便") await pool.query(`UPDATE ${輸送計画} SET "抽出区分" = $2 WHERE "輸送ID" = $1 AND "chk" = false`, [n(b.id), !!b.値]);
     else return reply.code(400).send({ error: "種類が正しくありません。" });
     return { ok: true };
+  });
+
+  // 選択・解除（Access の UpdateSet）：入庫は数量確定したものだけ、便は全部積込確認した（受領印チェックの）便だけ選ぶ。それ以外は外す
+  app.post<{ Body: { 種類: "入庫" | "便"; 値: boolean } }>("/api/ws/koshin/all", async (req, reply) => {
+    const 今日 = 日本の今().日付;
+    if (req.body.種類 === "入庫")
+      await pool.query(
+        `UPDATE ${入庫} SET "抽出区分" = CASE WHEN "数量確定フラグ" = true THEN $2 ELSE false END WHERE "chk" = false AND "入庫日" <= $1::date`,
+        [今日, !!req.body.値],
+      );
+    else if (req.body.種類 === "便")
+      await pool.query(
+        `UPDATE ${輸送計画} SET "抽出区分" = CASE WHEN "受領印チェック" = true THEN $2 ELSE false END WHERE "chk" = false AND "出荷計画日" <= $1::date`,
+        [今日, !!req.body.値],
+      );
+    else return reply.code(400).send({ error: "種類が正しくありません。" });
+    return { ok: true };
+  });
+
+  // 便の中身（Access の Lis_詳細：届け先・商品ごとのケース）
+  app.get<{ Params: { id: string } }>("/api/ws/koshin/bin/:id", async (req) => {
+    const rows = (
+      await pool.query(`SELECT "届け先", "商品名", SUM("ケース") AS "ケース" FROM ${出荷} WHERE "輸送ID" = $1 GROUP BY "輸送ID", "届け先", "商品名"`, [
+        n(req.params.id),
+      ])
+    ).rows;
+    // 並びは Access と同じ日本語の順（届け先・商品名）
+    return rows
+      .map((r: Rec) => ({ r, k1: 並びの鍵(r.届け先), k2: 並びの鍵(r.商品名) }))
+      .sort((a, b) => 鍵で比べる(a.k1, b.k1) || 鍵で比べる(a.k2, b.k2))
+      .map((x) => x.r);
   });
 
   // 更新（Access の cmd_Update_Click → CC_ZaikoUpdate）。更新の前に在庫を写す
