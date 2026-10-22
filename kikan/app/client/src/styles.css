@@ -1445,3 +1445,39 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .os-foot { margin-top: 4px; display: flex; gap: 0; }
 .os-foot .lbl { background: #800080; color: #ff0; padding: 1px 20px; }
 .os-foot .v { background: #fff; min-width: 60px; padding: 1px 8px; text-align: right; }
+/* 在庫表抽出印刷（FM_在庫表） */
+.zc { min-height: 100vh; background: #d8d8c0; padding: 6px 10px; display: flex; flex-direction: column; }
+.zc-top { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+.zc-total span { display: inline-block; background: #e8f8ff; border: 1px solid #aaa; min-width: 70px; text-align: right; padding: 1px 6px; }
+.zc-list { flex: 1; overflow: auto; max-height: calc(100vh - 230px); background: #fff; }
+.zc-grid { border-collapse: collapse; width: 100%; font-size: 13px; }
+.zc-grid th { background: #933a5e; color: #fff; padding: 2px 6px; position: sticky; top: 0; }
+.zc-grid td { border: 1px solid #bbb; padding: 1px 4px; background: #eefcff; }
+.zc-grid .blue { color: #1f4fd8; }
+.zc-grid .red { color: #d00; }
+.zc-grid .b { font-weight: bold; }
+.zc-bottom { display: flex; gap: 4px; margin-top: 6px; align-items: flex-start; }
+.zc-pick { background: #ffffa0; border: 1px solid #888; }
+.zc-pick .lbl, .zc-way .lbl { background: #00807f; color: #fff; text-align: center; padding: 1px 10px; }
+.zc-pick .list { height: 130px; overflow: auto; min-width: 120px; font-size: 12px; }
+.zc-pick:last-of-type .list { min-width: 260px; }
+.zc-pick .list div { padding: 0 4px; cursor: pointer; white-space: nowrap; }
+.zc-pick .list div.sel { background: #00807f; color: #fff; }
+.zc-pick .code { display: inline-block; min-width: 40px; color: #555; }
+.zc-pick .sel .code { color: #fff; }
+.zc-way { display: flex; flex-direction: column; gap: 4px; background: #ccc; border: 1px solid #888; padding: 0 4px 4px; }
+.zc-way .lbl { margin: 0 -4px; }
+.zc-way button.on { background: #cde; border: 2px solid #357; }
+.zc-side { display: flex; flex-direction: column; gap: 8px; margin-left: 8px; }
+.zc-note { background: #fdf; color: #333; padding: 2px 8px; font-size: 12px; }
+.zc-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #666; padding: 6px; }
+.zc-btns button { font-weight: bold; }
+.zc-btns .navy { color: #1f3b8f; } .zc-btns .red { color: #d00; } .zc-btns .green { color: #080; }
+@media print {
+  .zc { background: #fff; padding: 0; }
+  .zc-list { max-height: none; overflow: visible; }
+  .zc-grid th { position: static; }
+  .zc-grid td { background: #fff; }
+  @page { size: A4 landscape; margin: 8mm; }
+}
+.zc-grid td.r { text-align: right; } .zc-grid td.c { text-align: center; }

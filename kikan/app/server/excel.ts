@@ -76,3 +76,31 @@ export async function 古いデータのExcel(シート: { 名前: string; rows:
   }
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
+
+/** 一覧をそのまま Excel にする（1 行目が見出し。全部のマスに細い罫線。日付の列は yyyy/mm/dd） */
+export async function 一覧のExcel(シート名: string, 列: { key: string; 見出し?: string; width?: number; date?: boolean }[], rows: Record<string, unknown>[]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(シート名.slice(0, 31));
+  const font = { name: "ＭＳ Ｐゴシック", size: 11 };
+  const thin = { style: "thin" as const };
+  const border = { top: thin, left: thin, bottom: thin, right: thin };
+  ws.columns = 列.map((c) => ({ key: c.key, width: c.width ?? 12 }));
+  const head = ws.addRow(列.map((c) => c.見出し ?? c.key));
+  head.eachCell((cell) => {
+    cell.font = { ...font, bold: true };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC0C0C0" } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = border;
+  });
+  for (const r of rows) {
+    const row = ws.addRow(列.map((c) => (c.date ? 日付(r[c.key]) : r[c.key] ?? null)));
+    列.forEach((c, i) => {
+      const cell = row.getCell(i + 1);
+      cell.font = font;
+      cell.border = border;
+      if (c.date) cell.numFmt = "yyyy/mm/dd";
+    });
+  }
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
