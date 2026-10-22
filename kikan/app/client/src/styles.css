@@ -1414,3 +1414,4 @@ input.kyotsu[readonly] { background: #f3e2c0; }
   @page { size: A4 landscape; margin: 8mm; }
 }
 .kn-grid input.ms-cell { width: 100%; box-sizing: border-box; }
+.kn-grid textarea.ms-cell { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; resize: vertical; }

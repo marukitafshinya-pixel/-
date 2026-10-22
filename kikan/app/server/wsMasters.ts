@@ -36,6 +36,11 @@ const 表 = {
     表: t("kyotsu", "TM_集荷先別パレット設定"), 鍵: "ID", 合言葉: true, 絞る列: "集荷先ID", 並び: `"ID"`,
     列: ["集荷先ID", "集荷先", "商品コード", "商品名", "パレット単位", "特定パレット単位", "段数", "備考"], 数の列: ["集荷先ID", "商品コード", "パレット単位", "特定パレット単位", "段数"],
   },
+  // 商品使用予定数入力・道内ストック表示設定（FM_商品在庫ストック設定。WorkStation の本体の表）。ストック数は自由に書く文（希望在庫表示の上に出る）
+  stock: {
+    表: t("ws", "TM_商品在庫ストックマスタ"), 鍵: null, 合言葉: false, 絞る列: "区分", 並び: `"区分", "商品コード"`,
+    列: ["区分", "商品コード", "商品名", "ストック数", "備考"], 数の列: ["区分", "商品コード"],
+  },
 } satisfies Record<string, 設定>;
 type 種類 = keyof typeof 表;
 const 表を選ぶ = (k: string): 設定 | null => (k in 表 ? 表[k as 種類] : null);
@@ -71,6 +76,8 @@ export function wsMastersRoutes(app: FastifyInstance) {
       選択肢 = await q(
         `SELECT "相手先コード" AS id, MAX("相手先名") AS name FROM ${s.表} GROUP BY "相手先コード" HAVING "相手先コード" <> 0 ORDER BY COUNT("相手方届け先コード") DESC, "相手先コード"`,
       );
+    else if (req.params.kind === "stock")
+      選択肢 = await q(`SELECT "区分" AS id, '区分 ' || "区分" AS name FROM ${s.表} WHERE "区分" IS NOT NULL GROUP BY "区分" ORDER BY "区分"`);
     else if (req.params.kind === "pallet")
       選択肢 = await q(
         `SELECT p."集荷先ID" AS id, COALESCE(MIN(m."短縮名"), MIN(p."集荷先")) AS name FROM ${s.表} p LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = p."集荷先ID"
@@ -96,7 +103,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
       const v: Rec = { [項目]: 値 };
       const k = req.params.kind as 種類;
       if (k === "aite" && 項目 === "得意先短縮コード") v.得意先名 = await 短縮名(c, 値);
-      if ((k === "aite" || k === "pallet") && 項目 === "商品コード") v.商品名 = await 商品名(c, 値);
+      if ((k === "aite" || k === "pallet" || k === "stock") && 項目 === "商品コード") v.商品名 = await 商品名(c, 値);
       // 自社コードを選ぶと、届け先が空なら得意先の短縮名を入れる（Access は欄の名前の書き違いでここが働いていない。手で入れた名前は残す）
       if (k === "todoke" && 項目 === "自社コード") {
         const 今 = (await c.query(`SELECT "届け先" FROM ${s.表} WHERE "ID" = $1`, [n(req.body.鍵)])).rows[0];
@@ -127,6 +134,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
         const 名 = code ? (await c.query(`SELECT "相手先名" FROM ${s.表} WHERE "相手先コード" = $1 AND "相手先名" IS NOT NULL LIMIT 1`, [code])).rows[0]?.相手先名 : null;
         Object.assign(v, { 相手先コード: code || 0, 相手先名: 名 ?? null, 自社コード: 0 });
       }
+      if (k === "stock") Object.assign(v, { 区分: code || 1, 倉庫ID除外コード: 0, 通知区分: false });
       if (k === "pallet") Object.assign(v, { 集荷先ID: code, 集荷先: await 短縮名(c, code), 商品コード: 0, パレット単位: 0, 特定パレット単位: 0, 段数: 0 });
       if (s.鍵) {
         await c.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [s.表]);

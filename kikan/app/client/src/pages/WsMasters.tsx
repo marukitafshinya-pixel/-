@@ -7,9 +7,9 @@ type Rec = Record<string, any>;
 type Opt = { id: number; name: string };
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
 
-type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number };
+type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number; 複数行?: boolean };
 type 設定 = {
-  kind: "aite" | "todoke" | "pallet";
+  kind: "aite" | "todoke" | "pallet" | "stock";
   題: string;
   絞り: string;
   列: 列[];
@@ -37,6 +37,16 @@ const 設定一覧: Record<string, 設定> = {
       { k: "届け先", 見出し: "届け先", 幅: 200 },
       { k: "相手先コード", 見出し: "相手先コード", 数: true, 幅: 60 },
       { k: "相手先名", 見出し: "相手先名", 幅: 120 },
+    ],
+  },
+  stock: {
+    kind: "stock", 題: "商品使用予定数入力", 絞り: "区分", 合言葉: false, 絞りの探し方: "select",
+    列: [
+      { k: "区分", 見出し: "区分", 数: true, 幅: 40 },
+      { k: "商品コード", 見出し: "コード", 数: true, 探す: "shohin", 幅: 60 },
+      { k: "商品名", 見出し: "商品名", 読むだけ: true },
+      { k: "ストック数", 見出し: "ストック数（希望在庫表示の上に出る文）", 幅: 360, 複数行: true },
+      { k: "備考", 見出し: "備考", 幅: 160 },
     ],
   },
   pallet: {
@@ -167,6 +177,21 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
                     <td key={c.k} className="name">{r[c.k]}</td>
                   ) : (
                     <td key={c.k} style={{ width: c.幅 ?? 100 }}>
+                      {c.複数行 ? (
+                        <textarea
+                          key={r._鍵 + String(r[c.k] ?? "")}
+                          className="ms-cell"
+                          rows={Math.max(1, String(r[c.k] ?? "").split("\n").length)}
+                          defaultValue={String(r[c.k] ?? "").replace(/\r\n/g, "\n")}
+                          readOnly={ro}
+                          onBlur={(e) => {
+                            // 直していなければ書かない（改行の書き方だけの違いで書き換えないように）
+                            if (e.target.value === String(r[c.k] ?? "").replace(/\r\n/g, "\n")) return;
+                            const v = e.target.value.replace(/\n/g, "\r\n");
+                            直す(r, c.k, v === "" ? null : v);
+                          }}
+                        />
+                      ) : (
                       <Field
                         value={r[c.k]}
                         kind={c.数 ? "num" : "text"}
@@ -175,6 +200,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
                         onCommit={(v) => 直す(r, c.k, v.trim() === "" ? null : c.数 ? Number(v) : v)}
                         className="ms-cell"
                       />
+                      )}
                     </td>
                   ),
                 )}
