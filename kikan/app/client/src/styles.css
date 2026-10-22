@@ -1413,3 +1413,4 @@ input.kyotsu[readonly] { background: #f3e2c0; }
   .pz-name { color: #666; }
   @page { size: A4 landscape; margin: 8mm; }
 }
+.kn-grid input.ms-cell { width: 100%; box-sizing: border-box; }
