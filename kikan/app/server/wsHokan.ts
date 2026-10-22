@@ -17,7 +17,7 @@ const n = (v: unknown) => Number(v ?? 0) || 0;
 const 今日 = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
 /** 保管期間の期（Access の Hokan期。半月ごとに数える） */
-function 保管の期(入庫日: string | null, 基準日 = 今日()): number {
+export function 保管の期(入庫日: string | null, 基準日 = 今日()): number {
   if (!入庫日) return 0;
   const a = new Date(入庫日.slice(0, 10) + "T00:00:00Z");
   const b = new Date(基準日 + "T00:00:00Z");

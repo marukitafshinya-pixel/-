@@ -94,3 +94,16 @@ INSERT INTO app."帳票_差出人" ("区分", "並び", "社名") VALUES
 ON CONFLICT DO NOTHING;
 -- 輸送依頼書の注意書きの連絡先（Access ではレポートに人の名前が書かれていた。ここで入れる）
 INSERT INTO app."設定" ("名前", "値") VALUES ('輸送依頼書の連絡先', '') ON CONFLICT DO NOTHING;
+
+-- 日付ごとの在庫の控え（利用者の依頼 2026/10/22：過去の在庫や、保管庫ごとの量を見るため）。
+-- 在庫更新・日時更新のたびに、その日の在庫（在庫ケースが 0 でない行）を 入庫日・倉庫ID・商品コード ごとにまとめて書き直す。前の日の分は消さずに貯める。
+CREATE TABLE IF NOT EXISTS ws."TD_在庫日別集計" (
+  "集計日"     DATE NOT NULL,
+  "入庫日"     DATE,
+  "倉庫ID"     INTEGER,
+  "商品コード" INTEGER,
+  "ケース"     INTEGER NOT NULL DEFAULT 0,
+  "商品kg"     DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "更新時間"   TEXT
+);
+CREATE INDEX IF NOT EXISTS "TD_在庫日別集計_集計日" ON ws."TD_在庫日別集計" ("集計日", "倉庫ID");

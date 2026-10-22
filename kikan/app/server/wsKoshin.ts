@@ -5,6 +5,7 @@ import { requireUser } from "./auth.js";
 import { 一連で, 賞味期限計算 } from "./ws.js";
 import { 入庫できる } from "./wsZaiko.js";
 import { 並びの鍵, 鍵で比べる } from "./narabi.js";
+import { 保管の期 } from "./wsHokan.js";
 
 // 丸北WorkStation の在庫更新（Access の FM_在庫更新・CC_ZaikoUpdate）。
 // 製造管理の入庫（出来高）のうち印を付けたものを在庫に入れ、印を付けた便のまだ登録していない出荷を在庫から引き、在庫を集計する。
@@ -18,6 +19,7 @@ const 入庫 = t("seizo", "TD_入庫"); // WorkStation の TD_入庫 は製造�
 const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 利用者 = t("ws_fe", "TD_USER");
+const 日別集計 = t("ws", "TD_在庫日別集計");
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
@@ -77,8 +79,13 @@ export function 工場の名義(倉庫ID: number): number {
 }
 
 /** 入庫登録（Access の C_NyukoUpdate）：印を付けた、まだ登録していない入庫を在庫にする */
-async function 入庫登録(c: PoolClient, 更新日: string, 更新時間: string) {
-  const rows = (await c.query(`SELECT * FROM ${入庫} WHERE "抽出区分" = true AND "chk" = false ORDER BY "入庫ID"`)).rows;
+async function 入庫登録(c: PoolClient, 更新日: string, 更新時間: string, この日まで?: string) {
+  // ふだんは画面で印を付けた入庫。日時更新の自動の登録では、数量確定した、この日までの入庫を全部
+  const rows = (
+    この日まで
+      ? await c.query(`SELECT * FROM ${入庫} WHERE "数量確定フラグ" = -1 AND "入庫日" <= $1::date AND "chk" = false ORDER BY "入庫ID"`, [この日まで])
+      : await c.query(`SELECT * FROM ${入庫} WHERE "抽出区分" = true AND "chk" = false ORDER BY "入庫ID"`)
+  ).rows;
   for (const r of rows) {
     const 倉庫名 = await 短縮名(c, r.倉庫ID);
     const 製造ケース = n(r.ケース);
@@ -226,6 +233,29 @@ async function 在庫確認(c: PoolClient | typeof pool, 工場: number, 今日:
   ).rows;
 }
 
+/** 日付ごとの在庫の控え（TD_在庫日別集計）：その日の分を書き直す */
+async function 在庫の控え(c: PoolClient, 集計日: string, 更新時間: string) {
+  await c.query(`DELETE FROM ${日別集計} WHERE "集計日" = $1::date`, [集計日]);
+  await c.query(
+    `INSERT INTO ${日別集計} ("集計日", "入庫日", "倉庫ID", "商品コード", "ケース", "商品kg", "更新時間")
+     SELECT $1::date, "入庫日"::date, "倉庫ID", "商品コード", SUM("在庫ケース"), SUM(COALESCE("在庫kg", 0)), $2
+     FROM ${在庫} WHERE "在庫ケース" <> 0 GROUP BY "入庫日"::date, "倉庫ID", "商品コード"`,
+    [集計日, 更新時間],
+  );
+}
+
+/** 賞味期限の通知（Access の C_期限通知：180 日以内なら「あと○ヶ月!」、過ぎていれば「期限切れ!」） */
+function 期限通知(賞味期限: string, 今日: string): string {
+  const 日数 = Math.round((Date.parse(賞味期限.slice(0, 10) + "T00:00:00Z") - Date.parse(今日 + "T00:00:00Z")) / 86400000);
+  if (日数 > 180) return "";
+  if (日数 < 0) return "期限切れ!";
+  // Access の CLng と同じ丸め（0.5 は偶数へ）
+  const x = 日数 / 30;
+  const f = Math.floor(x);
+  const 月 = x - f > 0.5 || (x - f === 0.5 && f % 2 === 1) ? f + 1 : f;
+  return `あと${月}ヶ月!`;
+}
+
 export function wsKoshinRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
@@ -324,6 +354,7 @@ export function wsKoshinRoutes(app: FastifyInstance) {
       await 集計(c);
       const u = await c.query(`UPDATE ${利用者} SET "更新時間" = $1`, [更新時間]);
       if (!u.rowCount) await c.query(`INSERT INTO ${利用者} ("ID", "更新時間") VALUES (1, $1)`, [更新時間]);
+      await 在庫の控え(c, now.日付, 更新時間);
       return { 更新時間, 入庫件数, 登録できない, 在庫確認: await 在庫確認(c, 11, now.日付) };
     }),
   );
@@ -343,7 +374,62 @@ export function wsKoshinRoutes(app: FastifyInstance) {
       await c.query(`UPDATE ${入庫} SET "chk" = false WHERE "更新時間" = $1`, [KT]);
       await c.query(`UPDATE ${出荷} SET "chk" = false WHERE "更新時間" = $1`, [KT]);
       await c.query(`UPDATE ${輸送計画} SET "chk" = false WHERE "更新時間" = $1`, [KT]);
+      const now = 日本の今();
+      await 在庫の控え(c, now.日付, now.日時);
       return { ok: true };
+    }),
+  );
+
+  // 日時更新の前の確認：前回の自動の登録から何日たったか（Access の C_StartUp）
+  app.get("/api/ws/koshin/nichiji", async () => {
+    const u = (await pool.query(`SELECT "前回更新日", "日時更新日" FROM ${利用者} ORDER BY "ID" LIMIT 1`)).rows[0];
+    const 今日 = 日本の今().日付;
+    const 前回 = 日付(u?.前回更新日);
+    const 差 = 前回 ? Math.round((Date.parse(今日 + "T00:00:00Z") - Date.parse(前回 + "T00:00:00Z")) / 86400000) : null;
+    return { 前回更新日: 前回, 日時更新日: 日付(u?.日時更新日), 差日数: 差, 昨日: 日を足す(今日, -1) };
+  });
+
+  // 日時更新（Access の cmd_日時更新_Click → C_StartUp。押したときだけ動く）。
+  // 1. 自動の登録（2 日以上たっていて、画面で「はい」のとき）：数量確定した昨日までの入庫を在庫に入れる（在庫更新と同じ登録の仕方）
+  // 2. その日初めてなら、在庫の作成日付・賞味期限の通知・分類・保管の期を付け直す
+  //    （Access の CC_SokoSum。出庫ケース・製造ケースを 0 にして繰越に移す処理は、在庫が二重に引かれるのでしない：2026/10/22 利用者の決定）
+  // 3. 日付ごとの在庫の控えを書き直す
+  app.post<{ Body: { 自動の登録?: boolean } }>("/api/ws/koshin/nichiji", async (req) =>
+    一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('在庫更新'))`);
+      const now = 日本の今();
+      const 今日 = now.日付;
+      const 昨日 = 日を足す(今日, -1);
+      const u0 = (await c.query(`SELECT "日時更新日" FROM ${利用者} ORDER BY "ID" LIMIT 1`)).rows[0];
+      if (!u0) await c.query(`INSERT INTO ${利用者} ("ID") VALUES (1)`);
+      let 入庫件数 = 0;
+      if (req.body.自動の登録) {
+        await c.query(`DROP TABLE IF EXISTS ${在庫の写し}`);
+        await c.query(`CREATE TABLE ${在庫の写し} AS SELECT * FROM ${在庫}`);
+        入庫件数 = await 入庫登録(c, 昨日, now.日時, 昨日);
+        await 集計(c);
+        await c.query(`UPDATE ${利用者} SET "前回更新日" = $1::date, "更新時間" = $2`, [昨日, now.日時]);
+      }
+      let 付け直し = 0;
+      if (!u0?.日時更新日 || 日付(u0.日時更新日)! < 今日) {
+        const 分類 = new Map<number, number>(
+          (await c.query(`SELECT "商品コード", "分類ID" FROM ${商品マスタ}`)).rows.map((r: Rec) => [n(r.商品コード), n(r.分類ID)]),
+        );
+        for (const z of (await c.query(`SELECT "在庫ID", "商品コード", "賞味期限", "在庫ケース", "入庫日", "期" FROM ${在庫}`)).rows) {
+          await c.query(`UPDATE ${在庫} SET "作成日付" = $2::date, "賞味期限通知" = $3, "分類ID" = $4, "期" = $5 WHERE "在庫ID" = $1`, [
+            z.在庫ID,
+            今日,
+            z.賞味期限 ? 期限通知(String(z.賞味期限), 今日) : null,
+            分類.get(n(z.商品コード)) ?? 0,
+            n(z.在庫ケース) !== 0 ? 保管の期(z.入庫日 ? String(z.入庫日) : null, 今日) : z.期,
+          ]);
+          付け直し++;
+        }
+        await c.query(`UPDATE ${利用者} SET "日時更新日" = $1::date`, [今日]);
+      }
+      await 在庫の控え(c, 今日, now.日時);
+      const 控え = n((await c.query(`SELECT COUNT(*) AS n FROM ${日別集計} WHERE "集計日" = $1::date`, [今日])).rows[0].n);
+      return { 入庫件数, 付け直し, 控え, 更新時間: now.日時 };
     }),
   );
 

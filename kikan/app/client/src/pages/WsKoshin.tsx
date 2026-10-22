@@ -96,6 +96,31 @@ export default function WsKoshin() {
     }
   }
 
+  /** 日時更新（押したときだけ）。在庫の期限通知・分類・期を今日の日付で付け直し、今日の在庫を日別集計に控える。繰越はしない。 */
+  async function 日時更新() {
+    set動作中(true);
+    try {
+      const n = await api.get<Rec>("/api/ws/koshin/nichiji");
+      let 自動の登録 = false;
+      if (n.差日数 == null || Number(n.差日数) >= 2) {
+        const 何日 = n.差日数 == null ? "前回の更新の記録がありません。" : `${n.差日数}日間の更新がされていません`;
+        自動の登録 = confirm(`${何日}${月日(n.昨日)}まで更新を行いますか？`);
+        if (!自動の登録) alert("手動で更新を行ってください。");
+      }
+      const r = await api.post<Rec>("/api/ws/koshin/nichiji", { 自動の登録 });
+      alert(
+        `日時更新が終わりました。\n` +
+          (自動の登録 ? `入庫の登録：${r.入庫件数} 件\n` : "") +
+          `期限・分類の付け直し：${r.付け直し} 件\n日別の在庫の控え：${r.控え} 件`,
+      );
+      await 読む();
+    } catch (e) {
+      エラー(e);
+    } finally {
+      set動作中(false);
+    }
+  }
+
   async function 工場を変える(id: number) {
     set工場ID(id);
     set確認(await api.get<Rec[]>("/api/ws/koshin/kakunin", { kojo: id }));
@@ -138,7 +163,7 @@ export default function WsKoshin() {
       <div className="ko-body">
         <div className="ko-left">
           <div className="ko-ctrl">
-            <button onClick={読む}>日時更新</button>
+            <button onClick={日時更新} disabled={動作中}>日時更新</button>
             <button onClick={登録} disabled={動作中}>{動作中 ? "登録中…" : "登録"}</button>
             <button className="gray" onClick={戻す}>登録前に戻す</button>
             <div className="lbl">更新日</div>
