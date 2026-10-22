@@ -107,3 +107,5 @@ CREATE TABLE IF NOT EXISTS ws."TD_在庫日別集計" (
   "更新時間"   TEXT
 );
 CREATE INDEX IF NOT EXISTS "TD_在庫日別集計_集計日" ON ws."TD_在庫日別集計" ("集計日", "倉庫ID");
+-- どのシステムの在庫か（ws＝WorkStation の在庫、soko＝倉庫管理の在庫：外の冷蔵庫。パレット積載許容数で埋まり具合を見るため 2026/10/22）
+ALTER TABLE ws."TD_在庫日別集計" ADD COLUMN IF NOT EXISTS "システム" TEXT NOT NULL DEFAULT 'ws';

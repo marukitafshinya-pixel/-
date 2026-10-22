@@ -20,6 +20,7 @@ const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 利用者 = t("ws_fe", "TD_USER");
 const 日別集計 = t("ws", "TD_在庫日別集計");
+const 倉庫管理の在庫 = t("soko", "TD_在庫");
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
@@ -233,15 +234,16 @@ async function 在庫確認(c: PoolClient | typeof pool, 工場: number, 今日:
   ).rows;
 }
 
-/** 日付ごとの在庫の控え（TD_在庫日別集計）：その日の分を書き直す */
+/** 日付ごとの在庫の控え（TD_在庫日別集計）：その日の分を書き直す。倉庫管理の在庫（外の冷蔵庫）もいっしょに控える（読むだけ） */
 async function 在庫の控え(c: PoolClient, 集計日: string, 更新時間: string) {
   await c.query(`DELETE FROM ${日別集計} WHERE "集計日" = $1::date`, [集計日]);
-  await c.query(
-    `INSERT INTO ${日別集計} ("集計日", "入庫日", "倉庫ID", "商品コード", "ケース", "商品kg", "更新時間")
-     SELECT $1::date, "入庫日"::date, "倉庫ID", "商品コード", SUM("在庫ケース"), SUM(COALESCE("在庫kg", 0)), $2
-     FROM ${在庫} WHERE "在庫ケース" <> 0 GROUP BY "入庫日"::date, "倉庫ID", "商品コード"`,
-    [集計日, 更新時間],
-  );
+  for (const [システム, 表] of [["ws", 在庫], ["soko", 倉庫管理の在庫]])
+    await c.query(
+      `INSERT INTO ${日別集計} ("集計日", "システム", "入庫日", "倉庫ID", "商品コード", "ケース", "商品kg", "更新時間")
+       SELECT $1::date, $3, "入庫日"::date, "倉庫ID", "商品コード", SUM("在庫ケース"), SUM(COALESCE("在庫kg", 0)), $2
+       FROM ${表} WHERE "在庫ケース" <> 0 GROUP BY "入庫日"::date, "倉庫ID", "商品コード"`,
+      [集計日, 更新時間, システム],
+    );
 }
 
 /** 賞味期限の通知（Access の C_期限通知：180 日以内なら「あと○ヶ月!」、過ぎていれば「期限切れ!」） */

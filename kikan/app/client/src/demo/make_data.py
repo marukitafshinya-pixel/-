@@ -133,7 +133,7 @@ for k, name in [(1, "選果場"), (2, "冷蔵倉庫"), (3, "食品メーカー")
 for i, (code, name, name2, kana, chiku, soko, moto, uke) in enumerate(得意先, 1):
     ins("kyotsu.TM_得意先マスタ", ID=i, 短縮コード=code, 得意先名=name, 短縮名=name, 短縮名2=name2, **{"ｶﾅ分類": kana}, 地区コード=chiku,
         住所=f"見本県見本市{i}番地", 電話番号=f"000-000-{i:04d}", 倉庫区分=soko, 出荷元区分=moto, 入庫フラグ=False, 受付時間=uke, 入庫区分=soko or code in (812, 824),
-        十二地区="北海道" if chiku == 1 else "本州")
+        十二地区="北海道" if chiku == 1 else "本州", パレット積載許容数=3 if code == 343 else 0)
 
 # ---------------- 商品（作り物） ----------------
 商品 = [

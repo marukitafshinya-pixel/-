@@ -1146,3 +1146,8 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .hb-soko tr.sum td { font-weight: bold; background: #f2f2f2; }
 .hb-ugoki td.plus { color: #0a6b2d; font-weight: bold; }
 .hb-ugoki td.minus { color: #b00020; font-weight: bold; }
+.hb-soko td.ritsu { min-width: 140px; }
+.hb-soko .bar { position: relative; height: 16px; background: #eee; border: 1px solid #bbb; }
+.hb-soko .bar .fill { height: 100%; background: #6aa9e9; }
+.hb-soko .bar .fill.over { background: #e66; }
+.hb-soko .bar span { position: absolute; inset: 0; text-align: center; font-size: 12px; line-height: 16px; }

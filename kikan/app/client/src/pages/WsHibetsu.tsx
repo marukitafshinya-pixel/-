@@ -68,18 +68,22 @@ export default function WsHibetsu() {
       </div>
       <h3>倉庫ごとの在庫</h3>
       <table className="ws-grid hb-soko">
-        <thead><tr><th>倉庫</th><th>名前</th><th>ケース</th><th>kg</th></tr></thead>
+        <thead><tr><th>倉庫</th><th>名前</th><th>ケース</th><th>kg</th><th>パレット（概算）</th><th>入る量</th><th>埋まり具合</th><th>パレット単位のない商品</th></tr></thead>
         <tbody>
           {倉庫一覧.map((r) => (
             <tr key={r.倉庫ID} className={倉庫 === r.倉庫ID ? "cur" : ""} onClick={() => { const v = 倉庫 === r.倉庫ID ? "" : r.倉庫ID; set倉庫(v); 読む(d?.日付, v); }}>
               <td className="r">{r.倉庫ID}</td><td>{r.倉庫名}</td><td className="r">{num(r.ケース)}</td><td className="r">{num(Math.round(r.kg))}</td>
+              <td className="r">{num(r.パレット)} 枚</td><td className="r">{r.許容数 ? `${num(r.許容数)} 枚` : ""}</td>
+              <td className="ritsu">{r.使用率 != null && <div className="bar"><div className={r.使用率 >= 90 ? "fill over" : "fill"} style={{ width: `${Math.min(100, r.使用率)}%` }} /><span>{r.使用率}%</span></div>}</td>
+              <td className="r">{r.単位なし ? `${num(r.単位なし)} ケース` : ""}</td>
             </tr>
           ))}
           {倉庫一覧.length > 0 && (
-            <tr className="sum"><td /><td>合計</td><td className="r">{num(合計.ケース)}</td><td className="r">{num(Math.round(合計.kg))}</td></tr>
+            <tr className="sum"><td /><td>合計</td><td className="r">{num(合計.ケース)}</td><td className="r">{num(Math.round(合計.kg))}</td><td colSpan={4} /></tr>
           )}
         </tbody>
       </table>
+      <div className="hb-note">パレット数は、商品マスタの「パレット単位1」で割って切り上げた概算です（Access と同じ）。入る量は得意先マスタの「パレット積載許容数」です。</div>
       <h3>
         入った・減った商品{d?.前の日 ? `（${d.前の日} と比べて）` : ""}
         {倉庫 !== "" && <span className="filter">倉庫 {倉庫} だけ <button onClick={() => { set倉庫(""); 読む(d?.日付, ""); }}>全部の倉庫</button></span>}
@@ -93,6 +97,9 @@ export default function WsHibetsu() {
               <td>{r.倉庫名}</td><td className="r">{r.商品コード}</td><td>{r.商品名}</td><td>{r.規格}</td>
               <td className="r">{num(r.前)}</td><td className="r plus">{r.入った ? `+${num(r.入った)}` : ""}</td><td className="r minus">{r.減った ? `−${num(r.減った)}` : ""}</td>
               <td className="r">{num(r.ケース)}</td><td className="r">{num(Math.round(r.kg))}</td>
+              <td className="r">{num(r.パレット)} 枚</td><td className="r">{r.許容数 ? `${num(r.許容数)} 枚` : ""}</td>
+              <td className="ritsu">{r.使用率 != null && <div className="bar"><div className={r.使用率 >= 90 ? "fill over" : "fill"} style={{ width: `${Math.min(100, r.使用率)}%` }} /><span>{r.使用率}%</span></div>}</td>
+              <td className="r">{r.単位なし ? `${num(r.単位なし)} ケース` : ""}</td>
             </tr>
           ))}
         </tbody>
