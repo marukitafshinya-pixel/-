@@ -43,7 +43,7 @@ export default function WsHibetsu() {
     try {
       const r = await api.post<Rec>("/api/ws/hibetsu/rebuild", {});
       alert(r.日数 ? `${r.最初} から ${r.最後} までの ${r.日数} 日分を入れました。` : "作り直せる日がありませんでした。");
-      await 読む(d?.日付 || "");
+      await 読む(d?.倉庫一覧?.length ? d.日付 : "");
     } catch (e) {
       エラー(e);
     } finally {
