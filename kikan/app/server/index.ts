@@ -26,6 +26,7 @@ import { wsKoshinRoutes } from "./wsKoshin.js";
 import { wsHibetsuRoutes } from "./wsHibetsu.js";
 import { wsYoteiRoutes } from "./wsYotei.js";
 import { wsTeishiRoutes } from "./wsTeishi.js";
+import { wsKensaRoutes } from "./wsKensa.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -56,6 +57,7 @@ await app.register(async (a) => wsKoshinRoutes(a));
 await app.register(async (a) => wsHibetsuRoutes(a));
 await app.register(async (a) => wsYoteiRoutes(a));
 await app.register(async (a) => wsTeishiRoutes(a));
+await app.register(async (a) => wsKensaRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 

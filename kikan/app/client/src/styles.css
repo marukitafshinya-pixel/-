@@ -1189,6 +1189,35 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .ts-foot .v { background: #fff; border: 1px solid #000; padding: 2px 10px; min-width: 70px; text-align: right; font-weight: bold; }
 .ts-foot .day { color: #555; font-size: 12px; }
 
+/* 在庫検査結果登録（FM_在庫検査結果登録）・サンプル登録（FM_サンプル登録） */
+.kn { min-height: 100vh; background: #e4eef8; padding: 8px 12px; }
+.kn-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.kn-title { font-size: 26px; font-weight: bold; color: #1f3b8f; border: 1px solid #888; background: #fff; padding: 4px 30px; }
+.kn-box { display: flex; flex-direction: column; gap: 4px; background: #fff; border: 1px solid #aab; padding: 4px 8px; }
+.kn-box .lbl { background: #1f3b8f; color: #fff; padding: 1px 8px; font-size: 12px; }
+.kn-box .row { display: flex; gap: 8px; align-items: center; }
+.kn-box button.on, .kn-btns button.on { background: #1f3b8f; color: #fff; }
+.kn-cnt { font-weight: bold; color: #c00; min-width: 50px; }
+.kn-btns { margin-left: auto; display: flex; gap: 6px; }
+.kn-list { overflow: auto; max-height: calc(100vh - 120px); }
+.kn-grid { border-collapse: collapse; background: #fff; }
+.kn-grid th { background: #4a4a9a; color: #fff; padding: 3px 8px; border: 1px solid #888; position: sticky; top: 0; z-index: 1; }
+.kn-grid td { border: 1px solid #ccc; padding: 1px 4px; vertical-align: middle; }
+.kn-grid td.none { padding: 12px; }
+.kn-grid td.name { min-width: 240px; }
+.kn-grid tr.machi td { background: #fff8d0; }
+.kn-grid tr.teishi td { background: #ffd8d8; }
+.kn-grid .small { font-size: 11px; }
+.kn-grid .gray { color: #777; }
+.kn-grid .navy input { color: #00008b; font-weight: bold; }
+.kn-grid .orange { color: #e08000; }
+.kn-grid input.kn-d, .kn-grid input.sp-d { width: 92px; }
+.kn-grid input.kn-s { width: 70px; }
+.kn-grid input.kn-m { width: 220px; }
+.kn-grid input.sp-n { width: 60px; }
+.kn-grid input.sp-name { width: 300px; }
+.kn-foot { margin-top: 6px; color: #555; font-size: 12px; }
+
 /* マスタ管理（Accessマスタ管理） */
 .ms-menu { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; padding: 24px 40px; }
 .ms-menu .ms-title { font-size: 26px; font-weight: bold; color: #c0c; background: #cff; border: 1px solid #888; padding: 4px 30px; }
