@@ -1151,3 +1151,40 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .hb-soko .bar .fill { height: 100%; background: #6aa9e9; }
 .hb-soko .bar .fill.over { background: #e66; }
 .hb-soko .bar span { position: absolute; inset: 0; text-align: center; font-size: 12px; line-height: 16px; }
+.hb-soko td.akiover { color: #b00020; font-weight: bold; }
+.hb-chart { max-width: 920px; margin: 10px 0; }
+.hb-chart svg { width: 100%; height: auto; background: #fff; border: 1px solid #ddd; cursor: crosshair; }
+.hb-chart .grid { stroke: #e6e6e6; stroke-width: 1; }
+.hb-chart .tick { font-size: 11px; fill: #666; }
+.hb-chart .limit { stroke: #b00020; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.hb-chart .line { fill: none; stroke: #2a6fdb; stroke-width: 2; stroke-linejoin: round; }
+.hb-chart .cross { stroke: #999; stroke-width: 1; }
+.hb-chart .dot { fill: #2a6fdb; stroke: #fff; stroke-width: 2; }
+.hb-tip { font-size: 13px; margin-top: 4px; }
+.hb-tip .hint { color: #888; }
+
+/* 出荷停止在庫一覧（FM_保管庫_出荷停止） */
+.ts { min-height: 100vh; background: #dedbc0; padding: 8px 12px; }
+.ts-head { display: flex; align-items: center; gap: 24px; margin-bottom: 8px; }
+.ts-day .row { display: flex; gap: 4px; align-items: center; }
+.ts-day .lbl { background: #1f3b8f; color: #fff; padding: 2px 8px; font-weight: bold; }
+.ts-day input { margin-top: 4px; background: #c8f4ff; }
+.ts-title { font-size: 28px; font-weight: bold; color: #2a2a9a; border: 1px solid #888; padding: 4px 40px; }
+.ts-btns { margin-left: auto; }
+.ts-grid { border-collapse: collapse; background: #fff; min-width: 900px; }
+.ts-grid th { background: #5b5b8a; color: #fff; padding: 3px 8px; border: 1px solid #888; }
+.ts-grid td { border: 1px solid #bbb; padding: 2px 6px; vertical-align: middle; }
+.ts-grid tbody tr { background: #c96a95; }
+.ts-grid tbody tr td { background: #fff; }
+.ts-grid td.none { background: #fff; padding: 12px; }
+.ts-grid td.name { min-width: 220px; font-size: 15px; }
+.ts-grid td.name .kigen { color: #d00; font-size: 11px; border: 1px solid #d00; display: inline-block; padding: 0 4px; }
+.ts-grid td.seizo { color: #00c; font-weight: bold; }
+.ts-grid td.moto { color: #c33; font-weight: bold; }
+.ts-grid td.zaiko .cs { font-weight: bold; }
+.ts-grid td.zaiko .kg { font-size: 11px; color: #888; }
+.ts-grid td.biko { background: #ccc !important; min-width: 200px; font-size: 12px; white-space: pre-wrap; }
+.ts-foot { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.ts-foot .lbl { background: #666; color: #fff; padding: 2px 8px; font-size: 12px; }
+.ts-foot .v { background: #fff; border: 1px solid #000; padding: 2px 10px; min-width: 70px; text-align: right; font-weight: bold; }
+.ts-foot .day { color: #555; font-size: 12px; }

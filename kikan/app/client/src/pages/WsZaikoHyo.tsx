@@ -332,7 +332,7 @@ export function WsHokan() {
 }
 
 /** 在庫振替（Access の FSD_在庫訂正）。在庫の 1 ロットから、破損・原料・サンプルなどで数を落とす。製品化・原料化・出荷停止は別の在庫の行に振り替える */
-function FurikaeDialog(props: { 在庫ID: number; onClose: (変えた: boolean) => void }) {
+export function FurikaeDialog(props: { 在庫ID: number; onClose: (変えた: boolean) => void }) {
   const [d, setD] = useState<{ 在庫: Rec; rows: Rec[]; 振替先: 選択肢[]; 今日: string } | null>(null);
   const [新, set新] = useState<{ 変更日: string; ケース: string; 移動先ID: number; 備考: string }>({ 変更日: "", ケース: "0", 移動先ID: 0, 備考: "" });
   const load = () => api.get<any>(`/api/ws/furikae/${props.在庫ID}`).then((r) => {

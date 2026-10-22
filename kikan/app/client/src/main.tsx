@@ -27,6 +27,7 @@ import WsHoukoku from "./pages/WsHoukoku";
 import WsPallet from "./pages/WsPallet";
 import WsKoshin from "./pages/WsKoshin";
 import WsHibetsu from "./pages/WsHibetsu";
+import WsTeishi from "./pages/WsTeishi";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -66,6 +67,7 @@ function App() {
       <Route path="/ws/pallet" element={<WsPallet />} />
       <Route path="/ws/koshin" element={<WsKoshin />} />
       <Route path="/ws/hibetsu" element={<WsHibetsu />} />
+      <Route path="/ws/teishi" element={<WsTeishi />} />
       <Route path="/ws/zaikohyo" element={<WsZaikoHyo />} />
       <Route path="/ws/hokan" element={<WsHokan />} />
       <Route path="/form/:name" element={<NotYet />} />

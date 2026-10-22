@@ -48,7 +48,10 @@ export function wsHibetsuRoutes(app: FastifyInstance) {
     ).rows.map((r: Rec) => {
       const 許容数 = n(r.許容数);
       const パレット = n(r.パレット);
-      return { ...r, ケース: n(r.ケース), kg: Number(r.kg ?? 0), パレット, 単位なし: n(r.単位なし), 許容数: 許容数 || null, 使用率: 許容数 ? Math.round((パレット / 許容数) * 1000) / 10 : null };
+      return {
+        ...r, ケース: n(r.ケース), kg: Number(r.kg ?? 0), パレット, 単位なし: n(r.単位なし), 許容数: 許容数 || null,
+        空き: 許容数 ? 許容数 - パレット : null, 使用率: 許容数 ? Math.round((パレット / 許容数) * 1000) / 10 : null,
+      };
     });
     // 入庫日ごとの差を足して、商品ごとに「入った」「減った」を出す（同じ日に入って出た分も分かるように）
     const 動き = (
@@ -73,6 +76,34 @@ export function wsHibetsuRoutes(app: FastifyInstance) {
   });
 
   // 過去の日を作り直す（出荷の残っている最初の日から昨日まで）。ボタンで書いた控えのある日はそのまま。
+  // 1 つの倉庫の埋まり具合の移り変わり（控えのある日ごと）
+  app.get<{ Querystring: { soko: string } }>("/api/ws/hibetsu/suii", async (req) => {
+    const 倉庫ID = n(req.query.soko);
+    const m = (await pool.query(`SELECT "短縮名", "パレット積載許容数" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [倉庫ID])).rows[0];
+    const 許容数 = n(m?.パレット積載許容数) || null;
+    const 日ごと = (
+      await pool.query(
+        `SELECT a."集計日"::text AS "日付", SUM(a."ケース") AS "ケース",
+                SUM(CASE WHEN COALESCE(s."パレット単位1", 0) > 0 THEN CEIL(a."ケース"::numeric / s."パレット単位1") ELSE 0 END) AS "パレット"
+         FROM ${日別集計} a LEFT JOIN LATERAL (SELECT "パレット単位1" FROM ${商品マスタ} WHERE "商品コード" = a."商品コード" LIMIT 1) s ON true
+         WHERE a."倉庫ID" = $1 GROUP BY a."集計日" ORDER BY a."集計日"`,
+        [倉庫ID],
+      )
+    ).rows;
+    // その倉庫に在庫がなかった日も 0 として並べる
+    const ある = new Map(日ごと.map((r: Rec) => [r.日付, r]));
+    const 全部の日 = (await pool.query(`SELECT DISTINCT "集計日"::text AS d FROM ${日別集計} ORDER BY 1`)).rows.map((r: Rec) => r.d as string);
+    const 最初 = 日ごと[0]?.日付;
+    const 列 = 全部の日
+      .filter((d) => 最初 && d >= 最初)
+      .map((d) => {
+        const r = ある.get(d);
+        const パレット = n(r?.パレット);
+        return { 日付: d, ケース: n(r?.ケース), パレット, 使用率: 許容数 ? Math.round((パレット / 許容数) * 1000) / 10 : null };
+      });
+    return { 倉庫ID, 倉庫名: m?.短縮名 ?? "", 許容数, 日ごと: 列 };
+  });
+
   app.post("/api/ws/hibetsu/rebuild", async () =>
     一連で(async (c) => {
       await c.query(`SELECT pg_advisory_xact_lock(hashtext('在庫更新'))`);

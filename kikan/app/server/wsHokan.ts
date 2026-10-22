@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で, 賞味期限計算 } from "./ws.js";
+import { 確認用を作る } from "./wsTeishi.js";
 
 // 丸北WorkStation の在庫表（Access の FM_商品別在庫・Q_商品別在庫表）と保管庫詳細（FM_保管庫）
 const 在庫 = t("ws", "TD_在庫");
@@ -273,6 +274,8 @@ export function wsHokanRoutes(app: FastifyInstance) {
         [z.在庫ID],
       );
       await c.query(`UPDATE ${在庫変更} SET "変更Check" = true, "商品コード" = $2 WHERE "変更No" = $1`, [h.変更No, z.商品コード]);
+      // 出荷停止に振り替えたときは、もとの在庫の行もその日の出荷停止在庫一覧に出す（Access の「出荷停止確認の為、変更を表示させる」）
+      if (n(h.移動先ID) === 9) await 確認用を作る(c, 0, String(h.変更日 ?? 今日()).slice(0, 10), z.在庫ID);
       return { 通知: r.rowCount ?? 0 };
     });
   });
