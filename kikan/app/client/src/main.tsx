@@ -35,6 +35,7 @@ import WsMaster from "./pages/WsMasters";
 import WsOsaka from "./pages/WsOsaka";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
+import WsYusoChu from "./pages/WsYusoChu";
 import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList, UnsoForm, UnsoList, UserList, CalendarPage, MisetteiList, SakujoPage } from "./pages/Master";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
@@ -90,6 +91,7 @@ function App() {
       <Route path="/ws/osaka" element={<WsOsaka />} />
       <Route path="/ws/zaikochu" element={<WsZaikoChu />} />
       <Route path="/ws/shukkachu" element={<WsShukkaChu />} />
+      <Route path="/ws/yusochu" element={<WsYusoChu />} />
       <Route path="/master" element={<MasterMenu />} />
       <Route path="/master/shohin" element={<ShohinList />} />
       <Route path="/master/shohin/:code" element={<ShohinForm />} />

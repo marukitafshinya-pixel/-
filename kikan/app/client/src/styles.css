@@ -1535,3 +1535,35 @@ input.sc-in, input.sc-date { width: 128px; background: #cff; }
 .sp-grid tr.sp-f td { font-weight: bold; border-bottom: 1px solid #000; }
 .sp-grid tr.sp-t td { font-weight: bold; border-top: 2px double #000; }
 @media print { @page { size: A4 landscape; margin: 8mm; } }
+/* 輸送抽出帳票（FSD_輸送抽出帳票） */
+.yc { min-height: 100vh; background: #e4e1c8; padding: 6px 10px; }
+.yc-top { display: flex; gap: 16px; align-items: center; margin-bottom: 6px; }
+.yc-btns { display: flex; gap: 6px; background: #333; padding: 5px 8px; }
+.yc-btns button { font-weight: bold; min-width: 80px; }
+.yc-btns button.on { background: #cde; border: 2px solid #357; }
+.yc-btns .green { color: #080; } .yc-btns .blue { color: #1f5fff; }
+.yc-head { display: flex; gap: 8px; margin-bottom: 6px; }
+.yc-head .sc-box .lbl { background: #933a5e; }
+.yc-head .row { display: flex; gap: 4px; align-items: center; }
+.yc-body { display: flex; gap: 10px; align-items: flex-start; }
+.yc-grid { border-collapse: separate; border-spacing: 2px; background: #ddd; }
+.yc-grid th { background: #933a5e; color: #fff; padding: 1px 6px; font-size: 12px; }
+.yc-grid td { padding: 0 2px; }
+.yc-page { min-width: 60px; font-size: 12px; }
+.yc-page.on { background: #9cf; }
+.yc-sq { width: 24px; height: 22px; padding: 0; background: #fff; font-weight: bold; }
+.yc-sq.on { background: #9cf; }
+.yc-lbl { background: #800080; color: #fff; font-weight: bold; padding: 2px 10px !important; white-space: nowrap; }
+.yc-tog { white-space: nowrap; }
+.yc-tog button { min-width: 80px; }
+.yc-tog button.on { background: #cde; border: 2px solid #357; }
+.yc-grid select { min-width: 110px; background: #cff; }
+.yc-grid .row { display: flex; gap: 4px; align-items: center; }
+input.yc-in { width: 70px; background: #cff; }
+input.yc-in.s { width: 60px; }
+.yc-name { display: inline-block; background: #cff; min-width: 240px; min-height: 20px; padding: 1px 4px; font-size: 12px; }
+.yc-name.s { min-width: 90px; max-width: 110px; overflow: hidden; white-space: nowrap; }
+.yc-listlbl { background: #933a5e; color: #fff; text-align: center; font-weight: bold; }
+.yp-group { font-size: 15px; font-weight: bold; display: flex; gap: 40px; margin: 4px 0; }
+.yp-grid td, .yp-grid th { border: 1px solid #000; }
+@media print { .yp-page { page-break-after: always; } }

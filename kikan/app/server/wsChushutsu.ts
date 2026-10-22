@@ -6,6 +6,8 @@ import { 一連で } from "./ws.js";
 
 // 丸北WorkStation の抽出帳票
 // - 在庫表抽出印刷（Access の FM_在庫表。メニューの「在庫抽出帳票」）
+// - 輸送抽出帳票（FSD_輸送抽出帳票）：便の出荷を期間・運送会社・区分・届け先などで絞り、出す列（表示）・並び順・ページの見出し・改ページの小計を選んで、
+//   その場で帳票を組み立てる（Access の C_ReportMaking）。通常（明細）と集計（出す列でまとめてケース・kg を足す）
 // - 出荷抽出帳票（FSD_出荷抽出帳票）：出荷を条件で絞り、見出し（ヘッダー・フッダー）と並び順を選んで印刷・Excel 出力。条件は名前を付けて保存できる
 const 在庫 = t("ws", "TD_在庫");
 const 出荷 = t("ws", "TD_出荷");
@@ -152,6 +154,108 @@ const 出荷のExcelの列 = [
 ];
 const 曜日 = "日月火水木金土";
 
+// ---------------- 輸送抽出帳票 ----------------
+
+const 地区コード = t("ws_fe", "TM_地区コード");
+const 集計用レポート = t("ws_fe", "TM_集計用レポートクエリ");
+/** Access の T_輸送履歴（便の出荷。届け先の地区・区分の名前を足す） */
+const 輸送の表 = `(SELECT p."輸送ID", p."出荷計画日"::date AS "出荷日", s."売り日"::date AS "売り日", s."納品日"::date AS "納品日", g."分類ID", g."原料コード",
+    s."商品コード", s."商品名", s."規格", s."入数", s."ケース", s."商品kg", s."入庫前名義ID", s."入庫後名義ID", p."運送会社ID", p."運送会社名",
+    s."届け先コード", s."届け先", s."倉庫ID", s."倉庫名", u."都道府県", u."地区コード", u."十二地区",
+    (SELECT k."地区名" FROM ${地区コード} k WHERE k."地区コード" = u."地区コード" LIMIT 1) AS "地区名",
+    p."手配運送会社コード", p."手配運送会社名", p."帳合運送会社コード", p."帳合運送会社名", p."車番",
+    p."輸送区分ID", p."配達区分ID", p."車両区分ID", p."冷凍区分ID",
+    (SELECT x."輸送区分" FROM ${t("ws_fe", "TM_輸送区分")} x WHERE x."輸送区分ID" = p."輸送区分ID" LIMIT 1) AS "輸送区分",
+    (SELECT x."配達区分" FROM ${t("ws_fe", "TM_配達区分")} x WHERE x."配達区分ID" = p."配達区分ID" LIMIT 1) AS "配達区分",
+    (SELECT x."車両区分" FROM ${t("ws_fe", "TM_車両区分")} x WHERE x."車両区分ID" = p."車両区分ID" LIMIT 1) AS "車両区分",
+    (SELECT x."冷凍区分" FROM ${t("ws_fe", "TM_冷凍区分")} x WHERE x."冷凍ID" = p."冷凍区分ID" LIMIT 1) AS "冷凍区分"
+  FROM ${輸送計画} p JOIN ${出荷} s ON s."輸送ID" = p."輸送ID"
+    LEFT JOIN ${商品マスタ} g ON g."商品コード" = s."商品コード"
+    LEFT JOIN ${得意先マスタ} u ON u."短縮コード" = s."届け先コード"
+  WHERE s."届け先コード" <> 0)`;
+
+/** 列（Access の trgG_0〜12 の Tag。0 は日付、1 はエリア） */
+const 輸送の列 = ["日付", "エリア", "手配運送会社名", "帳合運送会社名", "運送会社名", "輸送区分", "配達区分", "車両区分", "冷凍区分", "車番", "届け先", "倉庫名", "商品名"];
+const 日付の基準: Record<number, string> = { 1: "出荷日", 2: "納品日", 3: "売り日" };
+
+type 輸送の条件 = {
+  開始?: string; 終了?: string; 集計?: boolean; 表示?: boolean[]; 並び?: number[]; ページ?: number; 改行?: number;
+  日付基準?: number; 日単位?: number; 地域区分?: number; エリア?: string; 手配?: number; 帳合?: number; 運送?: number;
+  輸送区分?: number; 配達区分?: number; 車両区分?: number; 冷凍区分?: number; 届け先?: (number | null)[]; 出荷地?: number; 品目?: number; 品名?: string;
+  積み下ろし?: boolean;
+};
+
+function 輸送の式(i: number, p: 輸送の条件): string {
+  if (i === 0) {
+    const 基準 = `x."${日付の基準[n(p.日付基準)] ?? "出荷日"}"`;
+    const 単位 = n(p.日単位) || 1;
+    if (単位 === 2) return `to_char(${基準}, 'YYYY/MM')`;
+    if (単位 === 3) return `(ARRAY['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'])[extract(dow FROM ${基準})::int + 1]`;
+    return `to_char(${基準}, 'YYYY/MM/DD')`;
+  }
+  if (i === 1) return `x."${({ 1: "都道府県", 2: "地区名", 3: "十二地区" } as Record<number, string>)[n(p.地域区分) || 1]}"`;
+  return `x."${輸送の列[i]}"`;
+}
+
+/** 輸送抽出（Access の LordDrive・DriveAriaSum・GroupSQL・R_Numbering）。列の名前と行を返す */
+async function 輸送の行(p: 輸送の条件): Promise<{ 列: string[]; rows: Rec[] }> {
+  const w: string[] = [];
+  const a: unknown[] = [];
+  const add = (sql: string, v: unknown) => {
+    a.push(v);
+    w.push(sql.replace("?", `$${a.length}`));
+  };
+  add(`x."出荷日" >= ?::date`, p.開始 || "1900-01-01");
+  add(`x."出荷日" <= ?::date`, p.終了 || "9999-12-31");
+  if (n(p.品目) === 1) w.push(`x."分類ID" = 4 AND x."原料コード" = 1`);
+  else if (n(p.品目) === 2) w.push(`x."分類ID" = 4 AND x."原料コード" = 3`);
+  else if (n(p.品目) === 3) add(`x."商品名" LIKE ?`, `%${p.品名 ?? ""}%`);
+  if (p.エリア) add(`${輸送の式(1, p)} = ?`, p.エリア);
+  if (n(p.手配)) add(`x."手配運送会社コード" = ?`, n(p.手配));
+  if (n(p.帳合)) add(`x."帳合運送会社コード" = ?`, n(p.帳合));
+  if (p.運送 != null && String(p.運送) !== "") add(`x."運送会社ID" = ?`, n(p.運送));
+  for (const k of ["輸送区分", "配達区分", "車両区分", "冷凍区分"] as const) if (n(p[k])) add(`x."${k}ID" = ?`, n(p[k]));
+  const 届け先 = (p.届け先 ?? []).map(n).filter((x) => x);
+  if (届け先.length) add(`x."届け先コード" = ANY(?::int[])`, 届け先);
+  if (n(p.出荷地)) add(`x."倉庫ID" = ?`, n(p.出荷地));
+  const where = `WHERE ${w.join(" AND ")}`;
+
+  if (p.積み下ろし) {
+    // 届け先別印刷（Access の Q_積み下ろし検索：出荷月・出荷日・運送会社・車番・届け先ごとの kg）
+    const rows = await q(
+      `SELECT to_char(x."出荷日", 'YYYY/MM') AS "出荷月", to_char(x."出荷日", 'YYYY/MM/DD') AS "出荷日", x."運送会社名", x."車番", x."届け先", round(SUM(x."商品kg")::numeric, 2)::float8 AS "商品kgの合計",
+              to_char(x."出荷日", 'YYYY/MM') AS "_頭", to_char(x."出荷日", 'YYYY/MM') AS "_足"
+       FROM ${輸送の表} x ${where} GROUP BY 1, 2, 3, 4, 5 ORDER BY 1, 2, 3, 4, 5`,
+      a,
+    );
+    return { 列: ["出荷月", "出荷日", "運送会社名", "車番", "届け先", "商品kgの合計"], rows };
+  }
+
+  const 表示 = 輸送の列.map((_, i) => !!p.表示?.[i]);
+  const 選んだ = 輸送の列.map((名, i) => ({ 名, i })).filter((x) => 表示[x.i]);
+  const 列 = [...選んだ.map((x) => x.名), ...(p.集計 ? ["ケースの合計", "商品kgの合計"] : ["ケース", "商品kg"])];
+  const 選 = 選んだ.map((x) => `${輸送の式(x.i, p)} AS "${x.名}"`);
+  // ページの見出し・改ページの見出し（Access の CreateGroupLevel。帳票はまず見出しで並ぶ）
+  const 頭 = p.ページ != null && 輸送の列[n(p.ページ)] ? 輸送の式(n(p.ページ), p) : null;
+  const 足 = p.改行 != null && 輸送の列[n(p.改行)] ? 輸送の式(n(p.改行), p) : null;
+  const 並び: string[] = [];
+  if (頭) 並び.push(`"_頭" NULLS FIRST`);
+  if (足) 並び.push(`"_足" NULLS FIRST`);
+  for (const i of p.並び ?? []) if (輸送の列[i] && (!p.集計 || 表示[i])) 並び.push(`${p.集計 ? `"${輸送の列[i]}"` : 輸送の式(i, p)} NULLS FIRST`);
+  let sql: string;
+  if (p.集計) {
+    const g = 選んだ.map((x) => 輸送の式(x.i, p));
+    const 頭式 = 頭 && g.includes(頭) ? 頭 : "NULL";
+    const 足式 = 足 && g.includes(足) ? 足 : "NULL";
+    sql = `SELECT ${[...選, `SUM(x."ケース")::float8 AS "ケースの合計"`, `round(SUM(x."商品kg")::numeric, 2)::float8 AS "商品kgの合計"`, `${頭式} AS "_頭"`, `${足式} AS "_足"`].join(", ")}
+           FROM ${輸送の表} x ${where} ${g.length ? `GROUP BY ${g.join(", ")}` : ""} ${並び.length ? `ORDER BY ${並び.join(", ")}` : ""}`;
+  } else {
+    sql = `SELECT ${[...選, `x."ケース"`, `x."商品kg"`, `${頭 ?? "NULL"} AS "_頭"`, `${足 ?? "NULL"} AS "_足"`].join(", ")}
+           FROM ${輸送の表} x ${where} ORDER BY ${[...並び, `x."輸送ID"`].join(", ")} LIMIT 50000`;
+  }
+  return { 列, rows: await q(sql, a) };
+}
+
 export function wsChushutsuRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
@@ -263,6 +367,58 @@ export function wsChushutsuRoutes(app: FastifyInstance) {
 
   app.post<{ Body: { ID: number } }>("/api/ws/shukkachu/saved/delete", async (req) => {
     await pool.query(`DELETE FROM ${レポート作成} WHERE "ID" = $1`, [n(req.body.ID)]);
+    return { ok: true };
+  });
+
+  // ---------------- 輸送抽出帳票 ----------------
+
+  app.get("/api/ws/yusochu/opts", async () => ({
+    運送会社: await q(`SELECT "運送会社ID" AS id, MIN("運送会社名") AS name FROM ${t("kyotsu", "TM_運送会社マスタ")} GROUP BY "運送会社ID" ORDER BY "運送会社ID"`),
+    輸送区分: await q(`SELECT "輸送区分ID" AS id, "輸送区分" AS name FROM ${t("ws_fe", "TM_輸送区分")} ORDER BY "輸送区分ID"`),
+    配達区分: await q(`SELECT "配達区分ID" AS id, "配達区分" AS name FROM ${t("ws_fe", "TM_配達区分")} ORDER BY "配達区分ID"`),
+    車両区分: await q(`SELECT "車両区分ID" AS id, "車両区分" AS name FROM ${t("ws_fe", "TM_車両区分")} ORDER BY "車両区分ID"`),
+    冷凍区分: await q(`SELECT "冷凍ID" AS id, "冷凍区分" AS name FROM ${t("ws_fe", "TM_冷凍区分")} ORDER BY "冷凍ID"`),
+    都道府県: await q(`SELECT "都道府県名" AS name FROM ${地区コード} GROUP BY "都道府県名", "都道府県コード" ORDER BY "都道府県コード"`),
+    地区名: await q(`SELECT "地区名" AS name FROM ${地区コード} GROUP BY "地区名", "地区コード" ORDER BY "地区コード"`),
+    十二地区: await q(`SELECT "十二地区" AS name FROM ${地区コード} WHERE "十二地区" IS NOT NULL GROUP BY "十二地区", "十二コード" ORDER BY "十二コード"`),
+  }));
+
+  app.post<{ Body: 輸送の条件 }>("/api/ws/yusochu", async (req) => 輸送の行(req.body ?? {}));
+
+  // Excel（Access の cmd_Exel_Click：出した列のまま。ファイル名はレポート表題）
+  app.post<{ Body: 輸送の条件 & { 表題?: string } }>("/api/ws/yusochu/excel", async (req, reply) => {
+    const r = await 輸送の行(req.body ?? {});
+    const buf = await 一覧のExcel("輸送", r.列.map((k) => ({ key: k, width: k === "届け先" || k === "商品名" ? 28 : 14 })), r.rows);
+    const 名前 = (req.body?.表題 || "輸送一覧表").replace(/[\\/:*?"<>|]/g, "");
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(名前 + ".xlsx")}`);
+    return reply.send(buf);
+  });
+
+  // 保存した条件（Access の TM_集計用レポートクエリ。並び順は保存しない）
+  app.get("/api/ws/yusochu/saved", async () => q(`SELECT * FROM ${集計用レポート} ORDER BY "ID"`));
+  app.post<{ Body: 輸送の条件 & { 表題?: string } }>("/api/ws/yusochu/saved", async (req) => {
+    const b = req.body ?? {};
+    const 文 = (v: unknown) => (v == null || v === "" ? null : String(v));
+    const v: Rec = {
+      作成日: 日本の今().日時, 集計開始日: b.開始 || null, 集計終了日: b.終了 || null, グループ集計: !!b.集計, 表題: b.表題 ?? null,
+      W_0: 文(b.日単位), W_1: 文(b.地域区分), W_0_1: 文(b.日付基準), W_1_1: 文(b.エリア), W_2: 文(b.手配), W_3: 文(b.帳合), W_4: 文(b.運送),
+      W_5: 文(b.輸送区分), W_6: 文(b.配達区分), W_7: 文(b.車両区分), W_8: 文(b.冷凍区分),
+      W_10_1: 文(b.届け先?.[0]), W_10_2: 文(b.届け先?.[1]), W_10_3: 文(b.届け先?.[2]), W_10_4: 文(b.届け先?.[3]),
+      W_11: 文(b.出荷地), W_12: 文(b.品目), W_like: 文(b.品名), ヘッダー: 文(b.ページ), フッダー: 文(b.改行),
+    };
+    for (let i = 0; i <= 12; i++) v[`V_${i}`] = !!b.表示?.[i];
+    await 一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_集計用レポートクエリ.ID'))`);
+      v.ID = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS n FROM ${集計用レポート}`)).rows[0].n);
+      const cols = Object.keys(v);
+      await c.query(`INSERT INTO ${集計用レポート} (${cols.map((k) => `"${k}"`).join(", ")}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(", ")})`, cols.map((k) => v[k]));
+    });
+    return { ID: v.ID };
+  });
+  app.post<{ Body: { ID: number } }>("/api/ws/yusochu/saved/delete", async (req) => {
+    await pool.query(`DELETE FROM ${集計用レポート} WHERE "ID" = $1`, [n(req.body.ID)]);
     return { ok: true };
   });
 }
