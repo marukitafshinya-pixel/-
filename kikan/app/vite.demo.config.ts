@@ -15,6 +15,7 @@ export default defineConfig({
     "process.env.JUCHU_DELETE_PASSWORD": JSON.stringify("demo"),
     "process.env.JUCHU_EDIT_PASSWORD": JSON.stringify("demo"),
     "process.env.JUCHU_MASTER_PASSWORD": JSON.stringify("demo"),
+    "process.env.MASTER_PASSWORD": JSON.stringify("demo"),
   },
   resolve: {
     alias: [

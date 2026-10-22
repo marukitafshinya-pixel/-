@@ -98,7 +98,7 @@ for tb in [
     "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ",
     # マスタ管理の選択肢
     "master_fe.TM_商品区分", "master_fe.TM_テープマスタ", "master_fe.TM_ハイ積みマスタ", "master_fe.TM_産地マスタ",
-    "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード",
+    "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード", "master_fe.TM_配達区分", "master.TM_運賃扱いマスタ",
 ]:
     copy_table(tb)
 # マスタ管理の資材（段ボール・計量袋・パット）は仕入先の名前が入るので、作り物にする
@@ -161,10 +161,10 @@ for i, (code, short, name, kikaku, irisu, bunrui, pal) in enumerate(商品, 1):
 名前 = {c: n for c, n, *_ in 得意先}
 
 # ---------------- 運送会社（作り物） ----------------
-for sc in ["ws_fe", "juchu_fe"]:
-    for i, (code, name, kana) in enumerate([(630, "丸北　北海道", "ﾏ"), (4, "見本物流", "ﾐ"), (5, "見本運輸", "ﾐ"), (6, "見本通運", "ﾐ"), (7, "見本急便", "ﾐ")], 1):
-        ins(f"{sc}.TM_運送会社マスタ", ID=i, 運送会社ID=code, 短縮名=name, 運送会社名=name + "株式会社" if code != 630 else name, カナ分類=kana,
-            住所=f"見本県見本市運送{i}番地", 電話番号=f"000-111-{i:04d}")
+# 運送会社マスタは kyotsu に 1 つ（各スキーマの同じ名前はビュー）
+for i, (code, name, kana) in enumerate([(630, "丸北　北海道", "ﾏ"), (4, "見本物流", "ﾐ"), (5, "見本運輸", "ﾐ"), (6, "見本通運", "ﾐ"), (7, "見本急便", "ﾐ")], 1):
+    ins("kyotsu.TM_運送会社マスタ", ID=i, 運送会社ID=code, 短縮名=name, 運送会社名=name + "株式会社" if code != 630 else name, カナ分類=kana,
+        住所=f"見本県見本市運送{i}番地", 電話番号=f"000-111-{i:04d}", 使用不可フラグ=False, 運賃扱い区分=1)
 
 # ---------------- 名義・出荷場所の条件（作り物） ----------------
 for i, (soko, name) in enumerate([(11, "丸北　北海道"), (191, "丸北　ふらの工場"), (164, "見本冷蔵　札幌")], 1):

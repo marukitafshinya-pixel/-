@@ -20,6 +20,10 @@ const 産地 = t("master_fe", "TM_産地マスタ");
 const 得意先区分 = t("master_fe", "TM_得意先区分");
 const web出力 = t("master_fe", "TM_web出力判別区分");
 const 地区コード = t("master_fe", "TM_地区コード");
+const 運送会社マスタ = t("kyotsu", "TM_運送会社マスタ");
+const 運賃扱い = t("master", "TM_運賃扱いマスタ");
+const 配達区分 = t("master_fe", "TM_配達区分");
+const 輸送計画の表 = [t("ws", "TD_輸送計画"), t("soko", "TD_輸送計画")];
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
@@ -98,6 +102,14 @@ function CLng(v: unknown): number {
   const d = x - f;
   return d > 0.5 || (d === 0.5 && f % 2 !== 0) ? f + 1 : f;
 }
+
+/** 運送会社マスタで書ける項目 */
+const 運送会社の項目 = [
+  "運送会社ID", "小口配送区分", "配達区分", "配達区分名", "カナ分類", "短縮名", "運送会社名", "グループコード1", "請求先区分", "住所", "電話番号", "FAX番号",
+  "締日", "支払方法", "取引銀行", "口座番号", "その他支払い", "サイト", "請求先コード", "請求先", "請求書送り先住所", "請求先電話番号", "請求書FAX番号",
+  "振込先コード", "振込先", "振込住所", "振込先電話番号", "振込先FAX番号", "備考", "支払い元", "支払い元住所", "支払い元電話番号", "支払先FAX番号",
+  "運賃扱い区分", "使用不可フラグ", "最大パレット積載数", "最小パレット積載数", "eLixxi扱い便CD",
+] as const;
 
 /** Access の 商品登録 の［登録］で確かめる項目（製造場所がないときは「入数」の知らせが「製造場所」に置き換わるのも Access と同じ） */
 function 商品の足りない項目(v: Rec): string {
@@ -305,6 +317,80 @@ export function masterRoutes(app: FastifyInstance) {
       const r = await c.query(`UPDATE ${得意先マスタ} SET ${ks.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "短縮コード" = $1`, [元, ...ks.map((k) => all[k])]);
       if (!r.rowCount) throw new 止める(404, "この得意先はありません");
       return { 短縮コード: 元 };
+    }),
+  );
+
+  // ---------------- 運送会社マスタ（FM_運送会社マスタ・FM_運送会社マスタ登録） ----------------
+  app.get("/api/mst/unso", async () =>
+    q(
+      `SELECT m."ID", m."運送会社ID", m."カナ分類", m."短縮名", m."運送会社名", m."住所", m."電話番号", m."FAX番号", m."締日", m."支払方法", m."請求先",
+              m."振込先", a."扱い区分名", m."使用不可フラグ", m."最大パレット積載数", m."備考"
+       FROM ${運送会社マスタ} m LEFT JOIN ${運賃扱い} a ON a."運賃扱い区分" = m."運賃扱い区分"
+       ORDER BY m."運送会社ID", m."ID"`,
+    ),
+  );
+  app.get("/api/mst/unso-opts", async () => ({
+    運賃扱い: await q(`SELECT "運賃扱い区分" AS id, "扱い区分名" AS name FROM ${運賃扱い} ORDER BY "運賃扱い区分"`),
+    配達区分: await q(`SELECT "配達区分ID" AS id, "配達区分" AS name FROM ${配達区分} ORDER BY "配達区分ID"`),
+    運送会社: await q(`SELECT DISTINCT ON ("運送会社ID") "運送会社ID" AS id, "運送会社名" AS name FROM ${運送会社マスタ}
+                      ORDER BY "運送会社ID", COALESCE("使用不可フラグ", false), "運送会社名" IS NULL, "ID"`),
+  }));
+  app.get<{ Params: { id: string } }>("/api/mst/unso/:id", async (req, reply) => {
+    const r = (await pool.query(`SELECT * FROM ${運送会社マスタ} WHERE "ID" = $1`, [n(req.params.id)])).rows[0];
+    if (!r) return reply.code(404).send({ error: "この運送会社はありません" });
+    return r;
+  });
+  // ［登録］：直すときは合言葉が要る。新しい運送会社は合言葉なし（Access の［新規登録］と同じ）
+  app.post<{ Body: { pass?: string; ID?: number; 値: Rec } }>("/api/mst/unso/save", async (req) =>
+    一連で(async (c) => {
+      const id = n(req.body.ID);
+      if (id) 合言葉を確かめる(req.body?.pass);
+      const v: Rec = {};
+      for (const k of 運送会社の項目) if (k in (req.body.値 ?? {})) v[k] = req.body.値[k] === "" ? null : req.body.値[k];
+      // 請求先・振込先の名前はコードから入れる（Access の 請求先コード_AfterUpdate・振込先コード_AfterUpdate）
+      const 名前 = async (code: unknown) =>
+        (await c.query(`SELECT "運送会社名" FROM ${運送会社マスタ} WHERE "運送会社ID" = $1 ORDER BY COALESCE("使用不可フラグ", false), "運送会社名" IS NULL, "ID" LIMIT 1`, [n(code)])).rows[0]?.運送会社名 ?? null;
+      if ("請求先コード" in v) v.請求先 = n(v.請求先コード) ? await 名前(v.請求先コード) : null;
+      if ("振込先コード" in v) v.振込先 = n(v.振込先コード) ? await 名前(v.振込先コード) : null;
+      if ("配達区分" in v) v.配達区分名 = (await c.query(`SELECT "配達区分" FROM ${配達区分} WHERE "配達区分ID" = $1`, [n(v.配達区分)])).rows[0]?.配達区分 ?? null;
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_運送会社マスタ'))`);
+      if (!id) {
+        if (!n(v.運送会社ID)) throw new 止める(400, "運送会社IDが入力されていません");
+        // Access では同じ運送会社ID を何度でも登録できたが、名前の引き当てがあいまいになるので止める
+        if ((await c.query(`SELECT 1 FROM ${運送会社マスタ} WHERE "運送会社ID" = $1`, [n(v.運送会社ID)])).rowCount)
+          throw new 止める(400, `運送会社ID ${v.運送会社ID} はもう使われています。`);
+        const 新ID = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS n FROM ${運送会社マスタ}`)).rows[0].n);
+        const 既定: Rec = {
+          ID: 新ID, 小口配送区分: false, 配達区分: 0, グループコード1: 0, 請求先区分: false, 請求先コード: 0, 振込先コード: 0, 運賃扱い区分: 0,
+          使用不可フラグ: false, 最大パレット積載数: 0, 最小パレット積載数: 0,
+        };
+        const all: Rec = { ...既定, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null)), 訂正区分: true };
+        const ks = Object.keys(all);
+        await c.query(`INSERT INTO ${運送会社マスタ} (${ks.map((k) => `"${k}"`).join(", ")}) VALUES (${ks.map((_, i) => `$${i + 1}`).join(", ")})`, ks.map((k) => all[k]));
+        return { ID: 新ID };
+      }
+      // 登録済みの運送会社ID は変えない（便とつながらなくなるため）
+      delete v.運送会社ID;
+      const all: Rec = { ...v, 訂正区分: true };
+      const ks = Object.keys(all);
+      const r = await c.query(`UPDATE ${運送会社マスタ} SET ${ks.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "ID" = $1`, [id, ...ks.map((k) => all[k])]);
+      if (!r.rowCount) throw new 止める(404, "この運送会社はありません");
+      return { ID: id };
+    }),
+  );
+  // 削除（Access の cmd_Delete_Click）：便（輸送計画）で使われていれば消さない
+  app.post<{ Body: { pass: string; ID: number } }>("/api/mst/unso/delete", async (req) =>
+    一連で(async (c) => {
+      合言葉を確かめる(req.body?.pass);
+      const r = (await c.query(`SELECT "運送会社ID" FROM ${運送会社マスタ} WHERE "ID" = $1`, [n(req.body.ID)])).rows[0];
+      if (!r) throw new 止める(404, "この運送会社はありません");
+      for (const 表 of 輸送計画の表) {
+        if (!(await c.query(`SELECT to_regclass($1) AS r`, [表])).rows[0].r) continue;
+        if ((await c.query(`SELECT 1 FROM ${表} WHERE "運送会社ID" = $1 LIMIT 1`, [n(r.運送会社ID)])).rowCount)
+          throw new 止める(400, "すでに使用されている為、削除できません");
+      }
+      await c.query(`DELETE FROM ${運送会社マスタ} WHERE "ID" = $1`, [n(req.body.ID)]);
+      return { ok: true };
     }),
   );
 }

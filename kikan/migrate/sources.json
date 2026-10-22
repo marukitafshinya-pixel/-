@@ -82,6 +82,10 @@
       "schema": "tehai_fe"
     },
     {
+      "file": "data/Accessマスタ管理.accdb",
+      "schema": "master"
+    },
+    {
       "file": "data/Accessマスタ管理FE.accdb",
       "schema": "master_fe"
     }

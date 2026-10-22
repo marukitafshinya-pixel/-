@@ -1,4 +1,3 @@
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -27,6 +26,10 @@ CREATE SCHEMA kyotsu;
 
 CREATE SCHEMA kyoyu;
 
+CREATE SCHEMA master;
+
+CREATE SCHEMA master_fe;
+
 CREATE SCHEMA seizo;
 
 CREATE SCHEMA seizo_fe;
@@ -44,10 +47,6 @@ CREATE SCHEMA web_fe;
 CREATE SCHEMA ws;
 
 CREATE SCHEMA ws_fe;
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
 
 CREATE TABLE app.sessions (
     token text NOT NULL,
@@ -69,6 +68,16 @@ CREATE TABLE app."受注検索_受注元ボタン" (
     "表示名" text NOT NULL,
     "値" integer NOT NULL,
     "要確認" boolean DEFAULT false NOT NULL
+);
+
+CREATE TABLE app."帳票_差出人" (
+    "区分" text NOT NULL,
+    "並び" integer DEFAULT 0 NOT NULL,
+    "社名" text DEFAULT ''::text NOT NULL,
+    "店舗" text DEFAULT ''::text NOT NULL,
+    "住所" text DEFAULT ''::text NOT NULL,
+    "TEL" text DEFAULT ''::text NOT NULL,
+    "FAX" text DEFAULT ''::text NOT NULL
 );
 
 CREATE TABLE app."発注依頼書_宛先" (
@@ -1137,7 +1146,7 @@ CREATE TABLE housou_fe."TM_車両区分" (
     "積載量" integer
 );
 
-CREATE TABLE housou_fe."TM_運送会社マスタ" (
+CREATE TABLE kyotsu."TM_運送会社マスタ" (
     "ID" integer,
     "小口配送区分" boolean,
     "配達区分" integer,
@@ -1179,6 +1188,49 @@ CREATE TABLE housou_fe."TM_運送会社マスタ" (
     "訂正区分" boolean,
     "eLixxi扱い便CD" character varying(255)
 );
+
+CREATE VIEW housou_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE housou_fe."TM_集荷先別パレット設定" (
     "ID" integer,
@@ -2086,48 +2138,48 @@ CREATE TABLE juchu_fe."TM_製造場所" (
     "倉庫ID" integer
 );
 
-CREATE TABLE juchu_fe."TM_運送会社マスタ" (
-    "ID" integer,
-    "小口配送区分" boolean,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean,
-    "eLixxi扱い便CD" character varying(255)
-);
+CREATE VIEW juchu_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE juchu_fe."T_エスビーweb受注" (
     "ID" integer,
@@ -3324,48 +3376,48 @@ CREATE TABLE keikaku."TM_通常運賃マスタ" (
     "Max" double precision
 );
 
-CREATE TABLE keikaku."TM_運送会社マスタ" (
-    "ID" integer,
-    "小口配送区分" boolean,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean,
-    "eLixxi扱い便CD" character varying(255)
-);
+CREATE VIEW keikaku."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE keikaku."TM_配達区分" (
     "ID" integer,
@@ -3648,6 +3700,1317 @@ CREATE TABLE kyoyu."大阪丸北生産計画" (
     "確認済みチェック" boolean,
     "冷凍原料手配区分" boolean,
     "関連受注ID" integer
+);
+
+CREATE TABLE master."TD_商品分類" (
+    "ID" integer,
+    "分類ID" integer,
+    "分類名" character varying(50)
+);
+
+CREATE TABLE master."TM_イベントスケジュール" (
+    "ID" integer,
+    "件名" character varying(50),
+    "開始日" character varying(50),
+    "期間" integer,
+    "分類項目" character varying(50),
+    "改正祝日法" boolean,
+    "特定月" integer,
+    "特定週" integer,
+    "特定曜日" character varying(50),
+    "区分" boolean,
+    "使用不可" boolean,
+    "日付" timestamp without time zone,
+    "特定年度" integer
+);
+
+CREATE TABLE master."TM_ダンボール寸法マスタ" (
+    "資材ID" integer,
+    "品番コード" character varying(255),
+    "品番" character varying(255),
+    "品名" character varying(255),
+    "寸法（内寸）" character varying(255),
+    "長さ" integer,
+    "幅" integer,
+    "高さ" integer,
+    "備考" character varying(255),
+    "更新日" timestamp without time zone
+);
+
+CREATE TABLE master."TM_入庫先商品別名義条件" (
+    "ID" integer,
+    "受注元ID" integer,
+    "受注元名" character varying(255),
+    "取引先グループID" integer,
+    "取引先グループ名" character varying(255),
+    "取引先ID" integer,
+    "取引先" character varying(255),
+    "受注先ID" integer,
+    "受注先" character varying(255),
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "ユーザー区分" integer,
+    "商品コード" integer,
+    "商品名" character varying(255),
+    "商品分類ID" integer,
+    "商品分類名" character varying(255),
+    "倉庫ID" integer,
+    "倉庫名" character varying(255),
+    "運賃請求ID" integer,
+    "運賃請求先" character varying(255),
+    "運賃振分区分" integer,
+    "運賃振分区分名" character varying(255),
+    "入庫名義ID" integer,
+    "入庫名義名" character varying(255),
+    "備考" character varying(255),
+    "重複" boolean,
+    "特定条件" boolean,
+    "指定冷蔵庫" boolean,
+    "輸送扱い区分" integer,
+    "輸送扱い区分名" character varying(255),
+    "もい運賃単位" integer,
+    "もらい運賃" double precision,
+    "もらい運賃個建" integer,
+    "キロ立替運賃" integer,
+    "新ダンボール初回案内" boolean,
+    "新ダンボール備考" character varying(255),
+    "取扱区分" boolean,
+    "取扱名" character varying(255),
+    "横持区分" boolean,
+    "売上請求先ID" integer,
+    "売上請求先名" character varying(255),
+    "届け先件数" integer,
+    "未完了chk" boolean,
+    "登録日" timestamp without time zone,
+    "更新日" timestamp without time zone,
+    "最終出荷日" timestamp without time zone,
+    "インポート場所ID" integer,
+    "訂正区分" boolean
+);
+
+CREATE TABLE master."TM_原料マスタ" (
+    "原料分類ID" integer,
+    "原料分類" character varying(50)
+);
+
+CREATE VIEW master."TM_商品マスタ" AS
+ SELECT "ID",
+    "商品コード",
+    "同一商品chk",
+    "グループ商品コード",
+    "分類ID",
+    "短縮コード",
+    "本社コード",
+    "ｶﾅ分類",
+    "短縮名",
+    "商品名",
+    "規格",
+    "入数",
+    "非加熱品",
+    "DB品番CD",
+    "DBパットCD",
+    "パット使用数",
+    "品質保持期間",
+    "特別検査区分",
+    "歩留",
+    "商品区分",
+    "主用原料コード",
+    "計量袋ID",
+    "取引先ID",
+    "取引先名",
+    "ダンボールID",
+    "テープID",
+    "自社原料区分",
+    "旧コード",
+    "賞味期限日付差",
+    "標準単価",
+    "売価",
+    "変更通知",
+    "規格枚数",
+    "規格kg",
+    "原料コード",
+    "等級",
+    "サイズ",
+    "パレット単位1",
+    "パレット単位2",
+    "特記事項",
+    "作業工程",
+    "登録時間",
+    "ロット表示区分",
+    "冷凍パン入数",
+    "現場ID",
+    "パレットID",
+    "賞味期限追記",
+    "製造場所ID",
+    "製造場所",
+    "取引先重複有無",
+    "使用中止",
+    "表示単位",
+    "産地コード",
+    "産地通称",
+    "特定運賃取扱区分",
+    "旧会社コード区分",
+    "使用可能chk",
+    "抽出フラグ",
+    "取扱い区分",
+    "取扱い区分名",
+    "積込時注意項目",
+    "マスタ登録日",
+    "訂正区分",
+    "USER賞味残日数",
+    "繁盛商品コード",
+    "資材ダンボールID",
+    "資材計量袋ID",
+    "資材その他ID",
+    "寸法L",
+    "寸法H",
+    "寸法W",
+    "ロボットプログラムNo"
+   FROM kyotsu."TM_商品マスタ";
+
+CREATE VIEW master."TM_得意先マスタ" AS
+ SELECT "ID",
+    "取引元ID",
+    "取引元",
+    "短縮コード",
+    "得意先コード",
+    "ｶﾅ分類",
+    "得意先名",
+    "短縮名",
+    "地区コード",
+    "郵便番号",
+    "都道府県",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "倉庫区分",
+    "出荷元区分",
+    "入庫区分",
+    "仕入帳区分",
+    "通常保管料",
+    "入出庫料",
+    "グループコード",
+    "グループコード2",
+    "十二地区",
+    "受付時間",
+    "備考",
+    "入庫フラグ",
+    "地区名",
+    "グループコード3",
+    "登録時間",
+    "必着時間",
+    "保管区分",
+    "短縮名2",
+    "隠語",
+    "ユーザー区分",
+    "ユーザー区分名",
+    "抽出フラグ",
+    "丸北契約冷蔵庫区分",
+    "使用不可フラグ",
+    "パレット積載許容数",
+    "正式電話番号",
+    "訂正区分",
+    chk,
+    "最終使用日",
+    "繁盛取引先コード",
+    "繁盛納入先コード"
+   FROM kyotsu."TM_得意先マスタ";
+
+CREATE TABLE master."TM_運賃扱いマスタ" (
+    "運賃扱い区分" integer,
+    "扱い区分" character varying(255),
+    "扱い区分名" character varying(255),
+    "備考" character varying(255),
+    "運賃除外区分" boolean
+);
+
+CREATE TABLE master."TM_運賃振分区分マスタ" (
+    "運賃振分区分" integer,
+    "運賃振分区分名" character varying(255)
+);
+
+CREATE TABLE master."TM_運賃輸送区分" (
+    "運賃輸送区分" integer,
+    "運賃輸送区分名" character varying(255)
+);
+
+CREATE VIEW master."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
+
+CREATE TABLE master_fe."M_販盛納入先マスタ" (
+    "ID" integer,
+    "納入先コード" character varying(50),
+    "取引先コード" character varying(255),
+    "取引先名" character varying(255),
+    "納入先名" character varying(255),
+    "敬称" character varying(255),
+    "納入先カナ名" character varying(255),
+    "郵便番号" character varying(255),
+    "住所１" character varying(255),
+    "住所２" character varying(255),
+    "電話番号" character varying(255)
+);
+
+CREATE TABLE master_fe."TD_予定" (
+    "ID" integer,
+    "日付" timestamp without time zone,
+    "項目" character varying(50),
+    "区分" integer,
+    "区分名" character varying(50),
+    "開始時間" character varying(50),
+    "終了時間" character varying(50),
+    "件数" integer,
+    "完了チェック" boolean,
+    "抽出区分" boolean,
+    "工場分類" character varying(50),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TD_倉庫詳細設定" (
+    "ID" integer,
+    "短縮コード" integer,
+    "倉庫名" character varying(50),
+    "入出庫料" double precision,
+    "保管料" double precision,
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "名義コード" integer,
+    "名義名" character varying(50),
+    "名義変更料" integer
+);
+
+CREATE TABLE master_fe."TD_単位" (
+    "ID" integer,
+    "単位コード" integer,
+    "単位" character varying(50)
+);
+
+CREATE TABLE master_fe."TMO_大阪丸北転売商品マスタ" (
+    "ID" integer,
+    "発注先" character varying(255),
+    "重複チェック" boolean,
+    "弊社CD" double precision,
+    "商品名" character varying(255),
+    "規格／入数" integer,
+    "納入場所" character varying(255),
+    "F6" character varying(255),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TMS_本社依頼受注" (
+    "個別受注ID" integer,
+    "大阪受注ID" integer,
+    "年間受注区分" boolean,
+    "運賃振分区分" integer,
+    "運賃振分区分名" character varying(255),
+    "入庫後名義ID" integer,
+    "取引元ID" integer,
+    "取引帳合ID" integer,
+    "グループ商品コード" integer,
+    "商品コード" integer,
+    "商品名" character varying(255),
+    "規格" character varying(255),
+    "入数" integer,
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "元ケース" integer,
+    "元数kg" integer,
+    "出荷ケース" integer,
+    "出荷kg" integer,
+    "残ケース" integer,
+    "残kg" integer,
+    "商品kg" integer,
+    "集計開始日" timestamp without time zone,
+    "集計終了日" timestamp without time zone,
+    "備考" character varying(255),
+    "摘要" character varying(255),
+    "作成日" timestamp without time zone,
+    "受注作成済みchk" boolean,
+    "本社識別受注ID" character varying(255),
+    "ふらの商品" boolean,
+    "本社商品コード" integer,
+    "仕入先商品コード" integer,
+    "終了chk" boolean,
+    "受注元ID" integer,
+    "受注元" character varying(255),
+    "確認chk" boolean,
+    chk boolean,
+    "丸北出荷済みケース" integer,
+    "丸北出荷済みkg" integer,
+    "倉庫出荷済みケース" integer,
+    "倉庫出荷済みkg" integer,
+    "丸北出荷見込ケース" integer,
+    "丸北出荷見込kg" integer,
+    "倉庫出荷見込ケース" integer,
+    "倉庫出荷見込kg" integer,
+    "出荷済みケース" integer,
+    "出荷済みkg" integer,
+    "出荷見込ケース" integer,
+    "出荷見込kg" integer,
+    "丸北出荷ケース" integer,
+    "丸北出荷kg" integer,
+    "倉庫出荷ケース" integer,
+    "倉庫出荷kg" integer,
+    "年月" character varying(255),
+    "倉庫ID" integer,
+    "倉庫名" character varying(255),
+    "現在庫数" integer,
+    "予定在庫数" integer,
+    "一回発注数" integer,
+    "月間発注回数" integer,
+    "発注曜日" character varying(255),
+    "年間在庫率" double precision,
+    "現在在庫率" double precision,
+    "予定在庫率" double precision,
+    "作成日時" character varying(255),
+    "調整ケース" integer,
+    "在庫出荷予定数" integer,
+    "納品日" timestamp without time zone,
+    "統一受注ID" character varying(255),
+    "月平均出荷数" double precision,
+    "受注元数" integer,
+    "合算予定数" integer
+);
+
+CREATE TABLE master_fe."TMS_本社依頼受注_製造" (
+    "個別受注ID" integer,
+    "大阪受注ID" integer,
+    "年間受注区分" boolean,
+    "運賃振分区分" integer,
+    "運賃振分区分名" character varying(255),
+    "入庫後名義ID" integer,
+    "取引元ID" integer,
+    "取引帳合ID" integer,
+    "グループ商品コード" integer,
+    "商品コード" integer,
+    "商品名" character varying(255),
+    "規格" character varying(255),
+    "入数" integer,
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "製造分割数" integer,
+    "製造分割kg" integer,
+    "前月繰越数" integer,
+    "前月繰越kg" integer,
+    "出荷ケース" integer,
+    "出荷kg" integer,
+    "残ケース" integer,
+    "残kg" integer,
+    "商品kg" integer,
+    "集計開始日" timestamp without time zone,
+    "集計終了日" timestamp without time zone,
+    "備考" character varying(255),
+    "摘要" character varying(255),
+    "作成日" timestamp without time zone,
+    "受注作成済みchk" boolean,
+    "本社識別受注ID" character varying(255),
+    "ふらの商品" boolean,
+    "本社商品コード" integer,
+    "仕入先商品コード" integer,
+    "終了chk" boolean,
+    "受注元ID" integer,
+    "受注元" character varying(255),
+    "確認chk" boolean,
+    chk boolean,
+    "丸北出荷済みケース" integer,
+    "丸北出荷済みkg" integer,
+    "倉庫出荷済みケース" integer,
+    "倉庫出荷済みkg" integer,
+    "丸北出荷見込ケース" integer,
+    "丸北出荷見込kg" integer,
+    "倉庫出荷見込ケース" integer,
+    "倉庫出荷見込kg" integer,
+    "出荷済みケース" integer,
+    "出荷済みkg" integer,
+    "出荷見込ケース" integer,
+    "出荷見込kg" integer,
+    "丸北出荷ケース" integer,
+    "丸北出荷kg" integer,
+    "倉庫出荷ケース" integer,
+    "倉庫出荷kg" integer,
+    "年月" character varying(255),
+    "倉庫ID" integer,
+    "倉庫名" character varying(255),
+    "現在庫数" integer,
+    "予定在庫数" integer,
+    "一回発注数" integer,
+    "月間発注回数" integer,
+    "発注曜日" character varying(255),
+    "年間在庫率" double precision,
+    "現在在庫率" double precision,
+    "予定在庫率" double precision,
+    "作成日時" character varying(255),
+    "調整ケース" integer,
+    "在庫出荷予定数" integer,
+    "納品日" timestamp without time zone,
+    "統一受注ID" character varying(255),
+    "月平均出荷数" double precision,
+    "受注元数" integer,
+    "合算予定数" integer,
+    "受注出荷済み数" integer,
+    "受注出荷見込み数" integer,
+    "受注残数" integer,
+    "個別受注合算数" integer,
+    "前月繰越出荷済み数" integer,
+    "前月繰越出荷見込み数" integer,
+    "前月繰越残数" integer,
+    "受注元KG" integer,
+    "年間前月繰越数" integer,
+    "年間調整数" integer,
+    "次月出荷予定数" integer
+);
+
+CREATE TABLE master_fe."TMU_取引先グループマスタ" (
+    "ID" integer,
+    "取引先ID" integer,
+    "取引先名" character varying(255),
+    "受注区分" integer
+);
+
+CREATE TABLE master_fe."TMU_受注先マスタ" (
+    "UserID" integer,
+    "受注先ID" integer,
+    "受注先名" character varying(255),
+    "受注区分" integer,
+    "取引先ID" integer,
+    "取引先名" character varying(255),
+    "ユーザー区分" integer,
+    "ユーザー区分名" character varying(255),
+    "入庫名義ID" integer
+);
+
+CREATE TABLE master_fe."TM_web出力判別区分" (
+    "ID" integer,
+    "web出力区分" integer,
+    "出力区分名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_もらい運賃マスタ仮" (
+    "ID" integer,
+    "倉庫ID" integer,
+    "倉庫名" character varying(255),
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "もらい運賃" integer,
+    "No" integer
+);
+
+CREATE TABLE master_fe."TM_エリアコード" (
+    "地区コード" integer,
+    "地区名" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_グループマスタ" (
+    "グループID" integer,
+    "グループ名" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_サービス設定" (
+    "ID" integer,
+    "倉庫ID" integer,
+    "倉庫名" character varying(50),
+    "サービス範囲" integer,
+    "備考" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_テープマスタ" (
+    "テープID" integer,
+    "テープ上" character varying(50),
+    "テープ下" character varying(50),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_ハイ積みマスタ" (
+    "ハイ積みID" integer,
+    "パレットコード" integer,
+    "パレット名" character varying(50),
+    "総数" integer,
+    "区分" character varying(50),
+    "ハイ" integer,
+    "パレット段数" integer,
+    "備考" character varying(50),
+    "ハイ積み備考" character varying(50),
+    "SPID2" integer,
+    "SPID3" integer,
+    "SPID4" integer,
+    "SPID5" integer,
+    "SPID6" integer
+);
+
+CREATE TABLE master_fe."TM_パレットマスタ" (
+    "パレットコード" integer,
+    "パレット名" character varying(50),
+    "区分" character varying(50),
+    "元数" integer,
+    "繰越数" integer,
+    "入庫数" integer,
+    "使用数" integer,
+    "在庫数" integer
+);
+
+CREATE TABLE master_fe."TM_レポート作成" (
+    "ID" integer,
+    "表題" character varying(50),
+    "宛名" character varying(50),
+    "出荷日1" character varying(50),
+    "出荷日2" character varying(50),
+    "製造日1" character varying(50),
+    "製造日2" character varying(50),
+    "納品日1" character varying(50),
+    "納品日2" character varying(50),
+    "届け先コード" integer,
+    "倉庫ID" integer,
+    "取引元ID" integer,
+    "運送会社ID" integer,
+    "商品コード" integer,
+    "入庫前名義" integer,
+    "入庫後名義" integer,
+    "商品分類" integer,
+    "商品分類等号" character varying(50),
+    "レポートタイプ" integer,
+    "作成日時" timestamp without time zone,
+    "ヘッダー" integer,
+    "フッダー" integer,
+    "並び順" character varying(50),
+    "出荷グループ" integer,
+    "届けグループ" integer,
+    "No1" smallint,
+    "No2" smallint,
+    "No3" smallint,
+    "No4" smallint,
+    "No5" smallint,
+    "No6" smallint,
+    "No7" smallint,
+    "No8" smallint,
+    "No9" smallint,
+    "No10" smallint,
+    "No11" smallint,
+    "抽出品名" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_仕入マスタ" (
+    "ID" integer,
+    "取引先コード" integer,
+    "資材会社名" character varying(50),
+    "会社名" character varying(255),
+    "仕入コード" character varying(50),
+    "品番" character varying(50),
+    "資材コード" character varying(50),
+    "識別条件" character varying(50),
+    "本社コード" character varying(255),
+    "商品名" character varying(255),
+    "単位ID" integer,
+    "単位" character varying(255),
+    "単価" double precision,
+    "商品コード" integer,
+    "原料コード" integer,
+    "分類ID" integer,
+    "入庫分類" integer,
+    "材質" character varying(50),
+    "到着日数" character varying(50),
+    "生産地コード" integer,
+    "生産地" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_備考欄" (
+    "ID" integer,
+    "分類" character varying(50),
+    "作業分類" character varying(50),
+    "備考欄" character varying(255),
+    "リンクID" integer,
+    "得意先名" character varying(50),
+    "使用頻度" integer,
+    "登録日" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_冷凍区分" (
+    "冷凍ID" integer,
+    "冷凍区分" character varying(50),
+    "区分名2" character varying(255),
+    "コメント" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_出荷場所条件" (
+    "ID" integer,
+    "倉庫ID" integer,
+    "倉庫名" character varying(50),
+    "手配元ID" integer,
+    "手配元" character varying(50),
+    "手配帳合ID" integer,
+    "手配帳合" character varying(50),
+    "名義ID" integer
+);
+
+CREATE TABLE master_fe."TM_前年在庫実績" (
+    "作成日付" timestamp without time zone,
+    "グループ商品コード" integer,
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "入庫後名義ID" integer,
+    "規格" character varying(50),
+    "入数" double precision,
+    "繰越ケース" integer,
+    "製造ケース" integer,
+    "出庫ケース" integer,
+    "在庫ケース" integer,
+    "繰越kg" double precision,
+    "製造kg" double precision,
+    "出荷kg" double precision,
+    "在庫kg" double precision,
+    "原料kg" integer,
+    "倉庫ID" integer,
+    "倉庫名" character varying(50),
+    "入庫元数" integer,
+    "入庫日" timestamp without time zone,
+    "範囲出庫ケース" integer,
+    "範囲出庫kg" double precision,
+    "範囲入庫ケース" integer,
+    "範囲入庫kg" double precision,
+    "インポート場所ID" integer,
+    "半年ケース" double precision,
+    "年間ケース" integer,
+    "平均年間ケース" integer,
+    "現在在庫率" character varying(255),
+    "出庫予定込在庫率" character varying(255),
+    "年間在庫率" character varying(255),
+    "製造工場No" character varying(255),
+    "製造工場運賃区分" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_印刷管理" (
+    "抽出区分" boolean,
+    "レポート名" character varying(50),
+    "オブジェクト名" character varying(50),
+    "日付フィールド" character varying(50),
+    "印刷時間" character varying(50),
+    "登録時間" character varying(50),
+    "登録日" timestamp without time zone,
+    "表示On" boolean,
+    "日報有無" character varying(50),
+    "オブジェクト" character varying(50),
+    "実行コード" character varying(50),
+    "製造分割表印刷日" timestamp without time zone
+);
+
+CREATE TABLE master_fe."TM_参照アドレス" (
+    "ID" integer,
+    "名称" character varying(255),
+    "ファイル名" character varying(255),
+    "拡張子" character varying(50),
+    "アドレス" character varying(255),
+    "備考" character varying(255),
+    "参照アドレス" text
+);
+
+CREATE TABLE master_fe."TM_取り扱い区分マスタ" (
+    "ID" integer,
+    "分類" character varying(255),
+    "取扱い区分ID" integer,
+    "区分名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_受注先マスタ" (
+    "本社受注" boolean,
+    "ID" integer,
+    "受注区分" integer,
+    "取引先ID" integer,
+    "取引先名" character varying(255),
+    "受注元ID" integer,
+    "受注元名" character varying(255),
+    "受注先ID" integer,
+    "受注先名" character varying(255),
+    "受注帳合ID" integer,
+    "受注帳合先名" character varying(255),
+    "指定届け先コード" integer,
+    "指定届け先" character varying(255),
+    "ユーザー区分" integer,
+    "指定入庫名義ID" integer,
+    "指定入庫後名義名" character varying(255),
+    "最終使用日" timestamp without time zone,
+    "指定倉庫ID" integer,
+    "指定倉庫名" character varying(255),
+    "備考" character varying(50),
+    "伝票送付" boolean,
+    "デポ区分" boolean,
+    "使用不可" boolean,
+    "取扱い区分" integer,
+    "集荷条件" integer,
+    "届け先条件" integer
+);
+
+CREATE TABLE master_fe."TM_受注検索方法" (
+    "ID" integer,
+    "検索方法ID" integer,
+    "選択方法" character varying(255),
+    "コメント" character varying(255),
+    "備考" character varying(255),
+    "順番No1" integer,
+    "順番No2" integer,
+    "順番No3" integer,
+    "順番No4" integer
+);
+
+CREATE TABLE master_fe."TM_商品ラベル" (
+    "ID" integer,
+    "ラベル名称" character varying(50),
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "ラベル枚数" character varying(50),
+    "ラベル色" integer,
+    "ラベルタイプ" integer
+);
+
+CREATE TABLE master_fe."TM_商品区分" (
+    "区分ID" integer,
+    "区分名" character varying(50),
+    "区分隠語" character varying(255),
+    "検査日数" integer
+);
+
+CREATE TABLE master_fe."TM_商品単価マスタ" (
+    "ID" integer,
+    "取引先コード" double precision,
+    "取引先名" character varying(255),
+    "納入先コード" character varying(255),
+    "納入先名" character varying(255),
+    "期間開始日" timestamp without time zone,
+    "期間終了日" timestamp without time zone,
+    "商品コード" character varying(255),
+    "商品名" character varying(255),
+    "単位コード" double precision,
+    "単位名" character varying(255),
+    "特売区分" double precision,
+    "特売区分名" character varying(255),
+    "単価" double precision
+);
+
+CREATE TABLE master_fe."TM_商品在庫ストックマスタ" (
+    "区分" integer,
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "ストック数" character varying(255),
+    "備考" character varying(255),
+    "倉庫ID除外コード" integer,
+    "更新時間" character varying(255),
+    "通知区分" boolean
+);
+
+CREATE TABLE master_fe."TM_商品振替" (
+    "ID" integer,
+    "振替先" character varying(255),
+    "振替後商品区分" integer,
+    "振替後商品区分名" character varying(255),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_商品状態マスタ" (
+    "ID" integer,
+    "隠語" character varying(255),
+    "状態" character varying(255),
+    "区分" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_商品輸送区分" (
+    "商品輸送区分" integer,
+    "区分名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_商品隠語マスタ" (
+    "ID" integer,
+    "隠語" character varying(255),
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "ストックユーザーコード" integer,
+    "ストックユーザー名" character varying(255),
+    "商品コード" integer,
+    "商品名" character varying(255),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_地区コード" (
+    "地区コード" integer,
+    "地区名" character varying(50),
+    "十二コード" integer,
+    "十二地区" character varying(50),
+    "都道府県名" character varying(50),
+    "都道府県コード" integer
+);
+
+CREATE TABLE master_fe."TM_大阪月間受注商品マスタ" (
+    "商品コード" integer,
+    "商品名" character varying(255),
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "規格" character varying(255),
+    "入数" integer,
+    "歩留" integer,
+    "本社識別受注ID" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_定形メールマスタ" (
+    "ID" integer,
+    "実行名" character varying(255),
+    "件名" character varying(255),
+    "本文" text,
+    "宛先" character varying(255),
+    "CC1" character varying(255),
+    "CC2" character varying(255),
+    "CC3" character varying(255),
+    "CC4" character varying(255),
+    "CC5" character varying(255),
+    "添付アドレス" character varying(255),
+    "作成者" character varying(255),
+    "作成日" character varying(255),
+    "自動送信有無" boolean
+);
+
+CREATE TABLE master_fe."TM_市外局番マスタ" (
+    "ID" integer,
+    "番号区画" double precision,
+    "番号区画1" character varying(255),
+    "市外局番" double precision,
+    "市内局番" character varying(255),
+    "参照用市外局番" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_得意先区分" (
+    "得意先区分コード" integer,
+    "区分名" character varying(50),
+    "備考" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_支店マスタ" (
+    "ID" integer,
+    "支店コード" double precision,
+    "支店名" character varying(255),
+    "本部区分" double precision,
+    "本部区分名" character varying(255),
+    "郵便番号" character varying(255),
+    "住所１" character varying(255),
+    "住所２" character varying(255),
+    "電話番号" character varying(255),
+    "ＦＡＸ番号" character varying(255),
+    "振込先銀行コード１" character varying(255),
+    "振込先銀行名１" character varying(255),
+    "振込先支店コード１" character varying(255),
+    "振込先支店名１" character varying(255),
+    "口座種別１" double precision,
+    "口座種別名１" character varying(255),
+    "口座番号１" character varying(255),
+    "振込先銀行コード２" character varying(255),
+    "振込先銀行名２" character varying(255),
+    "振込先支店コード２" character varying(255),
+    "振込先支店名２" character varying(255),
+    "口座種別２" double precision,
+    "口座種別名２" character varying(255),
+    "口座番号２" character varying(255),
+    "振込先銀行コード３" character varying(255),
+    "振込先銀行名３" character varying(255),
+    "振込先支店コード３" character varying(255),
+    "振込先支店名３" character varying(255),
+    "口座種別３" double precision,
+    "口座種別名３" character varying(255),
+    "口座番号３" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_本社扱い振分マスタ" (
+    "取引元ID" integer,
+    "取引元" character varying(255),
+    "届け先コード" integer,
+    "届け先" character varying(255),
+    "運賃請求ID" integer,
+    "運賃振分区分" integer,
+    "運賃振分区分名" character varying(255),
+    "特定条件" boolean,
+    "指定冷蔵庫" boolean,
+    "備考" character varying(255),
+    "取扱区分" boolean,
+    "取扱名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_産地マスタ" (
+    "産地コード" integer,
+    "通称" character varying(50),
+    "国籍" character varying(50),
+    "都道府県" character varying(255),
+    "市町村" character varying(255),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_用紙タイプ" (
+    "ID" integer,
+    "用紙タイプ" character varying(50),
+    "幅" integer,
+    "高さ" integer,
+    "Key" integer
+);
+
+CREATE TABLE master_fe."TM_相手先商品マスタ" (
+    "受注元コード" integer,
+    "受注元" character varying(255),
+    "得意先短縮コード" integer,
+    "得意先名" character varying(50),
+    "相手先商品コード" character varying(255),
+    "相手先商品名" character varying(50),
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "帳合先コード1" character varying(255),
+    "帳合先1" character varying(255),
+    "相手先商品コード1" character varying(255),
+    "相手先商品名1" character varying(50),
+    "帳合先コード2" character varying(255),
+    "帳合先2" character varying(255),
+    "相手先商品コード2" character varying(255),
+    "相手先商品名2" character varying(50),
+    "本社商品コード" character varying(255),
+    chk boolean,
+    "備考" character varying(255),
+    "製造場所ID" integer,
+    "指定倉庫ID" integer,
+    "使用不可" boolean
+);
+
+CREATE TABLE master_fe."TM_相手先届け先マスタ" (
+    "ID" integer,
+    "相手方届け先コード" character varying(50),
+    "自社コード" integer,
+    "届け先" character varying(50),
+    "相手先コード" integer,
+    "相手先名" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_製造場所" (
+    "製造場所ID" integer,
+    "製造場所" character varying(255),
+    "短縮名" character varying(255),
+    "倉庫ID" integer
+);
+
+CREATE TABLE master_fe."TM_製造工場マスタ" (
+    "短縮コード" integer,
+    "短縮名" character varying(50),
+    "製造工場No" character varying(255),
+    "製造工場運賃区分" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_訂正科目マスタ" (
+    "訂正科目ID" integer,
+    "訂正科目名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_読込コードマスタ" (
+    "ID" integer,
+    "取引先コード" integer,
+    "取引先" character varying(50),
+    "相手商品コード" integer,
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "備考" character varying(50),
+    "枚数管理chk" boolean,
+    "セットアップ商品" boolean
+);
+
+CREATE TABLE master_fe."TM_買取単価マスタ" (
+    "ID" integer,
+    "計算区分" integer,
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "単価" double precision,
+    "開始日" timestamp without time zone,
+    "終了日" timestamp without time zone,
+    "買取先コード" integer,
+    "買取先" character varying(50),
+    "備考" character varying(50),
+    "年度" character varying(255),
+    "新会社コード" integer,
+    "特定産地コード" integer,
+    "産地名" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_車両区分" (
+    "車両区分ID" integer,
+    "車両区分" character varying(50),
+    "積載量" integer
+);
+
+CREATE TABLE master_fe."TM_輸送区分" (
+    "輸送区分ID" integer,
+    "輸送区分" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_輸送扱いマスタ" (
+    "輸送扱い区分" integer,
+    "輸送扱い区分名" character varying(255),
+    "備考" character varying(255)
+);
+
+CREATE TABLE master_fe."TM_通常運賃マスタ" (
+    "運賃ID" integer,
+    "運賃区分" integer,
+    "届け先コード" integer,
+    "届け先" character varying(50),
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "最低運賃" double precision,
+    "商品区分" integer,
+    "運送会社ID" integer,
+    "運送会社名" character varying(50),
+    "計算ID" smallint,
+    "計算方法" character varying(50),
+    "車両ID" integer,
+    "車両" character varying(50),
+    "配達ID" integer,
+    "配達" character varying(50),
+    "冷凍ID" integer,
+    "冷凍" character varying(50),
+    "北海道" double precision,
+    "東北" double precision,
+    "関東" double precision,
+    "東海中部" double precision,
+    "北陸" double precision,
+    "近畿" double precision,
+    "中国" double precision,
+    "四国" double precision,
+    "九州" double precision,
+    "その他" double precision,
+    "Min" double precision,
+    "Max" double precision
+);
+
+CREATE TABLE master_fe."TM_配達区分" (
+    "ID" integer,
+    "配達区分ID" integer,
+    "配達区分" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_集荷先別パレット設定" (
+    "ID" integer,
+    "集荷先ID" integer,
+    "集荷先" character varying(50),
+    "商品コード" integer,
+    "商品名" character varying(50),
+    "パレット単位" integer,
+    "特定パレット単位" integer,
+    "段数" integer,
+    "備考" character varying(50)
+);
+
+CREATE TABLE master_fe."TM_集計用レポートクエリ" (
+    "ID" integer,
+    "作成日" character varying(50),
+    "グループ集計" boolean,
+    "集計開始日" timestamp without time zone,
+    "集計終了日" timestamp without time zone,
+    "表題" character varying(255),
+    "W_0" character varying(50),
+    "W_0_1" character varying(50),
+    "W_1_1" character varying(50),
+    "W_1" character varying(50),
+    "W_2" character varying(50),
+    "W_3" character varying(50),
+    "W_4" character varying(50),
+    "W_5" character varying(50),
+    "W_6" character varying(50),
+    "W_7" character varying(50),
+    "W_8" character varying(50),
+    "W_9" character varying(50),
+    "W_10_1" character varying(50),
+    "W_10_2" character varying(50),
+    "W_10_3" character varying(50),
+    "W_10_4" character varying(50),
+    "W_11" character varying(50),
+    "W_12" character varying(50),
+    "W_like" character varying(50),
+    "V_0" boolean,
+    "V_1" boolean,
+    "V_2" boolean,
+    "V_3" boolean,
+    "V_4" boolean,
+    "V_5" boolean,
+    "V_6" boolean,
+    "V_7" boolean,
+    "V_8" boolean,
+    "V_9" boolean,
+    "V_10" boolean,
+    "V_11" boolean,
+    "V_12" boolean,
+    "ヘッダー" character varying(50),
+    "フッダー" character varying(50)
+);
+
+CREATE TABLE master_fe."歩留まり計算(生産計画)" (
+    "ID" integer,
+    "月" character varying(255),
+    "日" character varying(255),
+    "曜日" character varying(255),
+    "品名" character varying(255),
+    kg double precision,
+    "原料kg" double precision,
+    "歩留" double precision,
+    "工場" double precision
+);
+
+CREATE TABLE master_fe."生産計画繁盛コード切替" (
+    "製造日" timestamp without time zone,
+    "包装予定" timestamp without time zone,
+    "曜日" character varying(255),
+    "コード" character varying(255),
+    "第一工場" character varying(255),
+    "出来高" double precision,
+    "原料" character varying(255),
+    "入庫先" character varying(255),
+    "F9" character varying(255),
+    "コード1" character varying(255),
+    "第二工場" character varying(255),
+    "出来高1" double precision,
+    "原料1" character varying(255),
+    "入庫先1" character varying(255),
+    "備考" character varying(255),
+    "その他" character varying(255),
+    "F17" character varying(255),
+    "コード2" character varying(255),
+    "ふらのｿﾃｰ工場" character varying(255),
+    "出来高2" integer,
+    "F21" character varying(255),
+    "コード3" character varying(255),
+    "えんゆう野菜加工施設" character varying(255),
+    "出来高3" integer,
+    "コード4" character varying(255),
+    "遠軽食品" character varying(255),
+    "出来高4" integer
+);
+
+CREATE TABLE master_fe."繁盛_製品マスタ" (
+    "ID" integer,
+    "F1" character varying(255),
+    "商品コード" character varying(255),
+    "商品コード（編集）" character varying(255),
+    "品目区分" character varying(255),
+    "商品名" character varying(255),
+    "商品名（ｶﾅ）" character varying(255),
+    "規格" double precision,
+    "メーカー名" double precision,
+    "産地" character varying(255),
+    "大分類" character varying(255),
+    "中分類" character varying(255),
+    "小分類" integer,
+    "在庫管理" character varying(255),
+    "ロット管理" character varying(255),
+    "賞味期限管理" character varying(255),
+    "賞味期限日数" double precision,
+    "在庫評価方法" character varying(255),
+    "標準単価" double precision,
+    "在庫評価単価" double precision,
+    "基本単位" character varying(255),
+    "在庫単位" character varying(255),
+    "取引単位" character varying(255),
+    "基本単位重量" double precision,
+    "重量単位" character varying(255),
+    "在庫単位係数" double precision,
+    "取引単位係数" double precision,
+    "その他単位1" character varying(255),
+    "その他単位係数1" integer,
+    "その他単位2" character varying(255),
+    "その他単位係数2" integer,
+    "数量管理方法" character varying(255),
+    "入数" integer,
+    "合数" double precision,
+    "課税区分" character varying(255),
+    "F35" double precision,
+    "F36" double precision,
+    "編集日" character varying(255),
+    "F38" character varying(255),
+    "丸北Acs商品コード" integer
+);
+
+CREATE TABLE master_fe."繁盛_製品マスタ(抜粋)" (
+    "ID" integer,
+    "F1" character varying(255),
+    "商品コード" character varying(255),
+    "商品コード（編集）" character varying(255),
+    "品目区分" character varying(255),
+    "商品名" character varying(255),
+    "商品名（ｶﾅ）" character varying(255),
+    "規格" double precision,
+    "メーカー名" double precision,
+    "産地" character varying(255),
+    "大分類" character varying(255),
+    "中分類" character varying(255),
+    "小分類" integer,
+    "在庫管理" character varying(255),
+    "ロット管理" character varying(255),
+    "賞味期限管理" character varying(255),
+    "賞味期限日数" double precision,
+    "在庫評価方法" character varying(255),
+    "標準単価" double precision,
+    "在庫評価単価" double precision,
+    "基本単位" character varying(255),
+    "在庫単位" character varying(255),
+    "取引単位" character varying(255),
+    "基本単位重量" double precision,
+    "重量単位" character varying(255),
+    "在庫単位係数" double precision,
+    "取引単位係数" double precision,
+    "その他単位1" character varying(255),
+    "その他単位係数1" integer,
+    "その他単位2" character varying(255),
+    "その他単位係数2" integer,
+    "数量管理方法" character varying(255),
+    "入数" integer,
+    "合数" double precision,
+    "課税区分" character varying(255),
+    "F35" double precision,
+    "F36" double precision,
+    "編集日" character varying(255),
+    "F38" character varying(255),
+    "丸北Acs商品コード" integer
+);
+
+CREATE TABLE master_fe."繁盛コード" (
+    "ID" integer,
+    "販盛納入先コード" integer,
+    "届け先コード" double precision,
+    "届け先" character varying(255)
 );
 
 CREATE TABLE seizo."TD_入庫" (
@@ -4113,58 +5476,48 @@ CREATE TABLE seizo_fe."TM_製造工場マスタ" (
     "製造工場運賃区分" character varying(255)
 );
 
-CREATE TABLE seizo_fe."TM_運送会社マスタ" (
-    "ID" integer NOT NULL,
-    "小口配送区分" boolean NOT NULL,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean NOT NULL,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean NOT NULL,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean NOT NULL,
-    "eLixxi扱い便CD" character varying(255)
-);
-
-CREATE SEQUENCE seizo_fe."TM_運送会社マスタ_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE seizo_fe."TM_運送会社マスタ_ID_seq" OWNED BY seizo_fe."TM_運送会社マスタ"."ID";
+CREATE VIEW seizo_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE seizo_fe."T_画面一覧" (
     "ID" integer,
@@ -6772,58 +8125,48 @@ CREATE SEQUENCE soko_fe."TM_運賃輸送区分_運賃輸送区分_seq"
 
 ALTER SEQUENCE soko_fe."TM_運賃輸送区分_運賃輸送区分_seq" OWNED BY soko_fe."TM_運賃輸送区分"."運賃輸送区分";
 
-CREATE TABLE soko_fe."TM_運送会社マスタ" (
-    "ID" integer NOT NULL,
-    "小口配送区分" boolean NOT NULL,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean NOT NULL,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean NOT NULL,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean NOT NULL,
-    "eLixxi扱い便CD" character varying(255)
-);
-
-CREATE SEQUENCE soko_fe."TM_運送会社マスタ_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE soko_fe."TM_運送会社マスタ_ID_seq" OWNED BY soko_fe."TM_運送会社マスタ"."ID";
+CREATE VIEW soko_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE soko_fe."TM_運送会社別サイズ別係数" (
     "ID" integer NOT NULL,
@@ -8426,58 +9769,48 @@ CREATE SEQUENCE tehai_fe."TM_運賃輸送区分_運賃輸送区分_seq"
 
 ALTER SEQUENCE tehai_fe."TM_運賃輸送区分_運賃輸送区分_seq" OWNED BY tehai_fe."TM_運賃輸送区分"."運賃輸送区分";
 
-CREATE TABLE tehai_fe."TM_運送会社マスタ" (
-    "ID" integer NOT NULL,
-    "小口配送区分" boolean NOT NULL,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean NOT NULL,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean NOT NULL,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean NOT NULL,
-    "eLixxi扱い便CD" character varying(255)
-);
-
-CREATE SEQUENCE tehai_fe."TM_運送会社マスタ_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE tehai_fe."TM_運送会社マスタ_ID_seq" OWNED BY tehai_fe."TM_運送会社マスタ"."ID";
+CREATE VIEW tehai_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE tehai_fe."TM_配達区分" (
     "ID" integer NOT NULL,
@@ -9333,58 +10666,48 @@ CREATE TABLE web_fe."TM_相手先商品マスタ" (
     "使用不可" boolean NOT NULL
 );
 
-CREATE TABLE web_fe."TM_運送会社マスタ" (
-    "ID" integer NOT NULL,
-    "小口配送区分" boolean NOT NULL,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean NOT NULL,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean NOT NULL,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean NOT NULL,
-    "eLixxi扱い便CD" character varying(255)
-);
-
-CREATE SEQUENCE web_fe."TM_運送会社マスタ_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE web_fe."TM_運送会社マスタ_ID_seq" OWNED BY web_fe."TM_運送会社マスタ"."ID";
+CREATE VIEW web_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE web_fe."T_elixxi一時入庫データ" (
     "拠点名称" character varying(255),
@@ -9935,6 +11258,17 @@ CREATE TABLE ws."TD_在庫変更" (
     "買取単価コード" integer,
     "買取金額" integer,
     "買取chk" boolean
+);
+
+CREATE TABLE ws."TD_在庫日別集計" (
+    "集計日" date NOT NULL,
+    "入庫日" date,
+    "倉庫ID" integer,
+    "商品コード" integer,
+    "ケース" integer DEFAULT 0 NOT NULL,
+    "商品kg" double precision DEFAULT 0 NOT NULL,
+    "更新時間" text,
+    "システム" text DEFAULT 'ws'::text NOT NULL
 );
 
 CREATE TABLE ws."TD_積込順" (
@@ -12625,19 +13959,6 @@ CREATE TABLE ws_fe."TM_大阪月間受注商品マスタ" (
     "本社識別受注ID" character varying(255)
 );
 
-CREATE TABLE ws_fe."TM_専務専用住所録" (
-    "ID" integer,
-    "ｶﾅ分類" character varying(1),
-    "得意先名" character varying(50),
-    "担当者名" character varying(50),
-    "郵便番号" character varying(50),
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "携帯番号" character varying(50),
-    "入力日" character varying(50)
-);
-
 CREATE VIEW ws_fe."TM_得意先マスタ" AS
  SELECT "ID",
     "取引元ID",
@@ -12999,48 +14320,48 @@ CREATE TABLE ws_fe."TM_運賃輸送区分" (
     "運賃輸送区分名" character varying(255)
 );
 
-CREATE TABLE ws_fe."TM_運送会社マスタ" (
-    "ID" integer,
-    "小口配送区分" boolean,
-    "配達区分" integer,
-    "配達区分名" character varying(255),
-    "運送会社ID" integer,
-    "カナ分類" character varying(1),
-    "短縮名" character varying(255),
-    "運送会社名" character varying(255),
-    "グループコード1" integer,
-    "請求先区分" boolean,
-    "住所" character varying(50),
-    "電話番号" character varying(50),
-    "FAX番号" character varying(50),
-    "締日" character varying(50),
-    "支払方法" character varying(50),
-    "取引銀行" character varying(50),
-    "口座番号" character varying(50),
-    "その他支払い" character varying(50),
-    "サイト" character varying(50),
-    "請求先コード" integer,
-    "請求先" character varying(50),
-    "請求書送り先住所" character varying(100),
-    "請求先電話番号" character varying(50),
-    "請求書FAX番号" character varying(255),
-    "振込先コード" integer,
-    "振込先" character varying(50),
-    "振込住所" character varying(100),
-    "振込先電話番号" character varying(50),
-    "振込先FAX番号" character varying(255),
-    "備考" character varying(255),
-    "支払い元" character varying(50),
-    "支払い元住所" character varying(50),
-    "支払い元電話番号" character varying(50),
-    "支払先FAX番号" character varying(255),
-    "運賃扱い区分" integer,
-    "使用不可フラグ" boolean,
-    "最大パレット積載数" integer,
-    "最小パレット積載数" integer,
-    "訂正区分" boolean,
-    "eLixxi扱い便CD" character varying(255)
-);
+CREATE VIEW ws_fe."TM_運送会社マスタ" AS
+ SELECT "ID",
+    "小口配送区分",
+    "配達区分",
+    "配達区分名",
+    "運送会社ID",
+    "カナ分類",
+    "短縮名",
+    "運送会社名",
+    "グループコード1",
+    "請求先区分",
+    "住所",
+    "電話番号",
+    "FAX番号",
+    "締日",
+    "支払方法",
+    "取引銀行",
+    "口座番号",
+    "その他支払い",
+    "サイト",
+    "請求先コード",
+    "請求先",
+    "請求書送り先住所",
+    "請求先電話番号",
+    "請求書FAX番号",
+    "振込先コード",
+    "振込先",
+    "振込住所",
+    "振込先電話番号",
+    "振込先FAX番号",
+    "備考",
+    "支払い元",
+    "支払い元住所",
+    "支払い元電話番号",
+    "支払先FAX番号",
+    "運賃扱い区分",
+    "使用不可フラグ",
+    "最大パレット積載数",
+    "最小パレット積載数",
+    "訂正区分",
+    "eLixxi扱い便CD"
+   FROM kyotsu."TM_運送会社マスタ";
 
 CREATE TABLE ws_fe."TM_運送会社車両パレット積載マスタ" (
     "ID" integer,
@@ -13962,8 +15283,6 @@ ALTER TABLE ONLY seizo_fe."TM_札色設定" ALTER COLUMN "ID" SET DEFAULT nextva
 
 ALTER TABLE ONLY seizo_fe."TM_製造商品頻度マスタ2025" ALTER COLUMN "ID" SET DEFAULT nextval('seizo_fe."TM_製造商品頻度マスタ2025_ID_seq"'::regclass);
 
-ALTER TABLE ONLY seizo_fe."TM_運送会社マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('seizo_fe."TM_運送会社マスタ_ID_seq"'::regclass);
-
 ALTER TABLE ONLY soko_fe."M_Webアドレス操作" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."M_Webアドレス操作_ID_seq"'::regclass);
 
 ALTER TABLE ONLY soko_fe."TD_スケジュール" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TD_スケジュール_ID_seq"'::regclass);
@@ -14036,8 +15355,6 @@ ALTER TABLE ONLY soko_fe."TM_運賃扱いマスタ" ALTER COLUMN "運賃扱い�
 
 ALTER TABLE ONLY soko_fe."TM_運賃輸送区分" ALTER COLUMN "運賃輸送区分" SET DEFAULT nextval('soko_fe."TM_運賃輸送区分_運賃輸送区分_seq"'::regclass);
 
-ALTER TABLE ONLY soko_fe."TM_運送会社マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TM_運送会社マスタ_ID_seq"'::regclass);
-
 ALTER TABLE ONLY soko_fe."TM_運送会社別サイズ別係数" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TM_運送会社別サイズ別係数_ID_seq"'::regclass);
 
 ALTER TABLE ONLY soko_fe."TM_配達区分" ALTER COLUMN "ID" SET DEFAULT nextval('soko_fe."TM_配達区分_ID_seq"'::regclass);
@@ -14092,8 +15409,6 @@ ALTER TABLE ONLY tehai_fe."TM_輸送区分" ALTER COLUMN "輸送区分ID" SET DE
 
 ALTER TABLE ONLY tehai_fe."TM_運賃輸送区分" ALTER COLUMN "運賃輸送区分" SET DEFAULT nextval('tehai_fe."TM_運賃輸送区分_運賃輸送区分_seq"'::regclass);
 
-ALTER TABLE ONLY tehai_fe."TM_運送会社マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('tehai_fe."TM_運送会社マスタ_ID_seq"'::regclass);
-
 ALTER TABLE ONLY tehai_fe."TM_配達区分" ALTER COLUMN "ID" SET DEFAULT nextval('tehai_fe."TM_配達区分_ID_seq"'::regclass);
 
 ALTER TABLE ONLY tehai_fe."T_ニチレイ輸送手配詳細データ" ALTER COLUMN "ID" SET DEFAULT nextval('tehai_fe."T_ニチレイ輸送手配詳細データ_ID_seq"'::regclass);
@@ -14120,8 +15435,6 @@ ALTER TABLE ONLY web_fe."TM_参照アドレス" ALTER COLUMN "ID" SET DEFAULT ne
 
 ALTER TABLE ONLY web_fe."TM_参照アドレスHOUSOU" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_参照アドレスHOUSOU_ID_seq"'::regclass);
 
-ALTER TABLE ONLY web_fe."TM_運送会社マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."TM_運送会社マスタ_ID_seq"'::regclass);
-
 ALTER TABLE ONLY web_fe."T_elixxi一時入庫データ" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."T_elixxi一時入庫データ_ID_seq"'::regclass);
 
 ALTER TABLE ONLY web_fe."T_ランテック詳細" ALTER COLUMN "ID" SET DEFAULT nextval('web_fe."T_ランテック詳細_ID_seq"'::regclass);
@@ -14145,6 +15458,9 @@ ALTER TABLE ONLY app.users
 ALTER TABLE ONLY app."受注検索_受注元ボタン"
     ADD CONSTRAINT "受注検索_受注元ボタン_pkey" PRIMARY KEY ("並び");
 
+ALTER TABLE ONLY app."帳票_差出人"
+    ADD CONSTRAINT "帳票_差出人_pkey" PRIMARY KEY ("区分");
+
 ALTER TABLE ONLY app."発注依頼書_宛先"
     ADD CONSTRAINT "発注依頼書_宛先_pkey" PRIMARY KEY ("商品コード");
 
@@ -14157,6 +15473,8 @@ ALTER TABLE ONLY app."設定"
 CREATE INDEX "TM_商品マスタ_商品コード_idx" ON kyotsu."TM_商品マスタ" USING btree ("商品コード");
 
 CREATE INDEX "TM_得意先マスタ_短縮コード_idx" ON kyotsu."TM_得意先マスタ" USING btree ("短縮コード");
+
+CREATE INDEX "TM_運送会社マスタ_運送会社ID_idx" ON kyotsu."TM_運送会社マスタ" USING btree ("運送会社ID");
 
 CREATE UNIQUE INDEX "TM_ダンボール寸法マスタ_品番コード_idx" ON seizo_fe."TM_ダンボール寸法マスタ" USING btree ("品番コード");
 
@@ -14184,132 +15502,9 @@ CREATE UNIQUE INDEX "エクセル用出荷履歴_ID_idx" ON soko_fe."エクセ�
 
 CREATE UNIQUE INDEX "T_elixxi一時入庫データ_ID_idx" ON web_fe."T_elixxi一時入庫データ" USING btree ("ID");
 
+CREATE INDEX "TD_在庫日別集計_集計日" ON ws."TD_在庫日別集計" USING btree ("集計日", "倉庫ID");
+
 ALTER TABLE ONLY app.sessions
     ADD CONSTRAINT sessions_login_fkey FOREIGN KEY (login) REFERENCES app.users(login) ON DELETE CASCADE;
 
 
--- マスタ管理の画面側ファイル（Accessマスタ管理FE）の一覧表
-CREATE SCHEMA master_fe;
-CREATE TABLE master_fe."TM_web出力判別区分" (
-    "ID" integer NOT NULL,
-    "web出力区分" integer,
-    "出力区分名" character varying(255)
-);
-CREATE SEQUENCE master_fe."TM_web出力判別区分_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE master_fe."TM_web出力判別区分_ID_seq" OWNED BY master_fe."TM_web出力判別区分"."ID";
-CREATE TABLE master_fe."TM_テープマスタ" (
-    "テープID" integer NOT NULL,
-    "テープ上" character varying(50),
-    "テープ下" character varying(50),
-    "備考" character varying(255)
-);
-CREATE SEQUENCE master_fe."TM_テープマスタ_テープID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE master_fe."TM_テープマスタ_テープID_seq" OWNED BY master_fe."TM_テープマスタ"."テープID";
-CREATE TABLE master_fe."TM_ハイ積みマスタ" (
-    "ハイ積みID" integer NOT NULL,
-    "パレットコード" integer,
-    "パレット名" character varying(50),
-    "総数" integer,
-    "区分" character varying(50),
-    "ハイ" integer,
-    "パレット段数" integer,
-    "備考" character varying(50),
-    "ハイ積み備考" character varying(50),
-    "SPID2" integer,
-    "SPID3" integer,
-    "SPID4" integer,
-    "SPID5" integer,
-    "SPID6" integer
-);
-CREATE SEQUENCE master_fe."TM_ハイ積みマスタ_ハイ積みID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE master_fe."TM_ハイ積みマスタ_ハイ積みID_seq" OWNED BY master_fe."TM_ハイ積みマスタ"."ハイ積みID";
-CREATE TABLE master_fe."TM_仕入マスタ" (
-    "ID" integer NOT NULL,
-    "取引先コード" integer,
-    "資材会社名" character varying(50),
-    "会社名" character varying(255),
-    "仕入コード" character varying(50),
-    "品番" character varying(50),
-    "資材コード" character varying(50),
-    "識別条件" character varying(50),
-    "本社コード" character varying(255),
-    "商品名" character varying(255),
-    "単位ID" integer,
-    "単位" character varying(255),
-    "単価" double precision,
-    "商品コード" integer,
-    "原料コード" integer,
-    "分類ID" integer,
-    "入庫分類" integer,
-    "材質" character varying(50),
-    "到着日数" character varying(50),
-    "生産地コード" integer,
-    "生産地" character varying(50)
-);
-CREATE SEQUENCE master_fe."TM_仕入マスタ_ID_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE master_fe."TM_仕入マスタ_ID_seq" OWNED BY master_fe."TM_仕入マスタ"."ID";
-CREATE TABLE master_fe."TM_商品区分" (
-    "区分ID" integer NOT NULL,
-    "区分名" character varying(50),
-    "区分隠語" character varying(255),
-    "検査日数" integer
-);
-CREATE TABLE master_fe."TM_地区コード" (
-    "地区コード" integer,
-    "地区名" character varying(50),
-    "十二コード" integer,
-    "十二地区" character varying(50),
-    "都道府県名" character varying(50),
-    "都道府県コード" integer
-);
-CREATE TABLE master_fe."TM_得意先区分" (
-    "得意先区分コード" integer,
-    "区分名" character varying(50),
-    "備考" character varying(50)
-);
-CREATE TABLE master_fe."TM_産地マスタ" (
-    "産地コード" integer NOT NULL,
-    "通称" character varying(50),
-    "国籍" character varying(50),
-    "都道府県" character varying(255),
-    "市町村" character varying(255),
-    "備考" character varying(255)
-);
-CREATE SEQUENCE master_fe."TM_産地マスタ_産地コード_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE master_fe."TM_産地マスタ_産地コード_seq" OWNED BY master_fe."TM_産地マスタ"."産地コード";
-ALTER TABLE ONLY master_fe."TM_web出力判別区分" ALTER COLUMN "ID" SET DEFAULT nextval('master_fe."TM_web出力判別区分_ID_seq"'::regclass);
-ALTER TABLE ONLY master_fe."TM_テープマスタ" ALTER COLUMN "テープID" SET DEFAULT nextval('master_fe."TM_テープマスタ_テープID_seq"'::regclass);
-ALTER TABLE ONLY master_fe."TM_ハイ積みマスタ" ALTER COLUMN "ハイ積みID" SET DEFAULT nextval('master_fe."TM_ハイ積みマスタ_ハイ積みID_seq"'::regclass);
-ALTER TABLE ONLY master_fe."TM_仕入マスタ" ALTER COLUMN "ID" SET DEFAULT nextval('master_fe."TM_仕入マスタ_ID_seq"'::regclass);
-ALTER TABLE ONLY master_fe."TM_産地マスタ" ALTER COLUMN "産地コード" SET DEFAULT nextval('master_fe."TM_産地マスタ_産地コード_seq"'::regclass);
-CREATE UNIQUE INDEX "TM_仕入マスタ_資材コード_idx" ON master_fe."TM_仕入マスタ" USING btree ("資材コード");

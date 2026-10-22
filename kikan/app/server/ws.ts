@@ -8,6 +8,7 @@ import { cint } from "./hanmori.js";
 const 輸送計画 = t("ws", "TD_輸送計画");
 const 出荷 = t("ws", "TD_出荷");
 const 積込順 = t("ws", "TD_積込順");
+// 運送会社ID が同じ行が 2 つある運送会社（180・213）があるので、使っている（使用不可でない・名前のある）行を選ぶ
 const 運送会社マスタ = t("ws_fe", "TM_運送会社マスタ");
 const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 商品マスタ = t("kyotsu", "TM_商品マスタ");
@@ -336,7 +337,8 @@ export function wsRoutes(app: FastifyInstance) {
 
   // 運送会社の名前（コードを入れたとき）
   app.get<{ Params: { code: string } }>("/api/ws/unso/:code", async (req) => {
-    const [m] = await q(`SELECT "短縮名" FROM ${運送会社マスタ} WHERE "運送会社ID" = $1 LIMIT 1`, [Number(req.params.code)]);
+    const [m] = await q(`SELECT "短縮名" FROM ${運送会社マスタ} WHERE "運送会社ID" = $1
+       ORDER BY COALESCE("使用不可フラグ", false), "運送会社名" IS NULL, "ID" LIMIT 1`, [Number(req.params.code)]);
     return { 短縮名: m?.短縮名 ?? null };
   });
 

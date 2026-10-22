@@ -28,7 +28,7 @@ import WsPallet from "./pages/WsPallet";
 import WsKoshin from "./pages/WsKoshin";
 import WsHibetsu from "./pages/WsHibetsu";
 import WsTeishi from "./pages/WsTeishi";
-import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList } from "./pages/Master";
+import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList, UnsoForm, UnsoList } from "./pages/Master";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -74,6 +74,8 @@ function App() {
       <Route path="/master/shohin/:code" element={<ShohinForm />} />
       <Route path="/master/tokui" element={<TokuiList />} />
       <Route path="/master/tokui/:code" element={<TokuiForm />} />
+      <Route path="/master/unso" element={<UnsoList />} />
+      <Route path="/master/unso/:id" element={<UnsoForm />} />
       <Route path="/ws/zaikohyo" element={<WsZaikoHyo />} />
       <Route path="/ws/hokan" element={<WsHokan />} />
       <Route path="/form/:name" element={<NotYet />} />

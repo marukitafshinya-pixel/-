@@ -1270,3 +1270,4 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .tf-side .ms-tg { padding: 6px; }
 .tf input[readonly], .tf textarea[readonly] { background: #f4f4f4; }
 @media print { .ms-head .ms-btns { display: none; } }
+.ms-grid tr.off td { color: #aaa; }

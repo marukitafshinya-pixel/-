@@ -51,7 +51,7 @@ export function MasterMenu() {
       <div className="ms-title">マスタ選択</div>
       <button onClick={() => nav("/master/shohin")}>商品マスタ登録</button>
       <button onClick={() => nav("/master/tokui")}>得意先マスタ登録</button>
-      <button disabled title="運送会社マスタは、写しの違いを確かめてから作ります">運送会社マスタ登録（準備中）</button>
+      <button onClick={() => nav("/master/unso")}>運送会社マスタ登録</button>
       <button className="close" onClick={() => nav("/")}>閉じる</button>
     </div>
   );
@@ -471,6 +471,167 @@ export function TokuiForm() {
           <切替 {...P} k="使用不可フラグ" 文字="使用(表示)しない" />
         </div>
         {ro && <div className="mf-ro">見るだけです。一覧の［訂正］から開くと直せます。</div>}
+      </div>
+    </div>
+  );
+}
+
+// ---------------- 運送会社マスタ（FM_運送会社マスタ） ----------------
+export function UnsoList() {
+  const nav = useNavigate();
+  const [rows, setRows] = useState<Rec[]>([]);
+  const 読む = () => api.get<Rec[]>("/api/mst/unso").then(setRows, エラー);
+  useEffect(() => {
+    読む();
+  }, []);
+  async function 訂正(id: number) {
+    const pass = await 合言葉を聞く();
+    if (pass) nav(`/master/unso/${id}`, { state: { pass } });
+  }
+  async function 削除(r: Rec) {
+    if (!confirm(`${r.運送会社名 ?? ""} のレコードを削除しますが、よろしいですか？`)) return;
+    const pass = await 合言葉を聞く();
+    if (!pass) return;
+    try {
+      await api.post("/api/mst/unso/delete", { pass, ID: r.ID });
+      読む();
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  function 探す() {
+    const v = prompt("運送会社IDか名前の一部を入れてください。");
+    if (!v) return;
+    const r = rows.find((x) => String(x.運送会社ID) === v.trim()) ?? rows.find((x) => `${x.運送会社名 ?? ""}${x.短縮名 ?? ""}`.includes(v.trim()));
+    if (!r) return alert("見つかりませんでした。");
+    document.getElementById(`un-${r.ID}`)?.scrollIntoView({ block: "center" });
+    document.getElementById(`un-${r.ID}`)?.classList.add("hit");
+  }
+  return (
+    <div className="ms">
+      <div className="ms-head">
+        <div className="ms-name">運送会社マスタ</div>
+        <div className="ms-box"><span>件数</span><b>{rows.length}</b></div>
+        <div className="ms-btns">
+          <button onClick={() => nav("/master/unso/new")}>新規登録</button>
+          <button onClick={探す}>検索</button>
+          <button onClick={() => window.print()}>印刷</button>
+          <button onClick={() => nav("/master")}>閉じる</button>
+        </div>
+      </div>
+      <table className="ms-grid">
+        <thead>
+          <tr><th /><th>運送会社ID</th><th>カナ</th><th>短縮名</th><th>運送会社名</th><th>住所</th><th>TEL</th><th>FAX</th><th>締日</th><th>支払方法</th><th>請求先</th><th>振込先</th><th>運賃扱い</th><th>最大パレット</th><th>使用不可</th><th /></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.ID} id={`un-${r.ID}`} className={r.使用不可フラグ ? "off" : ""}>
+              <td className="c"><button className="link" onClick={() => 訂正(r.ID)}>訂正</button></td>
+              <td className="r code">{r.運送会社ID}</td>
+              <td className="c">{r.カナ分類}</td>
+              <td>{r.短縮名}</td>
+              <td className="name">{r.運送会社名}</td>
+              <td className="small">{r.住所}</td>
+              <td>{r.電話番号}</td>
+              <td>{r.FAX番号}</td>
+              <td>{r.締日}</td>
+              <td className="small">{r.支払方法}</td>
+              <td className="small">{r.請求先}</td>
+              <td className="small">{r.振込先}</td>
+              <td>{r.扱い区分名}</td>
+              <td className="r">{r.最大パレット積載数 || ""}</td>
+              <td className="c">{r.使用不可フラグ ? "使用不可" : ""}</td>
+              <td className="c"><button onClick={() => 削除(r)}>削除</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---------------- 運送会社マスタ登録（FM_運送会社マスタ登録） ----------------
+export function UnsoForm() {
+  const { id } = useParams();
+  const nav = useNavigate();
+  const loc = useLocation();
+  const 新規 = id === "new";
+  const [pass] = useState<string | null>(((loc.state ?? {}) as { pass?: string }).pass ?? null);
+  const [v, setV] = useState<Rec>(新規 ? { 運送会社ID: null, 運賃扱い区分: 0, 配達区分: 0 } : {});
+  const [o, setO] = useState<Rec>({});
+  const ro = !新規 && !pass;
+  const set = (k: string, x: any) => setV((a) => ({ ...a, [k]: x }));
+  useEffect(() => {
+    api.get<Rec>("/api/mst/unso-opts").then(setO, エラー);
+    if (!新規) api.get<Rec>(`/api/mst/unso/${id}`).then(setV, エラー);
+  }, [id]);
+  async function 登録() {
+    if (!confirm("登録します。よろしいですか")) return alert("登録をキャンセルしました。");
+    try {
+      await api.post("/api/mst/unso/save", { pass, ID: 新規 ? undefined : n(id), 値: v });
+      nav("/master/unso");
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  const P = { v, set, ro };
+  const 欄 = (h: string, k: string, opt?: { num?: boolean; w2?: boolean }) => (
+    <div className={opt?.w2 ? "cell w2" : "cell"}><div className="h">{h}</div><入力 {...P} k={k} num={opt?.num} /></div>
+  );
+  const 名前 = (code: unknown) => (o.運送会社 ?? []).find((x: 選択肢) => x.id === n(code))?.name ?? "";
+  return (
+    <div className="tf">
+      <div className="tf-top">
+        <div className="tf-name">運送会社マスタ登録</div>
+        <div className="mf-btns">
+          <button onClick={登録} disabled={ro}>登録</button>
+          <button onClick={() => nav("/master/unso")}>閉じる</button>
+        </div>
+        {ro && <span className="mf-ro">見るだけです。一覧の［訂正］から開くと直せます。</span>}
+      </div>
+      <div className="tf-grid">
+        <div className="cell"><div className="h">運送会社ID</div>{新規 ? <入力 {...P} k="運送会社ID" num cls="code" /> : <div className="code">{v.運送会社ID}</div>}</div>
+        <div className="cell"><div className="h">カナ</div><入力 {...P} k="カナ分類" after={(x) => set("カナ分類", 半角カナ(x))} /></div>
+        {欄("短縮名", "短縮名")}
+        {欄("運送会社名", "運送会社名")}
+        {欄("住所", "住所", { w2: true })}
+        {欄("TEL", "電話番号")}
+        {欄("FAX", "FAX番号")}
+        {欄("締日", "締日")}
+        {欄("支払方法", "支払方法")}
+        {欄("サイト", "サイト")}
+        {欄("その他支払い", "その他支払い")}
+        {欄("取引銀行", "取引銀行")}
+        {欄("口座番号", "口座番号")}
+        <div className="cell"><div className="h">請求先コード</div><入力 {...P} k="請求先コード" num /></div>
+        <div className="cell"><div className="h">請求先</div><div className="gray">{n(v.請求先コード) ? 名前(v.請求先コード) : v.請求先 ?? ""}</div></div>
+        {欄("請求書送り先住所", "請求書送り先住所", { w2: true })}
+        {欄("請求先TEL", "請求先電話番号")}
+        {欄("請求書FAX", "請求書FAX番号")}
+        <div className="cell"><div className="h">振込先コード</div><入力 {...P} k="振込先コード" num /></div>
+        <div className="cell"><div className="h">振込先</div><div className="gray">{n(v.振込先コード) ? 名前(v.振込先コード) : v.振込先 ?? ""}</div></div>
+        {欄("振込住所", "振込住所", { w2: true })}
+        {欄("振込先TEL", "振込先電話番号")}
+        {欄("振込先FAX", "振込先FAX番号")}
+        {欄("支払い元", "支払い元")}
+        {欄("支払い元住所", "支払い元住所")}
+        {欄("支払い元TEL", "支払い元電話番号")}
+        {欄("支払先FAX", "支払先FAX番号")}
+        <div className="cell w2"><div className="h">備考</div><textarea value={v.備考 ?? ""} readOnly={ro} onChange={(e) => set("備考", e.target.value)} /></div>
+      </div>
+      <div className="tf-side">
+        <div className="h">運賃扱い区分</div>
+        <選ぶ {...P} k="運賃扱い区分" opts={o.運賃扱い ?? []} />
+        <div className="h">配達区分</div>
+        <選ぶ {...P} k="配達区分" opts={o.配達区分 ?? []} />
+        <div className="h">最大パレット積載数</div><入力 {...P} k="最大パレット積載数" num />
+        <div className="h">最小パレット積載数</div><入力 {...P} k="最小パレット積載数" num />
+        <div className="h">eLixxi扱い便CD</div><入力 {...P} k="eLixxi扱い便CD" />
+        <div className="tgs">
+          <切替 {...P} k="小口配送区分" 文字="小口配送" />
+          <切替 {...P} k="請求先区分" 文字="請求先" />
+          <切替 {...P} k="使用不可フラグ" 文字="使用(表示)しない" />
+        </div>
       </div>
     </div>
   );
