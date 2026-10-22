@@ -53,6 +53,7 @@ export function MasterMenu() {
       <button onClick={() => nav("/master/tokui")}>得意先マスタ登録</button>
       <button onClick={() => nav("/master/unso")}>運送会社マスタ登録</button>
       <button onClick={() => nav("/master/user")}>ユーザーマスタ登録</button>
+      <button onClick={() => nav("/master/misettei")}>ユーザーマスタ未設定登録</button>
       <button onClick={() => nav("/master/calendar")}>カレンダー設定</button>
       <button className="close" onClick={() => nav("/")}>閉じる</button>
     </div>
@@ -863,6 +864,91 @@ export function CalendarPage() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ---------------- ユーザーマスタ未設定登録（F_ユーザー詳細条件設定_未設定） ----------------
+export function MisetteiList() {
+  const nav = useNavigate();
+  const [pass, setPass] = useState<string | null>(null);
+  const [o, setO] = useState<Rec>({});
+  const [rows, setRows] = useState<Rec[]>([]);
+  const [知らせ, set知らせ] = useState("");
+  const [開く, set開く] = useState<number | null>(null);
+  const 読む = () =>
+    api.get<Rec>("/api/mst/misettei").then((r) => {
+      setRows(r.rows);
+      set知らせ(r.足した ? `出荷から新しい組み合わせを ${r.足した} 件取り込みました。` : "");
+    }, エラー);
+  useEffect(() => {
+    // Access と同じく、開くときに合言葉を聞く
+    合言葉を聞く().then((p) => {
+      if (!p) return nav("/master");
+      setPass(p);
+      api.get<Rec>("/api/mst/user-opts").then(setO, エラー);
+      読む();
+    });
+  }, []);
+  async function インポート() {
+    try {
+      const r = await api.post<Rec>("/api/mst/misettei/import", { pass });
+      alert(r.足した ? `${r.足した} 件取り込みました。` : "新しい組み合わせはありませんでした。");
+      読む();
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  async function 未完(r: Rec, 値: boolean) {
+    try {
+      await api.post("/api/mst/misettei/chk", { pass, ID: r.ID, 値 });
+      setRows((x) => x.map((y) => (y.ID === r.ID ? { ...y, 未完了chk: 値 } : y)));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  const 名前 = (code: unknown) => (o.得意先 ?? []).find((x: 選択肢) => x.id === n(code))?.name ?? "";
+  const 振分名 = (v: unknown) => ({ 1: "北海道工場", 629: "大阪丸北" } as Record<number, string>)[n(v)] ?? (v ?? "");
+  if (!pass) return <div className="ms" />;
+  return (
+    <div className="ms">
+      <div className="ms-head">
+        <div className="ms-name">ユーザーマスタ未設定登録</div>
+        <button onClick={インポート}>未設定インポート</button>
+        <div className="ms-box"><span>件数</span><b>{rows.length}</b></div>
+        <div className="ms-btns"><button onClick={() => nav("/master")}>閉じる</button></div>
+      </div>
+      <div className="hb-note">
+        直近 40 日の出荷（WorkStation・倉庫管理）で、ユーザーマスタにない 集荷場所・商品・届け先 の組み合わせを、開くたびに自動で取り込みます（1 時間ごとにも取り込みます）。
+        ［選択］で中身を入れ、「未完」の印を外すと、ユーザーマスタ登録の一覧に出ます。{知らせ && <b>　{知らせ}</b>}
+      </div>
+      <table className="ms-grid mi-grid">
+        <thead>
+          <tr><th>選択</th><th>未完</th><th>登録日</th><th>受注元</th><th>取引先グループ</th><th>受注先</th><th>コード</th><th>商品名</th><th>分類</th><th>コード</th><th>集荷場所</th><th>コード</th><th>届け先</th><th>指定名義</th><th>支払先(運賃)</th><th>扱い</th><th>取扱区分名</th><th>立替運賃(kg)</th><th>貰い運賃(kg)</th><th>貰い運賃(個建)</th><th>最終出荷日</th></tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && <tr><td colSpan={21} className="c">未設定の組み合わせはありません</td></tr>}
+          {rows.map((r) => (
+            <tr key={r.ID}>
+              <td className="c"><button onClick={() => set開く(r.ID)}>選択</button></td>
+              <td className="c"><input type="checkbox" checked={!!r.未完了chk} onChange={(e) => 未完(r, e.target.checked)} /></td>
+              <td>{日(r.登録日)}</td>
+              <td>{名前(r.受注元ID)}</td>
+              <td>{(o.グループ ?? []).find((g: Rec) => g.id === n(r.取引先グループID))?.name ?? ""}</td>
+              <td>{名前(r.受注先ID)}</td>
+              <td className="r">{r.商品コード}</td><td>{r.商品名}</td><td>{r.分類名}</td>
+              <td className="r">{r.倉庫ID}</td><td>{r.倉庫名}</td>
+              <td className="r">{r.届け先コード}</td><td>{r.届け先}</td>
+              <td>{r.入庫名義 ?? ""}</td>
+              <td>{振分名(r.運賃請求ID)}</td><td>{振分名(r.運賃振分区分)}</td>
+              <td>{r.取扱名}</td>
+              <td className="r">{r.キロ立替運賃 ?? ""}</td><td className="r">{r.もらい運賃 ?? ""}</td><td className="r">{r.もらい運賃個建 ?? ""}</td>
+              <td>{日(r.最終出荷日)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {開く != null && <UserCard id={開く} o={o} 既定={{}} 名前={名前} onClose={(変えた) => { set開く(null); if (変えた) 読む(); }} />}
     </div>
   );
 }

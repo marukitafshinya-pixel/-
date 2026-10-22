@@ -1317,3 +1317,4 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .mc-body { flex: 1; font-size: 12px; }
 .mc-row { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px dotted #ccc; padding: 0 3px; }
 .mc-row.past { color: #2a7a3a; }
+.mi-grid td { font-size: 12px; white-space: nowrap; }

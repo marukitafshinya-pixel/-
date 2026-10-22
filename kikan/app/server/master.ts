@@ -25,6 +25,11 @@ const 運送会社マスタ = t("kyotsu", "TM_運送会社マスタ");
 const 名義条件 = t("kyotsu", "TM_入庫先商品別名義条件");
 const 取引先グループ = t("master_fe", "TMU_取引先グループマスタ");
 const イベント = t("kyotsu", "TM_イベントスケジュール");
+// 未設定の取り込み元（Access の AQ_運賃条件未設定リスト＝丸北の出荷〈インポート場所 1〉、_出庫＝倉庫管理の出荷〈インポート場所 2〉）
+const 取り込み元 = [
+  { 場所: 1, 出荷: t("ws", "TD_出荷") },
+  { 場所: 2, 出荷: t("soko", "TD_出荷") },
+];
 const 予定 = t("master_fe", "TD_予定");
 const 新規生産計画 = t("kyoyu", "TD_新規生産計画");
 const 運賃扱い = t("master", "TM_運賃扱いマスタ");
@@ -142,6 +147,57 @@ function 商品の足りない項目(v: Rec): string {
   if (空(v.原料コード)) m[11] = "原料区分 ";
   if (!n(v.製造場所ID)) m[6] = "製造場所 ";
   return m.filter(Boolean).join("");
+}
+
+/**
+ * ユーザーマスタの未設定の取り込み（Access の C_運賃条件未設定インポート・_倉庫）。
+ * 直近 40 日の出荷のうち、ユーザーマスタに 集荷場所（倉庫）・届け先・商品 の組み合わせがないものを、未完了の行として足す。
+ * Access と同じく、商品 287・198・200・697 は取り込まない。
+ * Access は 集荷場所・商品・届け先・名義・最終出荷日 だけを入れていた（運賃の項目が空のまま）ので、
+ * Web 版では いちばん新しい出荷の 運賃請求先・扱い（運賃振分区分）も入れておく（2026/10/22 利用者の依頼：未設定登録を使えるものに）。
+ */
+export async function 未設定を取り込む(c: PoolClient): Promise<number> {
+  await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_入庫先商品別名義条件'))`);
+  const 今日 = 日本の今().日付;
+  let 件数 = 0;
+  for (const 元 of 取り込み元) {
+    if (!(await c.query(`SELECT to_regclass($1) AS r`, [元.出荷])).rows[0].r) continue;
+    const rows = (
+      await c.query(
+        `SELECT s."倉庫ID", s."商品コード", s."届け先コード", s."入庫後名義ID", MAX(s."出荷日") AS "最終出荷日",
+                (ARRAY_AGG(s."運賃請求ID" ORDER BY s."出荷日" DESC, s."出庫ID" DESC))[1] AS "運賃請求ID",
+                (ARRAY_AGG(s."運賃振分区分" ORDER BY s."出荷日" DESC, s."出庫ID" DESC))[1] AS "運賃振分区分"
+         FROM ${元.出荷} s
+         WHERE s."出荷日" >= $1::date - 40 AND s."商品コード" NOT IN (287, 198, 200, 697)
+         GROUP BY s."倉庫ID", s."商品コード", s."届け先コード", s."入庫後名義ID"`,
+        [今日],
+      )
+    ).rows;
+    for (const r of rows) {
+      const ある = await c.query(
+        `SELECT 1 FROM ${名義条件} WHERE "倉庫ID" IS NOT DISTINCT FROM $1 AND "届け先コード" IS NOT DISTINCT FROM $2 AND "商品コード" IS NOT DISTINCT FROM $3 LIMIT 1`,
+        [r.倉庫ID, r.届け先コード, r.商品コード],
+      );
+      if (ある.rowCount) continue;
+      const 短縮名 = async (code: unknown) =>
+        (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(code)])).rows[0]?.短縮名 ?? null;
+      const 商品 = (await c.query(`SELECT "商品名", "分類ID" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(r.商品コード)])).rows[0];
+      const id = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS n FROM ${名義条件}`)).rows[0].n);
+      const v: Rec = {
+        ID: id, 倉庫ID: r.倉庫ID, 倉庫名: await 短縮名(r.倉庫ID), 商品コード: r.商品コード, 商品名: 商品?.商品名 ?? null, 商品分類ID: 商品?.分類ID ?? null,
+        届け先コード: r.届け先コード, 届け先: await 短縮名(r.届け先コード), 入庫名義ID: r.入庫後名義ID, 入庫名義名: await 短縮名(r.入庫後名義ID),
+        運賃請求ID: r.運賃請求ID, 運賃請求先: 請求先の名前[n(r.運賃請求ID)] ?? null, 運賃振分区分: r.運賃振分区分,
+        登録日: 今日, 最終出荷日: r.最終出荷日, インポート場所ID: 元.場所, 未完了chk: true,
+        // Access の表の既定値
+        ユーザー区分: 0, 重複: false, 特定条件: false, 指定冷蔵庫: false, もい運賃単位: 0, 新ダンボール初回案内: false, 取扱区分: false, 横持区分: false,
+        売上請求先ID: 0, 届け先件数: 0, 訂正区分: false,
+      };
+      const ks = Object.keys(v);
+      await c.query(`INSERT INTO ${名義条件} (${ks.map((k) => `"${k}"`).join(", ")}) VALUES (${ks.map((_, i) => `$${i + 1}`).join(", ")})`, ks.map((k) => v[k]));
+      件数++;
+    }
+  }
+  return 件数;
 }
 
 export function masterRoutes(app: FastifyInstance) {
@@ -481,13 +537,14 @@ export function masterRoutes(app: FastifyInstance) {
 
   // ---------------- カレンダー設定（F_マルチカレンダー。見るだけ） ----------------
   // 予定全体＝TD_予定（完了していないもの）、休日設定＝イベントスケジュール（分類項目・件名）、製造＝新規生産計画（丸北北海道・kg の多い順）、資材＝なし
-  // Access と同じく、月の 1 日の週の日曜日から 35 日（5 週）を出す
+  // 月の 1 日の週の日曜日から 5 週。月末が 6 週目にかかる月は 6 週（Access は 5 週だけで月末が切れていた。2026/10/22 利用者の依頼で 6 週にする）
   app.get<{ Querystring: { year: string; month: string; mode?: string } }>("/api/mst/calendar", async (req) => {
     const y = n(req.query.year);
     const m = n(req.query.month);
-    const 日 = (await カレンダーの日(y, m)).slice(0, 35);
+    const 全部 = await カレンダーの日(y, m);
+    const 日 = 全部[35]?.inMonth ? 全部 : 全部.slice(0, 35);
     const from = 日[0].date;
-    const to = 日[34].date;
+    const to = 日[日.length - 1].date;
     const mode = n(req.query.mode);
     let 行: Rec[] = [];
     if (mode === 0)
@@ -501,4 +558,39 @@ export function masterRoutes(app: FastifyInstance) {
       );
     return 日.map((x) => ({ ...x, 中身: 行.filter((r) => r.d === x.date).map((r) => ({ a: r.a ?? "", b: r.b ?? "" })) }));
   });
+
+  // ---------------- ユーザーマスタ未設定登録（F_ユーザー詳細条件設定_未設定） ----------------
+  // 開くたびに未設定を取り込む（自動で取得。2026/10/22 利用者の依頼）。［未設定インポート］でも取り込める
+  app.get("/api/mst/misettei", async () => {
+    const 足した = await 一連で((c) => 未設定を取り込む(c));
+    const rows = await q(
+      `SELECT u."ID", u."未完了chk", u."登録日"::date::text AS "登録日", u."最終出荷日"::date::text AS "最終出荷日", u."受注元ID", u."取引先グループID",
+              u."受注先ID", u."商品コード", u."商品名", u."商品分類ID", b."分類名", u."倉庫ID", u."倉庫名", u."届け先コード", u."届け先",
+              u."入庫名義ID", m."短縮名" AS "入庫名義", u."運賃請求ID", u."運賃振分区分", u."取扱名", u."キロ立替運賃", u."もらい運賃", u."もらい運賃個建",
+              u."インポート場所ID"
+       FROM ${名義条件} u
+       LEFT JOIN ${商品分類} b ON b."分類ID" = u."商品分類ID"
+       LEFT JOIN LATERAL (SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = u."入庫名義ID" LIMIT 1) m ON true
+       WHERE u."未完了chk" = true ORDER BY u."登録日" DESC, u."ID" DESC`,
+    );
+    return { 足した, rows };
+  });
+  app.post<{ Body: { pass: string } }>("/api/mst/misettei/import", async (req) => {
+    合言葉を確かめる(req.body?.pass);
+    return { 足した: await 一連で((c) => 未設定を取り込む(c)) };
+  });
+  // 未完の印（外すと、ユーザーマスタ登録の一覧に出る）
+  app.post<{ Body: { pass: string; ID: number; 値: boolean } }>("/api/mst/misettei/chk", async (req) => {
+    合言葉を確かめる(req.body?.pass);
+    await pool.query(`UPDATE ${名義条件} SET "未完了chk" = $2, "更新日" = $3::date WHERE "ID" = $1`, [n(req.body.ID), !!req.body.値, 日本の今().日付]);
+    return { ok: true };
+  });
+
+  // サーバーで動いているときは、1 時間ごとにも未設定を取り込む（見本版では動かさない）
+  if (typeof (globalThis as any).window === "undefined") {
+    const 取り込む = () => 一連で((c) => 未設定を取り込む(c)).catch((e) => app.log.error(e, "ユーザーマスタの未設定の取り込みに失敗"));
+    const timer = setInterval(取り込む, 60 * 60 * 1000);
+    (timer as any).unref?.();
+    app.addHook("onClose", async () => clearInterval(timer));
+  }
 }
