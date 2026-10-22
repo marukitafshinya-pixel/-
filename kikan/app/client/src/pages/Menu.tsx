@@ -15,6 +15,8 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   { label: "発注依頼", to: "/form/F_受注元選択" },
   { label: "特定商品表示", to: "/form/FM_特定商品表示" },
   { label: "受注グループマスタ", to: "/form/FM_受注先マスタ登録" },
+  { label: "相手先届け先マスタ", to: "/juchu/aite-todoke" },
+  { label: "相手先商品マスタ", to: "/juchu/aite" },
   ] },
   // 丸北WorkStation（Access の WorkStation のメインメニュー）。作ったものから足していく
   { title: "丸北WorkStation", items: [{ label: "出荷明細票", to: "/ws" }, { label: "在庫表", to: "/ws/zaikohyo" }, { label: "保管庫詳細", to: "/ws/hokan" }, { label: "出荷停止在庫", to: "/ws/teishi" }, { label: "検査結果登録", to: "/ws/kensa" }, { label: "検査待ち在庫", to: "/ws/kensamachi" }, { label: "サンプル登録", to: "/ws/sample" }, { label: "在庫確認（パレット）", to: "/ws/zpallet" }, { label: "パレット配置図", to: "/ws/haichi" }, { label: "相手先商品", to: "/ws/aite" }, { label: "相手先届け先", to: "/ws/aite-todoke" }, { label: "集荷先パレット設定", to: "/ws/shuka-pallet" }, { label: "商品使用予定数入力", to: "/ws/stock" }, { label: "大阪受注登録", to: "/ws/osaka" }, { label: "在庫抽出帳票", to: "/ws/zaikochu" }, { label: "名義運賃振分設定", to: "/master/user" }, { label: "在庫更新", to: "/ws/koshin" }, { label: "日別の在庫", to: "/ws/hibetsu" }, { label: "パレット輸送割付", to: "/ws/pallet" }] },

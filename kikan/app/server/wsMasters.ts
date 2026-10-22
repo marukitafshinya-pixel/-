@@ -22,6 +22,10 @@ type 設定 = {
   絞る列: string;
   並び: string;
   合言葉: boolean;
+  /** 合言葉の置き場所（はじめは削除の合言葉。受注のマスタは受注のマスタの合言葉） */
+  合言葉の設定?: string;
+  /** 一覧に足す読むだけの列（SQL。表は t） */
+  足す列?: string;
 };
 const 表 = {
   aite: {
@@ -41,6 +45,20 @@ const 表 = {
     表: t("ws", "TM_商品在庫ストックマスタ"), 鍵: null, 合言葉: false, 絞る列: "区分", 並び: `"区分", "商品コード"`,
     列: ["区分", "商品コード", "商品名", "ストック数", "備考"], 数の列: ["区分", "商品コード"],
   },
+  // 受注管理の相手先商品マスタ（受注登録の FM_相手先商品マスタ。開くときに受注のマスタの合言葉）。取引元（受注元）で絞る
+  "j-aite": {
+    表: t("kyotsu", "TM_相手先商品マスタ"), 鍵: null, 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 絞る列: "受注元コード",
+    並び: `"得意先短縮コード", "商品コード"`,
+    列: ["受注元コード", "得意先短縮コード", "得意先名", "相手先商品コード", "本社商品コード", "商品コード", "商品名", "製造場所ID", "帳合先コード1", "相手先商品名", "指定倉庫ID", "備考"],
+    数の列: ["受注元コード", "得意先短縮コード", "商品コード", "製造場所ID", "指定倉庫ID"],
+    足す列: `(SELECT m."短縮名" FROM ${t("kyotsu", "TM_得意先マスタ")} m WHERE m."短縮コード" = t."製造場所ID" LIMIT 1) AS "仕入先名",
+             (SELECT m."短縮名" FROM ${t("kyotsu", "TM_得意先マスタ")} m WHERE m."短縮コード" = t."指定倉庫ID" LIMIT 1) AS "指定倉庫名"`,
+  },
+  // 受注管理の相手先届け先マスタ（受注登録の FM_相手先得意先マスタ）。取引元（相手先コード）で絞る
+  "j-todoke": {
+    表: t("kyotsu", "TM_相手先届け先マスタ"), 鍵: "ID", 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 絞る列: "相手先コード", 並び: `"ID"`,
+    列: ["相手先コード", "相手先名", "自社コード", "届け先", "相手方届け先コード", "備考"], 数の列: ["相手先コード", "自社コード"],
+  },
 } satisfies Record<string, 設定>;
 type 種類 = keyof typeof 表;
 const 表を選ぶ = (k: string): 設定 | null => (k in 表 ? 表[k as 種類] : null);
@@ -52,8 +70,8 @@ async function 商品名(c: { query: typeof pool.query }, code: unknown) {
   return (await c.query(`SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(code)])).rows[0]?.商品名 ?? null;
 }
 
-function 合言葉が合う(v: unknown) {
-  const pass = process.env.JUCHU_DELETE_PASSWORD;
+function 合言葉が合う(v: unknown, 設定 = "JUCHU_DELETE_PASSWORD") {
+  const pass = process.env[設定];
   return !!pass && String(v ?? "") === pass;
 }
 
@@ -65,9 +83,10 @@ export function wsMastersRoutes(app: FastifyInstance) {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
     const code = req.query.code;
-    const 鍵 = s.鍵 ? `"${s.鍵}"` : "ctid::text";
+    const 鍵 = s.鍵 ? `t."${s.鍵}"` : "t.ctid::text";
     const rows = await q(
-      `SELECT ${鍵} AS "_鍵", ${s.列.map((k) => `"${k}"`).join(", ")} FROM ${s.表} ${code ? `WHERE "${s.絞る列}" = $1` : ""} ORDER BY ${s.並び}`,
+      `SELECT ${鍵} AS "_鍵", ${s.列.map((k) => `t."${k}"`).join(", ")}${s.足す列 ? ", " + s.足す列 : ""}
+       FROM ${s.表} t ${code ? `WHERE t."${s.絞る列}" = $1` : ""} ORDER BY ${s.並び.replace(/"([^"]+)"/g, 't."$1"')}`,
       code ? [n(code)] : [],
     );
     let 選択肢: Rec[] = [];
@@ -75,6 +94,11 @@ export function wsMastersRoutes(app: FastifyInstance) {
       // Access の cmb_検索届け先（相手先ごと。届け先の多い順）
       選択肢 = await q(
         `SELECT "相手先コード" AS id, MAX("相手先名") AS name FROM ${s.表} GROUP BY "相手先コード" HAVING "相手先コード" <> 0 ORDER BY COUNT("相手方届け先コード") DESC, "相手先コード"`,
+      );
+    else if (req.params.kind === "j-aite" || req.params.kind === "j-todoke")
+      // Access の cmb_取引元（相手先商品マスタにある受注元）
+      選択肢 = await q(
+        `SELECT "受注元コード" AS id, MAX("受注元") AS name FROM ${表["j-aite"].表} GROUP BY "受注元コード" HAVING "受注元コード" <> 0 ORDER BY "受注元コード"`,
       );
     else if (req.params.kind === "stock")
       選択肢 = await q(`SELECT "区分" AS id, '区分 ' || "区分" AS name FROM ${s.表} WHERE "区分" IS NOT NULL GROUP BY "区分" ORDER BY "区分"`);
@@ -86,23 +110,32 @@ export function wsMastersRoutes(app: FastifyInstance) {
     return { rows, 選択肢 };
   });
 
-  app.post<{ Body: { 合言葉: string } }>("/api/ws/mst/unlock", async (req, reply) => {
-    if (!process.env.JUCHU_DELETE_PASSWORD) return reply.code(400).send({ error: "合言葉がサーバーに設定されていないため、修正できません。" });
-    return { ok: 合言葉が合う(req.body.合言葉) };
+  app.post<{ Body: { 合言葉: string; kind?: string } }>("/api/ws/mst/unlock", async (req, reply) => {
+    const 設定 = 表を選ぶ(req.body.kind ?? "")?.合言葉の設定 ?? "JUCHU_DELETE_PASSWORD";
+    if (!process.env[設定]) return reply.code(400).send({ error: "合言葉がサーバーに設定されていないため、修正できません。" });
+    return { ok: 合言葉が合う(req.body.合言葉, 設定) };
   });
 
   // 1 つの欄を直す。コードを入れると名前も入れる（Access の各欄の AfterUpdate）
   app.post<{ Params: { kind: string }; Body: { 鍵: string; 項目: string; 値: unknown; 合言葉?: string } }>("/api/ws/mst/:kind/save", async (req, reply) => {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
-    if (s.合言葉 && !合言葉が合う(req.body.合言葉)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
+    if (s.合言葉 && !合言葉が合う(req.body.合言葉, s.合言葉の設定)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
     const 項目 = req.body.項目;
     if (!s.列.includes(項目)) return reply.code(400).send({ error: "この欄は直せません" });
     return 一連で(async (c) => {
       const 値 = req.body.値 === "" || req.body.値 == null ? null : s.数の列.includes(項目) ? n(req.body.値) : String(req.body.値);
       const v: Rec = { [項目]: 値 };
       const k = req.params.kind as 種類;
-      if (k === "aite" && 項目 === "得意先短縮コード") v.得意先名 = await 短縮名(c, 値);
+      if ((k === "aite" || k === "j-aite") && 項目 === "得意先短縮コード") v.得意先名 = await 短縮名(c, 値);
+      if (k === "j-aite" && 項目 === "商品コード") {
+        // 商品コード_AfterUpdate：商品名と本社コード
+        v.商品名 = await 商品名(c, 値);
+        v.本社商品コード = (await c.query(`SELECT "本社コード" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(値)])).rows[0]?.本社コード ?? null;
+      }
+      if (k === "j-aite" && 項目 === "受注元コード") v.受注元 = await 短縮名(c, 値);
+      // 受注の相手先届け先マスタ：自社コードを入れると届け先に短縮名（Access の 自社コード_AfterUpdate）
+      if (k === "j-todoke" && 項目 === "自社コード") v.届け先 = await 短縮名(c, 値);
       if ((k === "aite" || k === "pallet" || k === "stock") && 項目 === "商品コード") v.商品名 = await 商品名(c, 値);
       // 自社コードを選ぶと、届け先が空なら得意先の短縮名を入れる（Access は欄の名前の書き違いでここが働いていない。手で入れた名前は残す）
       if (k === "todoke" && 項目 === "自社コード") {
@@ -124,7 +157,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
   app.post<{ Params: { kind: string }; Body: { code?: number; 合言葉?: string } }>("/api/ws/mst/:kind/new", async (req, reply) => {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
-    if (s.合言葉 && !合言葉が合う(req.body.合言葉)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
+    if (s.合言葉 && !合言葉が合う(req.body.合言葉, s.合言葉の設定)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
     return 一連で(async (c) => {
       const k = req.params.kind as 種類;
       const code = n(req.body.code);
@@ -133,6 +166,11 @@ export function wsMastersRoutes(app: FastifyInstance) {
       if (k === "todoke") {
         const 名 = code ? (await c.query(`SELECT "相手先名" FROM ${s.表} WHERE "相手先コード" = $1 AND "相手先名" IS NOT NULL LIMIT 1`, [code])).rows[0]?.相手先名 : null;
         Object.assign(v, { 相手先コード: code || 0, 相手先名: 名 ?? null, 自社コード: 0 });
+      }
+      if (k === "j-aite") Object.assign(v, { 受注元コード: code || 0, 受注元: code ? await 短縮名(c, code) : null, chk: false, 使用不可: false });
+      if (k === "j-todoke") {
+        const 名 = code ? (await c.query(`SELECT "相手先名" FROM ${s.表} WHERE "相手先コード" = $1 AND "相手先名" IS NOT NULL LIMIT 1`, [code])).rows[0]?.相手先名 : null;
+        Object.assign(v, { 相手先コード: code || 0, 相手先名: 名 ?? (code ? await 短縮名(c, code) : null), 自社コード: 0 });
       }
       if (k === "stock") Object.assign(v, { 区分: code || 1, 倉庫ID除外コード: 0, 通知区分: false });
       if (k === "pallet") Object.assign(v, { 集荷先ID: code, 集荷先: await 短縮名(c, code), 商品コード: 0, パレット単位: 0, 特定パレット単位: 0, 段数: 0 });
@@ -150,7 +188,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
   app.post<{ Params: { kind: string }; Body: { 鍵: string; 合言葉?: string } }>("/api/ws/mst/:kind/delete", async (req, reply) => {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
-    if (s.合言葉 && !合言葉が合う(req.body.合言葉)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
+    if (s.合言葉 && !合言葉が合う(req.body.合言葉, s.合言葉の設定)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
     const r = await pool.query(`DELETE FROM ${s.表} WHERE ${s.鍵 ? `"${s.鍵}" = $1` : `ctid = $1::tid`}`, [s.鍵 ? n(req.body.鍵) : req.body.鍵]);
     if (!r.rowCount) return reply.code(409).send({ error: "この行はほかの人が直したか消したようです。［出し直す］を押してください。" });
     return { ok: true };

@@ -7,9 +7,9 @@ type Rec = Record<string, any>;
 type Opt = { id: number; name: string };
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
 
-type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number; 複数行?: boolean };
+type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number; 複数行?: boolean; 名前?: string };
 type 設定 = {
-  kind: "aite" | "todoke" | "pallet" | "stock";
+  kind: "aite" | "todoke" | "pallet" | "stock" | "j-aite" | "j-todoke";
   題: string;
   絞り: string;
   列: 列[];
@@ -46,6 +46,33 @@ const 設定一覧: Record<string, 設定> = {
       { k: "商品コード", 見出し: "コード", 数: true, 探す: "shohin", 幅: 60 },
       { k: "商品名", 見出し: "商品名", 読むだけ: true },
       { k: "ストック数", 見出し: "ストック数（希望在庫表示の上に出る文）", 幅: 360, 複数行: true },
+      { k: "備考", 見出し: "備考", 幅: 160 },
+    ],
+  },
+  "j-aite": {
+    kind: "j-aite", 題: "相手先商品マスタ", 絞り: "取引元", 合言葉: true, 絞りの探し方: "select",
+    列: [
+      { k: "得意先短縮コード", 見出し: "コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "得意先名", 見出し: "販売先(総称)", 読むだけ: true },
+      { k: "相手先商品コード", 見出し: "相手先商品コード", 幅: 120 },
+      { k: "本社商品コード", 見出し: "本社コード", 読むだけ: true, 幅: 70 },
+      { k: "商品コード", 見出し: "商品コード", 数: true, 探す: "shohin", 幅: 60 },
+      { k: "商品名", 見出し: "商品名", 読むだけ: true },
+      { k: "製造場所ID", 見出し: "仕入先", 数: true, 探す: "tokui", 幅: 90, 名前: "仕入先名" },
+      { k: "帳合先コード1", 見出し: "仕入先コード", 幅: 90 },
+      { k: "相手先商品名", 見出し: "相手先商品名", 幅: 180 },
+      { k: "指定倉庫ID", 見出し: "指定倉庫", 数: true, 探す: "tokui", 幅: 90, 名前: "指定倉庫名" },
+      { k: "備考", 見出し: "備考", 幅: 140 },
+    ],
+  },
+  "j-todoke": {
+    kind: "j-todoke", 題: "相手先届け先マスタ", 絞り: "取引元", 合言葉: true, 絞りの探し方: "select",
+    列: [
+      { k: "相手先コード", 見出し: "コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "相手先名", 見出し: "取引元", 幅: 130 },
+      { k: "自社コード", 見出し: "コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "届け先", 見出し: "届け先", 幅: 260 },
+      { k: "相手方届け先コード", 見出し: "相手先コード", 幅: 100 },
       { k: "備考", 見出し: "備考", 幅: 160 },
     ],
   },
@@ -95,7 +122,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
     if (合言葉 !== null) return;
     const p = prompt("パスワードを入力してください");
     if (p === null) return;
-    const r = await api.post<{ ok: boolean }>("/api/ws/mst/unlock", { 合言葉: p }).catch((e) => (エラー(e), null));
+    const r = await api.post<{ ok: boolean }>("/api/ws/mst/unlock", { 合言葉: p, kind: s.kind }).catch((e) => (エラー(e), null));
     if (!r) return;
     if (r.ok) {
       set合言葉(p);
@@ -174,7 +201,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
               <tr key={r._鍵}>
                 {s.列.map((c) =>
                   c.読むだけ ? (
-                    <td key={c.k} className="name">{r[c.k]}</td>
+                    <td key={c.k} className="name" style={c.幅 ? { width: c.幅 } : undefined}>{r[c.k]}</td>
                   ) : (
                     <td key={c.k} style={{ width: c.幅 ?? 100 }}>
                       {c.複数行 ? (
@@ -201,6 +228,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
                         className="ms-cell"
                       />
                       )}
+                      {c.名前 && <div className="small gray">{r[c.名前]}</div>}
                     </td>
                   ),
                 )}

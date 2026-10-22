@@ -84,6 +84,8 @@ function App() {
       <Route path="/ws/aite-todoke" element={<WsMaster kind="todoke" key="todoke" />} />
       <Route path="/ws/shuka-pallet" element={<WsMaster kind="pallet" key="pallet" />} />
       <Route path="/ws/stock" element={<WsMaster kind="stock" key="stock" />} />
+      <Route path="/juchu/aite" element={<WsMaster kind="j-aite" key="j-aite" />} />
+      <Route path="/juchu/aite-todoke" element={<WsMaster kind="j-todoke" key="j-todoke" />} />
       <Route path="/ws/osaka" element={<WsOsaka />} />
       <Route path="/ws/zaikochu" element={<WsZaikoChu />} />
       <Route path="/master" element={<MasterMenu />} />
