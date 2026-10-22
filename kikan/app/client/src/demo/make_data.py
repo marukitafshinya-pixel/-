@@ -335,6 +335,11 @@ for kid, todoke, start, end, ym, moto_cs, zan, biko in [
     ins("ws.TMS_本社依頼受注_製造", 個別受注ID=kid, 年月=ym, 統一受注ID=Raw(f"{ym} || '-91'"), 集計開始日=start, 集計終了日=end, 運賃振分区分=1,
         届け先コード=todoke, 届け先=名前[todoke], 商品コード=91, グループ商品コード=91, 商品名=name, 規格=kikaku, 入数=irisu,
         受注元数=moto_cs, 受注残数=zan, 取引元ID=360, 取引帳合ID=todoke, 入庫後名義ID=todoke, 備考=biko)
+# 大阪扱い（大阪 月間受注登録で kg を入れる行。kg ÷ 入数 が受注数）
+for kid, todoke, kg in [(19011, 164, 1000), (19012, 826, 600)]:
+    ins("ws.TMS_本社依頼受注_製造", 個別受注ID=kid, 年月=年月, 統一受注ID=Raw(f"{年月} || '-91'"), 集計開始日=月初, 集計終了日=月末, 運賃振分区分=629,
+        運賃振分区分名="大阪丸北", 届け先コード=todoke, 届け先=名前[todoke], 商品コード=91, グループ商品コード=91, 商品名=name, 規格=kikaku, 入数=irisu,
+        受注元KG=kg, 受注元数=kg // irisu, 受注残数=kg // irisu, chk=False)
 
 # ---------------- 取り込み元（倉庫管理・転売品管理・原料管理）の出荷（作り物） ----------------
 for sc, base in [("soko", 8001), ("tenbai", 8101)]:
