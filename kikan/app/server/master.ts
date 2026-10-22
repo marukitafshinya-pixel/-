@@ -21,6 +21,8 @@ const 得意先区分 = t("master_fe", "TM_得意先区分");
 const web出力 = t("master_fe", "TM_web出力判別区分");
 const 地区コード = t("master_fe", "TM_地区コード");
 const 運送会社マスタ = t("kyotsu", "TM_運送会社マスタ");
+const 名義条件 = t("kyotsu", "TM_入庫先商品別名義条件");
+const 取引先グループ = t("master_fe", "TMU_取引先グループマスタ");
 const 運賃扱い = t("master", "TM_運賃扱いマスタ");
 const 配達区分 = t("master_fe", "TM_配達区分");
 const 輸送計画の表 = [t("ws", "TD_輸送計画"), t("soko", "TD_輸送計画")];
@@ -110,6 +112,15 @@ const 運送会社の項目 = [
   "振込先コード", "振込先", "振込住所", "振込先電話番号", "振込先FAX番号", "備考", "支払い元", "支払い元住所", "支払い元電話番号", "支払先FAX番号",
   "運賃扱い区分", "使用不可フラグ", "最大パレット積載数", "最小パレット積載数", "eLixxi扱い便CD",
 ] as const;
+
+/** ユーザーマスタ（入庫先商品別名義条件）で書ける項目 */
+const ユーザーの項目 = [
+  "受注元ID", "取引先グループID", "取引先ID", "受注先ID", "届け先コード", "ユーザー区分", "商品コード", "倉庫ID", "運賃請求ID", "運賃振分区分",
+  "入庫名義ID", "備考", "重複", "特定条件", "指定冷蔵庫", "輸送扱い区分", "もい運賃単位", "もらい運賃", "もらい運賃個建", "キロ立替運賃",
+  "新ダンボール初回案内", "新ダンボール備考", "取扱名", "横持区分", "売上請求先ID", "未完了chk",
+] as const;
+/** 運賃請求先・扱いの選択肢（Access の画面の値リスト：丸北・大阪） */
+const 請求先の名前: Record<number, string> = { 1: "丸北", 629: "大阪" };
 
 /** Access の 商品登録 の［登録］で確かめる項目（製造場所がないときは「入数」の知らせが「製造場所」に置き換わるのも Access と同じ） */
 function 商品の足りない項目(v: Rec): string {
@@ -391,6 +402,75 @@ export function masterRoutes(app: FastifyInstance) {
       }
       await c.query(`DELETE FROM ${運送会社マスタ} WHERE "ID" = $1`, [n(req.body.ID)]);
       return { ok: true };
+    }),
+  );
+
+  // ---------------- ユーザーマスタ登録（F_選択_北海道丸北 → F_選択_取引先グループ → F_ユーザーカード検索・FM_ユーザーカード） ----------------
+  // Access は 受注元 → 取引先グループ の画面を通って一覧を開く。Web 版は一覧の上で選ぶ
+  app.get("/api/mst/user-opts", async () => ({
+    グループ: await q(`SELECT "取引先ID" AS id, "取引先名" AS name, "受注区分" FROM ${取引先グループ} ORDER BY "ID"`),
+    得意先: await q(`SELECT "短縮コード" AS id, "短縮名" AS name FROM ${得意先マスタ} ORDER BY "短縮コード"`),
+    商品: await q(`SELECT "商品コード" AS id, "商品名" AS name, "分類ID" FROM ${商品マスタ} ORDER BY "商品コード"`),
+    輸送扱い: [
+      { id: 1, name: "自社直送" }, { id: 2, name: "本社 直送" }, { id: 3, name: "自社横持ち" }, { id: 4, name: "本社 横持ち" },
+    ],
+  }));
+  app.get<{ Querystring: { group?: string; shohin?: string; todoke?: string } }>("/api/mst/user", async (req) =>
+    q(
+      `SELECT u."ID", u."受注先ID", u."受注先", u."商品コード", u."商品名", u."届け先コード", u."届け先", u."倉庫ID", u."倉庫名",
+              u."入庫名義ID", m."短縮名" AS "入庫名義", u."運賃請求ID", u."運賃振分区分", u."取扱名"
+       FROM ${名義条件} u LEFT JOIN LATERAL (SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = u."入庫名義ID" LIMIT 1) m ON true
+       WHERE u."未完了chk" = false
+         AND ($1::int IS NULL OR u."取引先グループID" = $1) AND ($2::int IS NULL OR u."商品コード" = $2) AND ($3::int IS NULL OR u."届け先コード" = $3)
+       ORDER BY u."取引先グループID", u."受注先ID", u."商品コード", u."倉庫ID", u."運賃請求ID", u."運賃振分区分"`,
+      [n(req.query.group) || null, n(req.query.shohin) || null, n(req.query.todoke) || null],
+    ),
+  );
+  app.get<{ Params: { id: string } }>("/api/mst/user/:id", async (req, reply) => {
+    const r = (await pool.query(`SELECT * FROM ${名義条件} WHERE "ID" = $1`, [n(req.params.id)])).rows[0];
+    if (!r) return reply.code(404).send({ error: "この行はありません" });
+    return r;
+  });
+  // ［登録］（FM_ユーザーカード・FM_ユーザーカード_新規）。合言葉は要らない（Access と同じ）
+  app.post<{ Body: { ID?: number; 値: Rec } }>("/api/mst/user/save", async (req) =>
+    一連で(async (c) => {
+      const v: Rec = {};
+      for (const k of ユーザーの項目) if (k in (req.body.値 ?? {})) v[k] = req.body.値[k] === "" ? null : req.body.値[k];
+      // コードから名前を入れる（Access の 各項目の AfterUpdate と同じ）
+      const 短縮名 = async (code: unknown) =>
+        (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(code)])).rows[0]?.短縮名 ?? null;
+      if ("商品コード" in v) {
+        const s = (await c.query(`SELECT "商品名", "分類ID" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(v.商品コード)])).rows[0];
+        v.商品名 = s?.商品名 ?? null;
+        v.商品分類ID = s?.分類ID ?? null;
+      }
+      if ("届け先コード" in v) v.届け先 = await 短縮名(v.届け先コード);
+      if ("倉庫ID" in v) v.倉庫名 = await 短縮名(v.倉庫ID);
+      if ("取引先ID" in v) v.取引先 = await 短縮名(v.取引先ID);
+      if ("入庫名義ID" in v) v.入庫名義名 = await 短縮名(v.入庫名義ID);
+      if ("取引先グループID" in v)
+        v.取引先グループ名 = (await c.query(`SELECT "取引先名" FROM ${取引先グループ} WHERE "取引先ID" = $1 LIMIT 1`, [n(v.取引先グループID)])).rows[0]?.取引先名 ?? null;
+      if ("運賃請求ID" in v) v.運賃請求先 = 請求先の名前[n(v.運賃請求ID)] ?? null;
+      if ("取扱名" in v) v.取扱区分 = !!v.取扱名;
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_入庫先商品別名義条件'))`);
+      const 今日 = 日本の今().日付;
+      const id = n(req.body.ID);
+      if (!id) {
+        const 新ID = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS n FROM ${名義条件}`)).rows[0].n);
+        const 既定: Rec = {
+          ID: 新ID, ユーザー区分: 0, 重複: false, 特定条件: false, 指定冷蔵庫: false, もい運賃単位: 0, 新ダンボール初回案内: false, 取扱区分: false,
+          横持区分: false, 売上請求先ID: 0, 届け先件数: 0, 未完了chk: false, 登録日: 今日, 更新日: 今日,
+        };
+        const all: Rec = { ...既定, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null)), 訂正区分: true };
+        const ks = Object.keys(all);
+        await c.query(`INSERT INTO ${名義条件} (${ks.map((k) => `"${k}"`).join(", ")}) VALUES (${ks.map((_, i) => `$${i + 1}`).join(", ")})`, ks.map((k) => all[k]));
+        return { ID: 新ID };
+      }
+      const all: Rec = { ...v, 訂正区分: true, 更新日: 今日 };
+      const ks = Object.keys(all);
+      const r = await c.query(`UPDATE ${名義条件} SET ${ks.map((k, i) => `"${k}" = $${i + 2}`).join(", ")} WHERE "ID" = $1`, [id, ...ks.map((k) => all[k])]);
+      if (!r.rowCount) throw new 止める(404, "この行はありません");
+      return { ID: id };
     }),
   );
 }

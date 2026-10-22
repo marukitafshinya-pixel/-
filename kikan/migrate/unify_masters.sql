@@ -13,6 +13,7 @@
 --   - 型が写しで違う項目（smallint と integer）は広い方（integer）にする。
 --   - 運送会社マスタも同じ（本体、なければ倉庫管理の写し。そこにない運送会社ID は WorkStation の写しから足す）。
 --     運送会社ID が同じ行が 2 つあるもの（180・213）は、本体のとおり両方残す。
+--   - ユーザーマスタ（入庫先商品別名義条件）は本体（なければ受注登録の写し）をそのまま使う。
 --
 -- 何度流してもよい。取り込み（accdb_to_pg・csv_to_pg）で各スキーマに表が入り直したときは、
 -- その表を old_master スキーマへ移して、まとめ直す。表が入り直していなければ、まとめた表はそのまま（画面での直しを消さない）。
@@ -25,7 +26,7 @@ CREATE SCHEMA IF NOT EXISTS old_master;
 DO $$
 DECLARE
   schemas text[] := ARRAY['master', 'juchu_fe', 'soko_fe', 'seizo_fe', 'housou_fe', 'tehai_fe', 'web_fe', 'ws_fe', 'keikaku'];
-  tables text[] := ARRAY['TM_商品マスタ', 'TM_得意先マスタ', 'TM_運送会社マスタ'];
+  tables text[] := ARRAY['TM_商品マスタ', 'TM_得意先マスタ', 'TM_運送会社マスタ', 'TM_入庫先商品別名義条件'];
   src text;
   s text;
   tb text;
@@ -47,7 +48,7 @@ BEGIN
 
   -- 2. 新しく移した表があるとき（またはまとめた表がまだないとき）だけ、まとめ直す
   IF moved OR to_regclass('kyotsu."TM_商品マスタ"') IS NULL OR to_regclass('kyotsu."TM_得意先マスタ"') IS NULL
-     OR to_regclass('kyotsu."TM_運送会社マスタ"') IS NULL THEN
+     OR to_regclass('kyotsu."TM_運送会社マスタ"') IS NULL OR to_regclass('kyotsu."TM_入庫先商品別名義条件"') IS NULL THEN
     -- 先にビューを消す（まとめた表を作り直すため）
     FOREACH tb IN ARRAY tables LOOP
       FOREACH s IN ARRAY schemas LOOP
@@ -57,6 +58,7 @@ BEGIN
     DROP TABLE IF EXISTS kyotsu."TM_商品マスタ";
     DROP TABLE IF EXISTS kyotsu."TM_得意先マスタ";
     DROP TABLE IF EXISTS kyotsu."TM_運送会社マスタ";
+    DROP TABLE IF EXISTS kyotsu."TM_入庫先商品別名義条件";
 
     -- 商品マスタ
     CREATE TABLE kyotsu."TM_商品マスタ" (LIKE old_master."juchu_fe.TM_商品マスタ");
@@ -113,6 +115,15 @@ BEGIN
                      cols, cols, s || '.TM_運送会社マスタ');
     END LOOP;
     CREATE INDEX ON kyotsu."TM_運送会社マスタ" ("運送会社ID");
+
+    -- ユーザーマスタ（入庫先商品別名義条件）。本体、なければ受注登録の写しをそのまま使う。
+    -- WorkStation・倉庫管理などの写しには、本体で消した古い行（2021 年までの出荷のもの）が残っているが、足さない
+    -- （Access も 2026/05/22 から各システムが本体を見るようになった。写しは old_master に残る）
+    src := CASE WHEN to_regclass('old_master."master.TM_入庫先商品別名義条件"') IS NOT NULL THEN 'master.TM_入庫先商品別名義条件'
+                ELSE 'juchu_fe.TM_入庫先商品別名義条件' END;
+    EXECUTE format('CREATE TABLE kyotsu."TM_入庫先商品別名義条件" (LIKE old_master.%I)', src);
+    EXECUTE format('INSERT INTO kyotsu."TM_入庫先商品別名義条件" SELECT * FROM old_master.%I', src);
+    CREATE INDEX ON kyotsu."TM_入庫先商品別名義条件" ("届け先コード", "商品コード");
   END IF;
 
   -- 3. 各スキーマの同じ名前のところをビューにする

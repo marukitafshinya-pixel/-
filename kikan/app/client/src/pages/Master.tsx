@@ -52,6 +52,7 @@ export function MasterMenu() {
       <button onClick={() => nav("/master/shohin")}>商品マスタ登録</button>
       <button onClick={() => nav("/master/tokui")}>得意先マスタ登録</button>
       <button onClick={() => nav("/master/unso")}>運送会社マスタ登録</button>
+      <button onClick={() => nav("/master/user")}>ユーザーマスタ登録</button>
       <button className="close" onClick={() => nav("/")}>閉じる</button>
     </div>
   );
@@ -631,6 +632,174 @@ export function UnsoForm() {
           <切替 {...P} k="小口配送区分" 文字="小口配送" />
           <切替 {...P} k="請求先区分" 文字="請求先" />
           <切替 {...P} k="使用不可フラグ" 文字="使用(表示)しない" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------- ユーザーマスタ登録（F_ユーザーカード検索・FM_ユーザーカード） ----------------
+const 受注元 = [{ id: 1, name: "丸北北海道" }, { id: 629, name: "大阪丸北" }];
+const 請求先 = [{ id: 1, name: "丸北" }, { id: 629, name: "大阪" }];
+export function UserList() {
+  const nav = useNavigate();
+  const [o, setO] = useState<Rec>({});
+  const [元, set元] = useState(1);
+  const [グループ, setグループ] = useState<number | "">(11);
+  const [商品, set商品] = useState<number | "">("");
+  const [届け先, set届け先] = useState<number | "">("");
+  const [rows, setRows] = useState<Rec[]>([]);
+  const [開く, set開く] = useState<number | "new" | null>(null);
+  const 読む = () =>
+    api.get<Rec[]>("/api/mst/user", { group: グループ, shohin: 商品, todoke: 届け先 }).then(setRows, エラー);
+  useEffect(() => {
+    api.get<Rec>("/api/mst/user-opts").then(setO, エラー);
+  }, []);
+  useEffect(() => {
+    読む();
+  }, [グループ, 商品, 届け先]);
+  const グループ一覧: Rec[] = (o.グループ ?? []).filter((g: Rec) => n(g.受注区分) === 元);
+  // 商品・届け先の絞り込みの選択肢は、いまの取引先グループに出てくるもの（Access と同じ）
+  const [グループの行, setグループの行] = useState<Rec[]>([]);
+  useEffect(() => {
+    api.get<Rec[]>("/api/mst/user", { group: グループ }).then(setグループの行, エラー);
+  }, [グループ]);
+  const 商品一覧 = useMemo(() => [...new Map(グループの行.map((r) => [r.商品コード, r.商品名])).entries()].filter(([c]) => c != null), [グループの行]);
+  const 届け先一覧 = useMemo(() => [...new Map(グループの行.map((r) => [r.届け先コード, r.届け先])).entries()].filter(([c]) => c != null), [グループの行]);
+  const 名前 = (code: unknown) => (o.得意先 ?? []).find((x: 選択肢) => x.id === n(code))?.name ?? "";
+
+  return (
+    <div className="ms us">
+      <div className="ms-head">
+        <div className="ms-name">ユーザーマスタ登録</div>
+        <label className="ms-box">
+          <span>受注元</span>
+          <select value={元} onChange={(e) => { const v = Number(e.target.value); set元(v); const g = (o.グループ ?? []).find((x: Rec) => n(x.受注区分) === v); setグループ(g ? g.id : ""); set商品(""); set届け先(""); }}>
+            {受注元.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </label>
+        <label className="ms-box">
+          <span>取引先グループ検索</span>
+          <select value={グループ} onChange={(e) => { setグループ(e.target.value === "" ? "" : Number(e.target.value)); set商品(""); set届け先(""); }}>
+            <option value="" />
+            {グループ一覧.map((g) => <option key={g.id} value={g.id}>{g.id}　{g.name}</option>)}
+          </select>
+        </label>
+        <label className="ms-box">
+          <span>商品名検索</span>
+          <select value={商品} onChange={(e) => set商品(e.target.value === "" ? "" : Number(e.target.value))}>
+            <option value="" />
+            {商品一覧.map(([c, nm]) => <option key={c} value={c}>{c}　{nm}</option>)}
+          </select>
+        </label>
+        <label className="ms-box">
+          <span>届け先検索</span>
+          <select value={届け先} onChange={(e) => set届け先(e.target.value === "" ? "" : Number(e.target.value))}>
+            <option value="" />
+            {届け先一覧.map(([c, nm]) => <option key={c} value={c}>{c}　{nm}</option>)}
+          </select>
+        </label>
+        <div className="ms-box"><span>件数</span><b>{rows.length}</b></div>
+        <div className="ms-btns">
+          <button onClick={() => set開く("new")}>新規登録</button>
+          <button onClick={() => nav("/master")}>閉じる</button>
+        </div>
+      </div>
+      <table className="ms-grid">
+        <thead>
+          <tr><th>選択</th><th>受注先</th><th>コード</th><th>商品名</th><th>コード</th><th>届け先</th><th>コード</th><th>集荷場所</th><th>指定名義</th><th>運賃請求先</th><th>扱い</th><th>取扱区分名</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.ID}>
+              <td className="c"><button onClick={() => set開く(r.ID)}>選択</button></td>
+              <td>{r.受注先 ?? ""}</td>
+              <td className="r">{r.商品コード}</td><td>{r.商品名}</td>
+              <td className="r">{r.届け先コード}</td><td>{r.届け先}</td>
+              <td className="r">{r.倉庫ID}</td><td>{r.倉庫名}</td>
+              <td>{r.入庫名義 ?? (r.入庫名義ID ? r.入庫名義ID : "")}</td>
+              <td className="c">{請求先.find((x) => x.id === n(r.運賃請求ID))?.name ?? (r.運賃請求ID ?? "")}</td>
+              <td className="c">{請求先.find((x) => x.id === n(r.運賃振分区分))?.name ?? (r.運賃振分区分 ?? "")}</td>
+              <td>{r.取扱名}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {開く != null && (
+        <UserCard
+          id={開く}
+          o={o}
+          既定={{ 受注元ID: 元 === 1 ? 11 : 629, 取引先グループID: グループ === "" ? null : グループ, 運賃請求ID: 元, 運賃振分区分: 元 }}
+          名前={名前}
+          onClose={(変えた) => { set開く(null); if (変えた) 読む(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** ユーザーカード（FM_ユーザーカード・FM_ユーザーカード_新規）：1 行を直す・足す */
+function UserCard(props: { id: number | "new"; o: Rec; 既定: Rec; 名前: (c: unknown) => string; onClose: (変えた: boolean) => void }) {
+  const 新規 = props.id === "new";
+  const [v, setV] = useState<Rec>(新規 ? { ...props.既定 } : {});
+  const set = (k: string, x: any) => setV((a) => ({ ...a, [k]: x }));
+  useEffect(() => {
+    if (!新規) api.get<Rec>(`/api/mst/user/${props.id}`).then(setV, エラー);
+  }, [props.id]);
+  async function 登録() {
+    if (!confirm("登録します。よろしいですか")) return alert("登録をキャンセルしました。");
+    try {
+      await api.post("/api/mst/user/save", { ID: 新規 ? undefined : props.id, 値: v });
+      props.onClose(true);
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  function 閉じる() {
+    if (!confirm("保存されませんが、よろしいですか？")) return;
+    props.onClose(false);
+  }
+  const P = { v, set, ro: false };
+  const 得意先: 選択肢[] = props.o.得意先 ?? [];
+  const 商品: 選択肢[] = props.o.商品 ?? [];
+  const コード欄 = (h: string, k: string, opts: 選択肢[]) => (
+    <div className="row"><span className="lbl">{h}</span><入力 {...P} k={k} num cls="s" /><選ぶ {...P} k={k} opts={opts} /></div>
+  );
+  return (
+    <div className="modal">
+      <div className="uc" onClick={(e) => e.stopPropagation()}>
+        <div className="uc-head">
+          <b>ユーザーカード{新規 ? "（新規）" : `（ID ${props.id}）`}</b>
+          <div className="mf-btns"><button onClick={登録}>登録</button><button onClick={閉じる}>閉じる</button></div>
+        </div>
+        <div className="mf-sec">
+          {コード欄("受注元", "受注元ID", 得意先)}
+          <div className="row"><span className="lbl">取引先グループ</span><選ぶ {...P} k="取引先グループID" opts={(props.o.グループ ?? []).map((g: Rec) => ({ id: g.id, name: g.name }))} /></div>
+          {コード欄("取引先", "取引先ID", 得意先)}
+          {コード欄("受注先", "受注先ID", 得意先)}
+          {コード欄("商品", "商品コード", 商品)}
+          {コード欄("届け先", "届け先コード", 得意先)}
+          {コード欄("集荷場所", "倉庫ID", 得意先)}
+          {コード欄("指定名義", "入庫名義ID", 得意先)}
+          <div className="row">
+            <span className="lbl">運賃請求先</span><選ぶ {...P} k="運賃請求ID" opts={請求先} />
+            <span className="lbl">扱い</span><選ぶ {...P} k="運賃振分区分" opts={請求先} />
+          </div>
+          <div className="row"><span className="lbl">輸送扱い区分</span><選ぶ {...P} k="輸送扱い区分" opts={props.o.輸送扱い ?? []} /></div>
+          <div className="row"><span className="lbl">取扱区分名</span><入力 {...P} k="取扱名" /></div>
+          <div className="row"><span className="lbl">もらい運賃</span><入力 {...P} k="もらい運賃" num cls="s" /><span className="lbl">個建</span><入力 {...P} k="もらい運賃個建" num cls="s" /><span className="lbl">キロ立替運賃</span><入力 {...P} k="キロ立替運賃" num cls="s" /></div>
+          {コード欄("売上請求先", "売上請求先ID", 得意先)}
+          <div className="row"><span className="lbl">備考</span><textarea value={v.備考 ?? ""} onChange={(e) => set("備考", e.target.value)} /></div>
+          <div className="row"><span className="lbl">新ダンボール備考</span><入力 {...P} k="新ダンボール備考" cls="w" /></div>
+          <div className="row">
+            <切替 {...P} k="特定条件" 文字="特定条件" />
+            <切替 {...P} k="指定冷蔵庫" 文字="指定冷蔵庫" />
+            <切替 {...P} k="横持区分" 文字="横持" />
+            <切替 {...P} k="重複" 文字="重複" />
+            <切替 {...P} k="新ダンボール初回案内" 文字="新ダンボール初回案内" />
+            <切替 {...P} k="未完了chk" 文字="未完了（一覧に出さない）" />
+          </div>
+          {!新規 && <div className="row gray">登録日 {日(v.登録日)}　更新日 {日(v.更新日)}　最終出荷日 {日(v.最終出荷日)}</div>}
         </div>
       </div>
     </div>

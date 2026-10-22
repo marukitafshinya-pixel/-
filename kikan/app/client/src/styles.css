@@ -1271,3 +1271,10 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .tf input[readonly], .tf textarea[readonly] { background: #f4f4f4; }
 @media print { .ms-head .ms-btns { display: none; } }
 .ms-grid tr.off td { color: #aaa; }
+.us .ms-box select { min-width: 160px; }
+.uc { background: #e8e8e8; padding: 12px; width: min(820px, 96vw); max-height: 92vh; overflow: auto; border-radius: 6px; font-size: 13px; }
+.uc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.uc .lbl { background: #c8c8c8; border: 1px solid #999; padding: 2px 8px; min-width: 92px; display: inline-block; text-align: center; }
+.uc .mf-sec input.s { width: 70px; }
+.uc .mf-sec input.w { flex: 1; }
+.uc .gray { color: #666; }
