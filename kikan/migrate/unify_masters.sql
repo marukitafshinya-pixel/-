@@ -144,3 +144,74 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- 相手先商品マスタ・集荷先パレット設定・相手先届け先マスタも 1 つにまとめる（利用者の指示）
+--   - 相手先商品マスタ：受注登録の本体（juchu）のものを使う（利用者の指示：受注登録のデータが正しい）。
+--   - 集荷先別パレット設定：マスタ管理の画面側ファイル（master_fe）のものを使う（ほかの写しの行もすべて入っている）。
+--   - 相手先届け先マスタ：受注登録の画面側ファイル（juchu_fe）のものを使う（利用者の指示：受注登録が正しい）。
+--     ただし受注登録にない相手先（しらい・ニチレイ大谷地）の行は、マスタ管理・手配の写しから足す（消えないように）。
+--     手配の写しにだけある項目（備考・chk）は空の列として足す。
+--   ほかのスキーマの同じ名前のところは、まとめた表を見るビューにする（写しは old_master に残る）。
+DO $$
+DECLARE
+  sets text[][] := ARRAY[
+    ARRAY['TM_相手先商品マスタ', 'juchu', 'juchu,master_fe,ws_fe,soko_fe,web_fe,keikaku'],
+    ARRAY['TM_集荷先別パレット設定', 'master_fe', 'master_fe,ws_fe,housou_fe,keikaku'],
+    ARRAY['TM_相手先届け先マスタ', 'juchu_fe', 'juchu_fe,ws_fe,master_fe,tehai_fe,keikaku']
+  ];
+  i int;
+  tb text;
+  src text;
+  s text;
+  moved boolean;
+BEGIN
+  FOR i IN 1 .. array_length(sets, 1) LOOP
+    tb := sets[i][1];
+    src := sets[i][2];
+    moved := false;
+    -- 1. 各スキーマに入っている表（ビューでないもの）を old_master へ移す
+    FOREACH s IN ARRAY string_to_array(sets[i][3], ',') LOOP
+      IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = s AND table_name = tb AND table_type = 'BASE TABLE') THEN
+        EXECUTE format('DROP TABLE IF EXISTS old_master.%I', s || '.' || tb);
+        EXECUTE format('CREATE TABLE old_master.%I AS TABLE %I.%I', s || '.' || tb, s, tb);
+        EXECUTE format('DROP TABLE %I.%I', s, tb);
+        moved := true;
+      END IF;
+    END LOOP;
+    -- 2. 新しく移した表があるとき（またはまとめた表がまだないとき）だけ、まとめ直す
+    IF (moved OR to_regclass(format('kyotsu.%I', tb)) IS NULL) AND to_regclass(format('old_master.%I', src || '.' || tb)) IS NOT NULL THEN
+      FOREACH s IN ARRAY string_to_array(sets[i][3], ',') LOOP
+        EXECUTE format('DROP VIEW IF EXISTS %I.%I', s, tb);
+      END LOOP;
+      EXECUTE format('DROP TABLE IF EXISTS kyotsu.%I', tb);
+      EXECUTE format('CREATE TABLE kyotsu.%I (LIKE old_master.%I)', tb, src || '.' || tb);
+      EXECUTE format('INSERT INTO kyotsu.%I SELECT * FROM old_master.%I', tb, src || '.' || tb);
+      IF tb = 'TM_相手先届け先マスタ' THEN
+        ALTER TABLE kyotsu."TM_相手先届け先マスタ" ADD COLUMN IF NOT EXISTS "備考" varchar, ADD COLUMN IF NOT EXISTS "chk" boolean;
+        -- 写しごとに入っている相手先がちがう（受注登録＝エスビー・日本食研、WorkStation・マスタ管理＝しらい、手配＝ニチレイ大谷地）。
+        -- 受注登録にない相手先の行は、マスタ管理、手配の順に足す（ID は後ろに振り直す）
+        FOREACH s IN ARRAY ARRAY['master_fe', 'tehai_fe'] LOOP
+          CONTINUE WHEN to_regclass(format('old_master.%I', s || '.' || tb)) IS NULL;
+          EXECUTE format('INSERT INTO kyotsu."TM_相手先届け先マスタ" ("ID", "相手方届け先コード", "自社コード", "届け先", "相手先コード", "相手先名", "区分名"%s)
+                          SELECT (SELECT COALESCE(MAX("ID"), 0) FROM kyotsu."TM_相手先届け先マスタ") + row_number() OVER (ORDER BY o."ID"),
+                                 o."相手方届け先コード", o."自社コード", o."届け先", o."相手先コード", o."相手先名", %s%s
+                          FROM old_master.%I o
+                          WHERE NOT EXISTS (SELECT 1 FROM kyotsu."TM_相手先届け先マスタ" k WHERE k."相手先コード" = o."相手先コード")',
+                         CASE WHEN s = 'tehai_fe' THEN ', "備考", "chk"' ELSE '' END,
+                         CASE WHEN s = 'tehai_fe' THEN 'o."区分名"' ELSE 'NULL' END,
+                         CASE WHEN s = 'tehai_fe' THEN ', o."備考", o."chk"' ELSE '' END,
+                         s || '.' || tb);
+        END LOOP;
+      END IF;
+    END IF;
+    -- 3. 各スキーマの同じ名前のところをビューにする
+    IF to_regclass(format('kyotsu.%I', tb)) IS NOT NULL THEN
+      FOREACH s IN ARRAY string_to_array(sets[i][3], ',') LOOP
+        IF to_regclass(format('%I.%I', s, tb)) IS NULL THEN
+          EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', s);
+          EXECUTE format('CREATE VIEW %I.%I AS SELECT * FROM kyotsu.%I', s, tb, tb);
+        END IF;
+      END LOOP;
+    END IF;
+  END LOOP;
+END $$;

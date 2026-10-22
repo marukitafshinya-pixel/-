@@ -8,8 +8,8 @@ import { cint, csvを表に入れる, 一連で, 数 } from "./hanmori.js";
 // SB受注取り込み（Access の F_エスビー受注インポート）で使う表
 const 受注 = t("juchu", "TD_受注");
 const SB受注 = t("juchu_fe", "T_エスビーweb受注");
-const 相手先商品 = t("juchu", "TM_相手先商品マスタ");
-const 相手先届け先 = t("juchu_fe", "TM_相手先届け先マスタ");
+const 相手先商品 = t("kyotsu", "TM_相手先商品マスタ");
+const 相手先届け先 = t("kyotsu", "TM_相手先届け先マスタ");
 const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 const 商品マスタ = t("kyotsu", "TM_商品マスタ");
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");

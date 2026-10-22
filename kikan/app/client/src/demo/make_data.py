@@ -196,9 +196,9 @@ for sc in ["ws_fe", "juchu_fe"]:
 for tid in [360, 350]:
     ins("juchu_fe.TM_出荷依頼先選択", 取引先ID=tid, 取引先名=名前[tid], 本社受注=False)
 for i, todoke in enumerate([812, 824, 949], 1):
-    ins("juchu_fe.TM_相手先届け先マスタ", ID=i, 相手方届け先コード=f"T{todoke}", 自社コード=todoke, 届け先=名前[todoke], 相手先コード=360, 相手先名="見本食品")
+    ins("kyotsu.TM_相手先届け先マスタ", ID=i, 相手方届け先コード=f"T{todoke}", 自社コード=todoke, 届け先=名前[todoke], 相手先コード=360, 相手先名="見本食品")
 for code in [48, 55, 91, 97, 633]:
-    ins("juchu.TM_相手先商品マスタ", 受注元コード=360, 受注元="見本食品", 相手先商品コード=f"G{code:06d}", 相手先商品名=商品名[code][0], 商品コード=code,
+    ins("kyotsu.TM_相手先商品マスタ", 受注元コード=360, 受注元="見本食品", 相手先商品コード=f"G{code:06d}", 相手先商品名=商品名[code][0], 商品コード=code,
         商品名=商品名[code][0])
 ins("juchu_fe.TM_受注特定項目", ID=1, 商品コード=55, 商品名=商品名[55][0], 届け先コード=812, 届け先=名前[812], 備考="見本：午前中に納品", 入力時間="2026/01/01 9:00:00")
 
@@ -276,12 +276,10 @@ for zid, name, irisu, cs in [(70101, "①見本ソテーオニオン（30%）", 
 
 # ---------------- WorkStation の小さなマスタ（作り物） ----------------
 for code, aite_code, aite_name, shohin in [(812, "A-1001", "オニオンペースト（相手先の名前）", 91), (812, "A-1002", "生姜ペースト（相手先の名前）", 55), (350, "S-77", "ソテーオニオン 4.8", 97)]:
-    ins("ws_fe.TM_相手先商品マスタ", 得意先短縮コード=code, 得意先名=名前[code], 相手先商品コード=aite_code, 相手先商品名=aite_name, 商品コード=shohin,
+    ins("kyotsu.TM_相手先商品マスタ", 得意先短縮コード=code, 得意先名=名前[code], 相手先商品コード=aite_code, 相手先商品名=aite_name, 商品コード=shohin,
         商品名=商品名[shohin][0], chk=False, 使用不可=False)
-for i, (todoke_code, jisha) in enumerate([("00101", 812), ("00102", 824), ("00103", 949)], 1):
-    ins("ws_fe.TM_相手先届け先マスタ", ID=i, 相手方届け先コード=todoke_code, 自社コード=jisha, 届け先=名前[jisha], 相手先コード=360, 相手先名="見本食品")
 for i, (shuka, shohin, tani, dan) in enumerate([(11, 48, 45, 5), (11, 91, 50, 5), (164, 97, 48, 6)], 1):
-    ins("ws_fe.TM_集荷先別パレット設定", ID=i, 集荷先ID=shuka, 集荷先=名前[shuka], 商品コード=shohin, 商品名=商品名[shohin][0], パレット単位=tani, 特定パレット単位=0, 段数=dan)
+    ins("kyotsu.TM_集荷先別パレット設定", ID=i, 集荷先ID=shuka, 集荷先=名前[shuka], 商品コード=shohin, 商品名=商品名[shohin][0], パレット単位=tani, 特定パレット単位=0, 段数=dan)
 
 # パレット配置図の見本（今日の分）
 ins("ws_fe.T_パレット配置図", ID=1, 入庫日=day(0), **{"L1-1": Raw("'生姜ﾍﾟｰｽﾄN（見本）' || chr(13) || chr(10) || to_char(demo_day(-7), 'MM/DD') || ' ① 40個'"), "L1-1在庫ID": "70001"})
