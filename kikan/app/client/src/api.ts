@@ -4,16 +4,56 @@ export class ApiError extends Error {
   }
 }
 
+// ---------------- 処理中の表示（インジケーター） ----------------
+// サーバーへの問い合わせが 0.3 秒より長くかかったら、画面の真ん中に「処理しています」を出す（全部の画面で共通）。
+// 出ている間は画面を押せない（二度押しを防ぐ）。
+let 動いている数 = 0;
+let 出す予約: ReturnType<typeof setTimeout> | null = null;
+function 表示を作る(): HTMLElement {
+  let el = document.getElementById("busy-indicator");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "busy-indicator";
+    el.innerHTML = '<div class="busy-box"><div class="busy-spin"></div><div class="busy-text">処理しています…</div></div>';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function 始める() {
+  動いている数++;
+  if (動いている数 === 1 && typeof document !== "undefined")
+    出す予約 = setTimeout(() => 表示を作る().classList.add("on"), 300);
+}
+function 終わる() {
+  動いている数 = Math.max(0, 動いている数 - 1);
+  if (動いている数 === 0 && typeof document !== "undefined") {
+    if (出す予約) clearTimeout(出す予約);
+    出す予約 = null;
+    document.getElementById("busy-indicator")?.classList.remove("on");
+  }
+}
+/** 時間のかかる処理（Excel の書き出しなど、api を通さないもの）を、処理中の表示付きで行う */
+export async function 処理中<T>(p: () => Promise<T>): Promise<T> {
+  始める();
+  try {
+    return await p();
+  } finally {
+    終わる();
+  }
+}
+
 async function call<T>(method: string, url: string, body?: unknown): Promise<T> {
-  const r = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "same-origin",
+  return 処理中(async () => {
+    const r = await fetch(url, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "same-origin",
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new ApiError(r.status, data.error ?? "エラーが起きました");
+    return data as T;
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new ApiError(r.status, data.error ?? "エラーが起きました");
-  return data as T;
 }
 
 export const api = {
@@ -28,15 +68,17 @@ export const api = {
 
 /** ファイルをそのままサーバーに送る */
 export async function upload<T = any>(url: string, file: File): Promise<T> {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: await file.arrayBuffer(),
-    credentials: "same-origin",
+  return 処理中(async () => {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: await file.arrayBuffer(),
+      credentials: "same-origin",
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new ApiError(r.status, data.error ?? "エラーが起きました");
+    return data as T;
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new ApiError(r.status, data.error ?? "エラーが起きました");
-  return data as T;
 }
 
 /** "2026-10-01 00:00:00" → "10/01（木）" のように、Access の画面と同じ書き方にする */

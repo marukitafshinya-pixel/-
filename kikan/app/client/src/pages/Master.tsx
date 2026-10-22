@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, num } from "../api";
+import { api, ApiError, num, 処理中 } from "../api";
 
 // マスタ管理（Access の「Accessマスタ管理」：F_マスタ一覧・FM_商品マスタ・FM_商品登録・FM_得意先マスタ・FM_得意先登録）
 type Rec = Record<string, any>;
@@ -988,14 +988,17 @@ export function SakujoPage() {
     if (!pass) return;
     set動作中(true);
     try {
-      const r = await fetch("/api/mst/sakujo/excel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pass, years: 年数, kinds: 選ぶ }),
-        credentials: "same-origin",
+      const blob = await 処理中(async () => {
+        const r = await fetch("/api/mst/sakujo/excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pass, years: 年数, kinds: 選ぶ }),
+          credentials: "same-origin",
+        });
+        if (!r.ok) throw new ApiError(r.status, (await r.json().catch(() => ({}))).error ?? "書き出せませんでした");
+        return r.blob();
       });
-      if (!r.ok) throw new ApiError(r.status, (await r.json().catch(() => ({}))).error ?? "書き出せませんでした");
-      const url = URL.createObjectURL(await r.blob());
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `消したデータ_${d?.消す日 ?? ""}より前.xlsx`;

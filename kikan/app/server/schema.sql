@@ -109,3 +109,26 @@ CREATE TABLE IF NOT EXISTS ws."TD_在庫日別集計" (
 CREATE INDEX IF NOT EXISTS "TD_在庫日別集計_集計日" ON ws."TD_在庫日別集計" ("集計日", "倉庫ID");
 -- どのシステムの在庫か（ws＝WorkStation の在庫、soko＝倉庫管理の在庫：外の冷蔵庫。パレット積載許容数で埋まり具合を見るため 2026/10/22）
 ALTER TABLE ws."TD_在庫日別集計" ADD COLUMN IF NOT EXISTS "システム" TEXT NOT NULL DEFAULT 'ws';
+
+-- 探すための索引（Access から移した表には索引がないので、よく使う項目に付ける。2026/10/22）
+-- 表がまだないとき（取り込み前・見本版の一部）は飛ばす
+DO $$
+DECLARE
+  x text[];
+  ix text[] := ARRAY[
+    'ws|TD_出荷|出庫ID', 'ws|TD_出荷|輸送ID', 'ws|TD_出荷|在庫ID', 'ws|TD_出荷|受注ID', 'ws|TD_出荷|入庫ID', 'ws|TD_出荷|出荷日', 'ws|TD_出荷|届け先コード',
+    'soko|TD_出荷|出庫ID', 'soko|TD_出荷|輸送ID', 'soko|TD_出荷|在庫ID', 'soko|TD_出荷|受注ID', 'soko|TD_出荷|入庫ID', 'soko|TD_出荷|出荷日',
+    'ws|TD_在庫|在庫ID', 'ws|TD_在庫|入庫ID', 'ws|TD_在庫|商品コード', 'soko|TD_在庫|在庫ID', 'soko|TD_在庫|入庫ID',
+    'ws|TD_在庫変更|在庫No', 'soko|TD_在庫変更|在庫No',
+    'ws|TD_輸送計画|輸送ID', 'ws|TD_輸送計画|出荷計画日', 'soko|TD_輸送計画|輸送ID', 'soko|TD_輸送計画|出荷計画日',
+    'seizo|TD_入庫|入庫ID', 'seizo|TD_入庫|入庫日', 'juchu|TD_受注|受注ID', 'juchu|TD_受注|受注日', 'juchu|TD_受注|届け先コード'
+  ];
+  s text;
+BEGIN
+  FOREACH s IN ARRAY ix LOOP
+    x := string_to_array(s, '|');
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = x[1] AND table_name = x[2] AND column_name = x[3]) THEN
+      EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I.%I (%I)', x[2] || '_' || x[3] || '_idx', x[1], x[2], x[3]);
+    END IF;
+  END LOOP;
+END $$;

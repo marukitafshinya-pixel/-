@@ -1,3 +1,4 @@
+import { 処理中 } from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Combo, Field } from "../formParts";
@@ -6,15 +7,17 @@ type Row = Record<string, any>;
 
 /** 合言葉を付けて呼ぶ */
 async function call<T = any>(pass: string, method: string, url: string, body?: unknown): Promise<T> {
-  const r = await fetch(url, {
-    method,
-    headers: { "x-kikan-pass": encodeURIComponent(pass), ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "same-origin",
+  return 処理中(async () => {
+    const r = await fetch(url, {
+      method,
+      headers: { "x-kikan-pass": encodeURIComponent(pass), ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "same-origin",
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error ?? "エラーが起きました");
+    return data as T;
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error ?? "エラーが起きました");
-  return data as T;
 }
 
 // コードと名前の組（コードを入れると名前が入る。Access の .Column(1)）
