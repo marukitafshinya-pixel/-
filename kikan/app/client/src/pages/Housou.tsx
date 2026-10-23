@@ -68,6 +68,7 @@ export function HousouJunbi() {
         </div>
         <div className="sz-top-btns">
           <button className="blue" onClick={自動割付}>自動割付</button>
+          <button onClick={() => nav("/housou/robot")}>ロボットマスタ</button>
           <button onClick={async () => { await api.post("/api/housou/junbi/recalc", { date: 日 }).catch(エラー); 読む(); }}>パレット枚数の再計算</button>
           <button disabled title="印刷の形をいただいてから作ります">印刷</button>
           <button disabled title="印刷の形をいただいてから作ります">包装札印刷</button>

@@ -95,6 +95,7 @@ function App() {
       <Route path="/keikaku" element={<KeikakuMenu />} />
       <Route path="/seizo" element={<SeizoMenu />} />
       <Route path="/housou/junbi" element={<HousouJunbi />} />
+      <Route path="/housou/robot" element={<WsMaster kind="robot" key="robot" />} />
       <Route path="/seizo/hoso" element={<SeizoHoso />} />
       <Route path="/seizo/dekidaka" element={<SeizoDekidaka />} />
       <Route path="/seizo/yotei" element={<SeizoYotei />} />

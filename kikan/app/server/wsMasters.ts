@@ -26,8 +26,16 @@ type 設定 = {
   合言葉の設定?: string;
   /** 一覧に足す読むだけの列（SQL。表は t） */
   足す列?: string;
+  /** 絞る列が文字のとき */
+  文字で絞る?: boolean;
 };
 const 表 = {
+  // ロボットハイ積みマスタ（包装場管理の FM_ロボットハイ積みマスタ。直すときは［修正］で合言葉）。パレットで絞る
+  robot: {
+    表: t("housou", "TM_ロボット積み付けマスタ"), 鍵: "ID", 合言葉: true, 絞る列: "パレット", 文字で絞る: true, 並び: `"ロボットプログラムNo", "ID"`,
+    列: ["ロボットプログラムNo", "パレット", "品番", "商品コード", "段ボール品番", "一段積載", "最大段数", "段数", "積み付け数", "一段積載数", "箱重量", "スピード", "高さ㎜", "幅㎜", "長さ㎜", "品番記号", "品番No", "備考"],
+    数の列: ["ロボットプログラムNo", "商品コード", "最大段数", "段数", "積み付け数", "一段積載数", "箱重量", "スピード", "高さ㎜", "幅㎜", "長さ㎜"],
+  },
   aite: {
     表: t("kyotsu", "TM_相手先商品マスタ"), 鍵: null, 合言葉: false, 絞る列: "得意先短縮コード", 並び: `"得意先短縮コード", "相手先商品コード", "商品コード"`,
     列: ["得意先短縮コード", "得意先名", "相手先商品コード", "相手先商品名", "商品コード", "商品名"], 数の列: ["得意先短縮コード", "商品コード"],
@@ -87,7 +95,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
     const rows = await q(
       `SELECT ${鍵} AS "_鍵", ${s.列.map((k) => `t."${k}"`).join(", ")}${s.足す列 ? ", " + s.足す列 : ""}
        FROM ${s.表} t ${code ? `WHERE t."${s.絞る列}" = $1` : ""} ORDER BY ${s.並び.replace(/"([^"]+)"/g, 't."$1"')}`,
-      code ? [n(code)] : [],
+      code ? [s.文字で絞る ? String(code) : n(code)] : [],
     );
     let 選択肢: Rec[] = [];
     if (req.params.kind === "todoke")
@@ -102,6 +110,8 @@ export function wsMastersRoutes(app: FastifyInstance) {
       );
     else if (req.params.kind === "stock")
       選択肢 = await q(`SELECT "区分" AS id, '区分 ' || "区分" AS name FROM ${s.表} WHERE "区分" IS NOT NULL GROUP BY "区分" ORDER BY "区分"`);
+    else if (req.params.kind === "robot")
+      選択肢 = await q(`SELECT "パレット" AS id, "パレット" AS name FROM ${s.表} WHERE "パレット" IS NOT NULL GROUP BY "パレット" ORDER BY "パレット"`);
     else if (req.params.kind === "pallet")
       選択肢 = await q(
         `SELECT p."集荷先ID" AS id, COALESCE(MIN(m."短縮名"), MIN(p."集荷先")) AS name FROM ${s.表} p LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = p."集荷先ID"
@@ -154,7 +164,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
   });
 
   // 新しい行（絞っている相手先・集荷先を入れておく。Access の DefaultValue と同じ）
-  app.post<{ Params: { kind: string }; Body: { code?: number; 合言葉?: string } }>("/api/ws/mst/:kind/new", async (req, reply) => {
+  app.post<{ Params: { kind: string }; Body: { code?: number | string; 合言葉?: string } }>("/api/ws/mst/:kind/new", async (req, reply) => {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
     if (s.合言葉 && !合言葉が合う(req.body.合言葉, s.合言葉の設定)) return reply.code(403).send({ error: "修正できません。［修正］を押してパスワードを入れてください。" });
@@ -173,6 +183,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
         Object.assign(v, { 相手先コード: code || 0, 相手先名: 名 ?? (code ? await 短縮名(c, code) : null), 自社コード: 0 });
       }
       if (k === "stock") Object.assign(v, { 区分: code || 1, 倉庫ID除外コード: 0, 通知区分: false });
+      if (k === "robot") Object.assign(v, { パレット: req.body.code ? String(req.body.code) : null, 低圧設定: false });
       if (k === "pallet") Object.assign(v, { 集荷先ID: code, 集荷先: await 短縮名(c, code), 商品コード: 0, パレット単位: 0, 特定パレット単位: 0, 段数: 0 });
       if (s.鍵) {
         await c.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [s.表]);

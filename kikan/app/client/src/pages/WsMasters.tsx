@@ -4,12 +4,12 @@ import { api, ApiError } from "../api";
 import { Field, FindDialog } from "../formParts";
 
 type Rec = Record<string, any>;
-type Opt = { id: number; name: string };
+type Opt = { id: number | string; name: string };
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
 
 type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number; 複数行?: boolean; 名前?: string };
 type 設定 = {
-  kind: "aite" | "todoke" | "pallet" | "stock" | "j-aite" | "j-todoke";
+  kind: "aite" | "todoke" | "pallet" | "stock" | "j-aite" | "j-todoke" | "robot";
   題: string;
   絞り: string;
   列: 列[];
@@ -18,6 +18,29 @@ type 設定 = {
 };
 
 const 設定一覧: Record<string, 設定> = {
+  robot: {
+    kind: "robot", 題: "ロボットハイ積みマスタ", 絞り: "パレット", 合言葉: true, 絞りの探し方: "select",
+    列: [
+      { k: "ロボットプログラムNo", 見出し: "プログラムNo", 数: true, 幅: 60 },
+      { k: "パレット", 見出し: "パレット", 幅: 50 },
+      { k: "品番", 見出し: "品番", 幅: 110 },
+      { k: "商品コード", 見出し: "商品コード", 数: true, 探す: "shohin", 幅: 60 },
+      { k: "段ボール品番", 見出し: "段ボール品番", 幅: 90 },
+      { k: "一段積載", 見出し: "一段積載", 幅: 110 },
+      { k: "最大段数", 見出し: "最大段数", 数: true, 幅: 45 },
+      { k: "段数", 見出し: "段数", 数: true, 幅: 45 },
+      { k: "積み付け数", 見出し: "積み付け数", 数: true, 幅: 50 },
+      { k: "一段積載数", 見出し: "一段積載数", 数: true, 幅: 50 },
+      { k: "箱重量", 見出し: "箱重量", 数: true, 幅: 50 },
+      { k: "スピード", 見出し: "スピード", 数: true, 幅: 50 },
+      { k: "高さ㎜", 見出し: "高さ㎜", 数: true, 幅: 50 },
+      { k: "幅㎜", 見出し: "幅㎜", 数: true, 幅: 50 },
+      { k: "長さ㎜", 見出し: "長さ㎜", 数: true, 幅: 50 },
+      { k: "品番記号", 見出し: "品番記号", 幅: 50 },
+      { k: "品番No", 見出し: "品番No", 幅: 60 },
+      { k: "備考", 見出し: "備考", 幅: 140 },
+    ],
+  },
   aite: {
     kind: "aite", 題: "相手先商品マスタ", 絞り: "相手先", 合言葉: false, 絞りの探し方: "find",
     列: [
@@ -96,7 +119,7 @@ const 設定一覧: Record<string, 設定> = {
 export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
   const s = 設定一覧[props.kind];
   const nav = useNavigate();
-  const [絞る, set絞る] = useState<number | null>(null);
+  const [絞る, set絞る] = useState<number | string | null>(null);
   const [rows, setRows] = useState<Rec[]>([]);
   const [選択肢, set選択肢] = useState<Opt[]>([]);
   const [探す, set探す] = useState(false);
@@ -173,9 +196,9 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
             ) : (
               <>
                 {s.kind === "pallet" && <button onClick={() => i > 0 && set絞る(選択肢[i - 1].id)} title="前の集荷先">◀</button>}
-                <select value={絞る ?? ""} onChange={(e) => set絞る(e.target.value === "" ? null : Number(e.target.value))}>
+                <select value={絞る ?? ""} onChange={(e) => set絞る(e.target.value === "" ? null : s.kind === "robot" ? e.target.value : Number(e.target.value))}>
                   {s.kind !== "pallet" && <option value="">（すべて）</option>}
-                  {選択肢.map((o) => <option key={o.id} value={o.id}>{o.id} {o.name}</option>)}
+                  {選択肢.map((o) => <option key={o.id} value={o.id}>{s.kind === "robot" ? o.name : `${o.id} ${o.name}`}</option>)}
                 </select>
                 {s.kind === "pallet" && <button onClick={() => i < 選択肢.length - 1 && set絞る(選択肢[i + 1].id)} title="次の集荷先">▶</button>}
                 {s.kind === "pallet" && <button onClick={() => set探す(true)} title="得意先から探す">探す</button>}
