@@ -41,6 +41,7 @@ import { sokoShukkoRoutes } from "./sokoShukko.js";
 import { sokoJuchuRoutes } from "./sokoJuchu.js";
 import { sokoMeihenRoutes } from "./sokoMeihen.js";
 import { sokoHokanRoutes } from "./sokoHokan.js";
+import { sokoKeihiRoutes } from "./sokoKeihi.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -86,6 +87,7 @@ await app.register(async (a) => sokoShukkoRoutes(a));
 await app.register(async (a) => sokoJuchuRoutes(a));
 await app.register(async (a) => sokoMeihenRoutes(a));
 await app.register(async (a) => sokoHokanRoutes(a));
+await app.register(async (a) => sokoKeihiRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 
