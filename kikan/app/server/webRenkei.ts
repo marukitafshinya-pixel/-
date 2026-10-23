@@ -20,6 +20,18 @@ export async function ログイン情報(サイト: string, 利用者: string): 
   return { ログインID: r.ログインID, パスワード: r.パスワード暗号 ? 元に戻す(r.パスワード暗号) : "", 寄託者: r.寄託者 };
 }
 
+/**
+ * elixxi の寄託者コード（Access は特定の PC のときだけ、名義で寄託者を切り替えていた）。
+ * 設定の「寄託者など」に「11=コード, 150=コード, 629=コード」の形で入れておくと、その名義のコードを返す。なければ空。パスワードは読まない
+ */
+export async function 寄託者コード(利用者: string, 名義: number): Promise<string> {
+  const r = (
+    await q(`SELECT "寄託者" FROM ${ログイン表} WHERE "サイト" = 'elixxi' AND "利用者" IN ($1, '') ORDER BY "利用者" = '' LIMIT 1`, [利用者])
+  )[0];
+  for (const m of String(r?.寄託者 ?? "").matchAll(/(\d+)\s*[=＝:：]\s*([^\s,、，;]+)/g)) if (Number(m[1]) === 名義) return m[2];
+  return "";
+}
+
 export function webRenkeiRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 

@@ -3,6 +3,7 @@ import { q, t } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で } from "./ws.js";
 import { 確認用を作り直す } from "./wsHoukoku.js";
+import { 寄託者コード } from "./webRenkei.js";
 
 // WEB連携の elixxi 入庫依頼（Access の F_Web出力選択 と C_elixxi入庫登録Ver2 の「何を入れるか」の部分）。
 // Access は Edge を動かして elixxi の入庫依頼登録の画面に打ち込み、最後の［登録］は人が押していた。
@@ -112,6 +113,8 @@ export function webElixxiNyukoRoutes(app: FastifyInstance) {
     );
     // Access は画面の「出荷予定日」（＝出荷計画日）を、出荷の「出荷日」と比べて探す
     const 中身 = await 入庫依頼の中身(String(行.出荷計画日).slice(0, 10), Number(行.輸送ID), Number(行.届け先コード), Number(行.入庫後名義ID));
+    // 寄託者は入庫後名義で切り替える（設定に入っているときだけ）
+    if (中身) Object.assign(中身, { 寄託者: await 寄託者コード(req.user?.login ?? "", Number(行.入庫後名義ID)) });
     return { 内訳, 中身 };
   });
 }

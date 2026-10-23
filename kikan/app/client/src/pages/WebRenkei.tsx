@@ -16,8 +16,9 @@ export function WebMenu() {
     { label: "ランテック賞味期限表示マスタ", to: "/web/lantec", 説明: "ランテックの発注の備考に賞味期限を書く届け先" },
     { label: "MerQurius 発注元マスタ", to: "/web/mq", 説明: "取引元と MerQurius の Web-EDI のコード" },
     { label: "elixxi 入庫予定の照合", to: "/web/elixxi-yotei", 説明: "elixxi の入庫依頼一覧を取り込んで、自社で入れた受付番号と照らす" },
-    { label: "elixxi 入庫依頼", to: "/web/elixxi-nyuko", 説明: "elixxi に入れる入庫依頼の中身を見る・印刷する。登録後の受付番号を入れる（自動入力はこれから作ります）" },
-    { label: "elixxi 出庫依頼", to: "/web/elixxi-shukko", 説明: "elixxi に入れる出庫依頼の中身を見る・印刷する。運行指令No・車号を入れる（自動入力はこれから作ります）" },
+    { label: "elixxi 入庫依頼", to: "/web/elixxi-nyuko", 説明: "elixxi に入れる入庫依頼の中身を見る・印刷する。elixxi の画面に入れる。登録後の受付番号を入れる" },
+    { label: "elixxi 出庫依頼", to: "/web/elixxi-shukko", 説明: "elixxi に入れる出庫依頼の中身を見る・印刷する。elixxi の画面に入れる。運行指令No・車号を入れる" },
+    { label: "elixxi 入力の補助（使い方）", to: "/web/hojo", 説明: "elixxi の画面で押すと入庫・出庫依頼の欄が埋まるボタン（ブックマーク）の登録と使い方。登録は人が押す" },
     { label: "ランテック輸送手配・送り状照合", to: "/web/lantec-okurijo", 説明: "便の送り状番号を見る・直す。ランテックの発注一覧明細 CSV を取り込んで便に送り状番号を書く（発注の自動入力はこれから作ります）" },
     { label: "MerQurius 納入日程", to: "/web/merqurius", 説明: "納入日程 CSV を取り込んで照合し、登録用 CSV を作る" },
     { label: "販盛 在庫移動・仕入", 説明: "やり方を決めてから作ります" },
@@ -144,7 +145,7 @@ export function WebSettei() {
                 </tr>
                 <tr><th>ログインID</th><td><input value={新.ログインID} onChange={(e) => set新({ ...新, ログインID: e.target.value })} autoComplete="off" /></td></tr>
                 <tr><th>パスワード</th><td><input type="password" value={新.パスワード} placeholder="変えるときだけ入れる" onChange={(e) => set新({ ...新, パスワード: e.target.value })} autoComplete="new-password" /></td></tr>
-                <tr><th>寄託者など</th><td><input value={新.寄託者} onChange={(e) => set新({ ...新, 寄託者: e.target.value })} /></td></tr>
+                <tr><th>寄託者など</th><td><input value={新.寄託者} placeholder="elixxi：名義=寄託者コード（11=…, 150=…, 629=…）" style={{ width: 320 }} onChange={(e) => set新({ ...新, 寄託者: e.target.value })} /></td></tr>
               </tbody>
             </table>
           </div>

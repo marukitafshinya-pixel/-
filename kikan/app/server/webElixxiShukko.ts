@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で } from "./ws.js";
+import { 寄託者コード } from "./webRenkei.js";
 
 // WEB連携の elixxi 出庫依頼（Access の F_出庫リスト表示 と C_elixxi出庫出力Ver2 の「何を入れるか」、C_外部番号受注紐づけ）。
 // Access は Edge を動かして elixxi の出庫依頼登録の画面に打ち込み、最後の［登録］は人が押していた。
@@ -48,7 +49,7 @@ export async function 出庫依頼の中身(輸送ID: number) {
   const 行 = await q(
     `SELECT k."出荷計画日"::date::text AS "出荷計画日", k."運送会社ID", k."運送会社名", s."倉庫ID", s."納品日"::date::text AS "納品日", s."受注ID",
             s."届け先コード", s."届け先", s."取引元ID", s."商品コード", s."商品名", s."ユーザー伝票No", s."入庫No", s."ケース", s."製造日"::date::text AS "製造日",
-            s."賞味期限"::date::text AS "賞味期限", s."タグ"
+            s."賞味期限"::date::text AS "賞味期限", s."タグ", s."入庫前名義ID"
      FROM ${輸送計画} k JOIN ${出庫} s ON s."輸送ID" = k."輸送ID"
      WHERE k."輸送ID" = $1
      ORDER BY s."商品コード", s."製造日", s."賞味期限", s."タグ", s."出庫ID"`,
@@ -83,6 +84,7 @@ export async function 出庫依頼の中身(輸送ID: number) {
     出庫先名: r.届け先 ?? "",
     扱い便コード: 扱い便コード(倉庫ID, Number(r.運送会社ID)),
     扱い便名: r.運送会社名 ?? "",
+    名義: r.入庫前名義ID,
     明細: 行.map((x) => ({
       入庫No: x.入庫No ? String(x.入庫No).slice(0, 8) + String(x.入庫No).slice(-2) : "",
       出庫個数: x.ケース,
@@ -122,7 +124,12 @@ export function webElixxiShukkoRoutes(app: FastifyInstance) {
   });
 
   // 選んだ便の elixxi 出庫依頼の中身
-  app.get<{ Querystring: { 輸送ID?: string } }>("/api/web/elixxi/shukko/detail", async (req) => ({ 中身: await 出庫依頼の中身(Number(req.query.輸送ID)) }));
+  app.get<{ Querystring: { 輸送ID?: string } }>("/api/web/elixxi/shukko/detail", async (req) => {
+    const 中身 = await 出庫依頼の中身(Number(req.query.輸送ID));
+    // 寄託者は 1 行目の入庫前名義で切り替える（設定に入っているときだけ）
+    if (中身) Object.assign(中身, { 寄託者: await 寄託者コード(req.user?.login ?? "", Number(中身.名義)) });
+    return { 中身 };
+  });
 
   // 運行指令No・車号を入れる。運行指令No を変えたときは受注登録に書き戻す（C_外部番号受注紐づけ）
   app.post<{ Body: { 輸送ID: number; 項目: "運行指令No" | "車号"; 値: string | null } }>("/api/web/elixxi/shukko/bango", async (req, reply) => {

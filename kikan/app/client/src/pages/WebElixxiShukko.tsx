@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { Field, parseDate, today } from "../formParts";
+import { 入力用の文字 } from "./elixxiHojo";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -49,6 +50,13 @@ export function WebElixxiShukko() {
     const 行 = [["入庫No", "出庫個数"], ...中身.明細.map((x: Rec) => [x.入庫No, x.出庫個数])];
     navigator.clipboard.writeText(行.map((r) => r.join("\t")).join("\n")).then(() => alert("明細をコピーしました。"), エラー);
   }
+  function 入力用() {
+    if (!中身) return;
+    navigator.clipboard.writeText(入力用の文字("出庫", 中身)).then(
+      () => alert("コピーしました。elixxi の「出庫依頼登録」の画面で「elixxi 入力」のブックマークを押してください。"),
+      エラー,
+    );
+  }
   const 日 = (v: string, set: (x: string) => void) => (
     <Field value={v} kind="date" className="sko-date" onCommit={(x) => { const d = parseDate(x); if (!d) return alert("日付の書き方が正しくありません。"); set(d); }} />
   );
@@ -88,7 +96,7 @@ export function WebElixxiShukko() {
         <>
           <div className="sko-pad">
             <b>elixxi の出庫依頼登録に入れる中身</b>　輸送ID {便.輸送ID}・{便.出庫場所}・{年月日(便.出荷計画日)}
-            <span className="no-print">　<button onClick={() => window.print()}>印刷</button> <button onClick={コピー} disabled={!中身}>明細をコピー</button></span>
+            <span className="no-print">　<button onClick={() => window.print()}>印刷</button> <button onClick={コピー} disabled={!中身}>明細をコピー</button> <button className="blue" onClick={入力用} disabled={!中身}>elixxi 入力用にコピー</button> <button onClick={() => nav("/web/hojo")}>使い方</button></span>
           </div>
           {!中身 ? (
             <div className="sko-pad small">この便には出庫の明細がありません。</div>
