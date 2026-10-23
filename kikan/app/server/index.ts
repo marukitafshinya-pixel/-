@@ -38,6 +38,7 @@ import { housouRoutes } from "./housou.js";
 import { tehaiRoutes } from "./tehai.js";
 import { sokoRoutes } from "./soko.js";
 import { sokoShukkoRoutes } from "./sokoShukko.js";
+import { sokoJuchuRoutes } from "./sokoJuchu.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -80,6 +81,7 @@ await app.register(async (a) => housouRoutes(a));
 await app.register(async (a) => tehaiRoutes(a));
 await app.register(async (a) => sokoRoutes(a));
 await app.register(async (a) => sokoShukkoRoutes(a));
+await app.register(async (a) => sokoJuchuRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 

@@ -326,7 +326,7 @@ export function SokoShukko() {
                   <button className="red" onClick={便を消す} title="この便と明細を消します（パスワードが要ります）">削除</button>
                   <span className="sko-sp" />
                   <button onClick={在庫不足} title="まだ登録していない出庫を在庫と比べ、在庫不足のものを出します">在庫不足チェック</button>
-                  <button disabled title="準備中">受注表示</button>
+                  <button onClick={() => nav(`/soko/juchu?id=${id}`)} title="受注を探して、この便に割り付けます（受注検索）">受注表示</button>
                   <button disabled title="準備中">受注読込</button>
                   <label className="sko-f"><span>商品</span><Field value={検索商品} kind="num" className="sko-code" kyotsu="shohin" onCommit={set検索商品} /></label>
                   <label className="sko-f"><span>倉庫</span><Field value={検索倉庫} kind="num" className="sko-code" kyotsu="tokui" onCommit={set検索倉庫} /></label>
