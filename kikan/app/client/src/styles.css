@@ -1688,3 +1688,33 @@ input.yc-in.s { width: 60px; }
 @media print { .sp-bar { display: none; } }
 /* 画面だけのもの（ボタンなど）は、あとで display を決めているものも含めて印刷しない */
 @media print { .no-print { display: none !important; } }
+
+/* 製造管理 丸北 */
+.sz { padding: 8px 12px; }
+.sz-title { font-size: 20px; font-weight: bold; color: #1f3864; margin-right: 10px; }
+.sz-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.sz-box { border: 1px solid #9bb; background: #f3f8fb; padding: 12px; max-width: 760px; margin-top: 8px; }
+.sz-menu { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.sz-menu button { min-width: 150px; padding: 10px; }
+.sz-date { display: flex; align-items: center; gap: 4px; }
+.sz-date .lbl, .sz .lbl { font-weight: bold; }
+.sz-d { width: 100px; }
+.sz-w { font-weight: bold; margin-left: 4px; }
+.sz-toggle button.on { background: #1f3864; color: #fff; }
+.sz-btns { display: flex; gap: 6px; margin-left: auto; }
+.sz-btns button.navy, .sz-dbtns button.navy { background: #1f3864; color: #fff; }
+.sz-info { font-size: 13px; }
+.sz-list { max-height: calc(100vh - 110px); overflow: auto; }
+.sz-grid { border-collapse: collapse; font-size: 12px; }
+.sz-grid th { position: sticky; top: 0; background: #dde6f0; border: 1px solid #889; padding: 2px 4px; white-space: nowrap; z-index: 1; }
+.sz-grid td { border: 1px solid #bbc; padding: 1px 3px; white-space: nowrap; }
+.sz-grid td.r { text-align: right; } .sz-grid td.c { text-align: center; }
+.sz-grid td.name { min-width: 160px; }
+.sz-grid tr.done td { background: #eef3ee; }
+.sz-grid tfoot td { font-weight: bold; border-top: 2px solid #000; }
+.sz-in { font-size: 12px; padding: 1px 2px; }
+.sz-in.w3 { width: 30px; } .sz-in.w4 { width: 44px; } .sz-in.w5 { width: 56px; } .sz-in.w6 { width: 66px; } .sz-in.w8 { width: 86px; } .sz-in.w10 { width: 130px; }
+.sz-grid select { font-size: 12px; max-width: 110px; }
+.sz-dialog { background: #fff; padding: 12px; max-height: 80vh; overflow: auto; border: 2px solid #1f3864; }
+.sz-dtitle { font-weight: bold; margin-bottom: 6px; }
+.sz-dbtns { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }

@@ -106,7 +106,7 @@ async function 変更日(c: PoolClient) {
 }
 
 /** 在庫変更を出荷に知らせる（C_在庫変更通知）。知らせた件数を返す */
-async function 出荷に知らせる(c: PoolClient, 入庫ID: number, 通知区分: string | null) {
+export async function 出荷に知らせる(c: PoolClient, 入庫ID: number, 通知区分: string | null) {
   const r = await c.query(`UPDATE ${出荷} SET "通知" = '訂正', "計画変更chk" = true, "変更通知" = $2 WHERE COALESCE("chk", false) = false AND "入庫ID" = $1`, [入庫ID, 通知区分]);
   return r.rowCount ?? 0;
 }
