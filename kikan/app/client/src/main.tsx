@@ -40,6 +40,7 @@ import { SokoMenu, SokoNyuko, SokoIdou, SokoNyukoKakunin, SokoShukkoKakunin } fr
 import { SokoShukko } from "./pages/SokoShukko";
 import { SokoJuchu } from "./pages/SokoJuchu";
 import { SokoMeihen } from "./pages/SokoMeihen";
+import { SokoHokan } from "./pages/SokoHokan";
 import { KeikakuMenu, KeikakuHenko, KeikakuLog, KeikakuCalendar, KeikakuDay } from "./pages/Keikaku";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
@@ -121,6 +122,7 @@ function App() {
       <Route path="/soko/shukko" element={<SokoShukko />} />
       <Route path="/soko/juchu" element={<SokoJuchu />} />
       <Route path="/soko/meihen" element={<SokoMeihen />} />
+      <Route path="/soko/hokan" element={<SokoHokan />} />
       <Route path="/soko/yomikomi" element={<WsYomikomi 系="soko" />} />
       <Route path="/soko/zaikochu" element={<WsZaikoChu 系="soko" />} />
       <Route path="/soko/shukkachu" element={<WsShukkaChu 系="soko" />} />

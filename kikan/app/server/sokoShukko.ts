@@ -221,7 +221,7 @@ export async function 倉庫の在庫見込み(c: PoolClient, 商品コード: n
  * ケース ＞ 入庫元数 − そのロットの全部の出庫（登録済みも、自分も含む）なら 通知「在庫不足」、ほかは「確認OK!」。
  * Access は書き損じで毎回 出荷日＝便の出荷計画日 にする。Web 版も同じにするが、便がない（出荷計画日が空の）ときは出荷日を消さない。
  */
-async function 出荷チェック(c: PoolClient, 出庫ID?: number) {
+export async function 出荷チェック(c: PoolClient, 出庫ID?: number) {
   const rows = (
     await c.query(
       `SELECT s.*, p."出荷計画日"::date::text AS "計画日" FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
