@@ -36,6 +36,7 @@ import { WebMenu, WebSettei } from "./pages/WebRenkei";
 import { WebMq } from "./pages/WebMq";
 import { WebLantec } from "./pages/WebLantec";
 import { WebElixxi } from "./pages/WebElixxi";
+import { WebElixxiNyuko } from "./pages/WebElixxiNyuko";
 import WsOsaka from "./pages/WsOsaka";
 import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
@@ -106,6 +107,7 @@ function App() {
       <Route path="/web/merqurius" element={<WebMq />} />
       <Route path="/web/lantec-okurijo" element={<WebLantec />} />
       <Route path="/web/elixxi-yotei" element={<WebElixxi />} />
+      <Route path="/web/elixxi-nyuko" element={<WebElixxiNyuko />} />
       <Route path="/web/elixxi" element={<WsMaster kind="w-elixxi" key="w-elixxi" />} />
       <Route path="/web/tsumi" element={<WsMaster kind="w-tsumi" key="w-tsumi" />} />
       <Route path="/web/lantec" element={<WsMaster kind="w-lantec" key="w-lantec" />} />
