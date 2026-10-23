@@ -149,6 +149,8 @@ export function seizoRoutes(app: FastifyInstance) {
     商品区分: await q(`SELECT "区分ID" AS id, "区分名" AS name FROM ${t("seizo_fe", "TM_商品区分")} ORDER BY "区分ID"`),
     産地: await q(`SELECT "産地コード" AS id, "通称" AS name FROM ${t("seizo_fe", "TM_産地マスタ")} ORDER BY "産地コード"`),
     商品状態: await q(`SELECT "隠語" AS id, "状態" AS name FROM ${t("seizo_fe", "TM_商品状態マスタ")} ORDER BY "隠語"`),
+    札色: await q(`SELECT "ID" AS id, "備考" AS name FROM ${t("seizo_fe", "TM_札色設定")} ORDER BY "ID"`),
+    作業場: (await q(`SELECT DISTINCT "作業場" AS id FROM ${入庫} WHERE "倉庫ID" = 11 AND "作業場" IS NOT NULL ORDER BY "作業場"`)).map((r) => ({ ...r, name: r.id })),
   }));
 
   // ================= 包装日誌登録（FM_生産登録）：包装日（入庫日）と工場で絞った入庫 =================
@@ -159,15 +161,23 @@ export function seizoRoutes(app: FastifyInstance) {
     ),
   );
 
+  // 他工場 計量日誌登録（FM_計量数登録）：製造日と工場で絞った入庫
+  app.get<{ Querystring: { date: string; soko: string } }>("/api/seizo/tako", async (req) =>
+    q(
+      `SELECT ${一覧の項目} FROM ${入庫} i WHERE i."倉庫ID" = $1 AND i."製造日" = $2::date ORDER BY i."商品コード", i."製造日", i."タグ", i."検査区分", i."入庫ID"`,
+      [n(req.query.soko) || 191, req.query.date],
+    ),
+  );
+
   // 1 つの項目を直す。Access の各項目の AfterUpdate と同じ計算をする
-  app.post<{ Body: { 入庫ID: number; 項目: string; 値: unknown; 画面: "hoso" | "dekidaka" | "yotei"; 製造日?: string; 入庫日?: string; 計画元数?: number; 作業場?: string; 工場?: number } }>(
+  app.post<{ Body: { 入庫ID: number; 項目: string; 値: unknown; 画面: "hoso" | "dekidaka" | "yotei" | "tako"; 製造日?: string; 入庫日?: string; 計画元数?: number; 作業場?: string; 工場?: number } }>(
     "/api/seizo/save",
     async (req, reply) => {
       const { 項目, 画面 } = req.body;
       const 直せる = [
         "商品コード", "ケース", "タグ", "計量元数", "開始No", "終了No", "商品kg", "製造日", "箱詰枚数", "数量確定フラグ", "原料コード", "産地コード", "商品状態隠語",
         "商品区分", "段ボールID", "備考", "管理備考", "規格", "入数", "賞味期限", "検査区分", "検体区分", "作業場", "カードカラーコード", "倉庫ID", "入庫日", "出荷止め",
-        "印刷時非表示", "検査予定日", "製造表記", "未包装kg", "未包装枚数",
+        "印刷時非表示", "検査予定日", "製造表記", "未包装kg", "未包装枚数", "原料kg", "出来高入力chk",
       ];
       if (!直せる.includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
       return 一連で(async (c) => {
@@ -229,6 +239,25 @@ export function seizoRoutes(app: FastifyInstance) {
           }
           if (項目 === "タグ" || 項目 === "終了No") await 区分登録();
           if (項目 === "商品区分" && n(r.商品区分) !== n(値)) v.ユーザーchk = true;
+          if (項目 === "箱詰枚数") Object.assign(v, await 箱詰めから(m, 新));
+        }
+        if (画面 === "tako") {
+          // 他工場 計量日誌登録（FM_計量数登録）
+          if (項目 === "商品コード") Object.assign(v, await 商品の値(c, 値, r.製造日), { 原料: (await マスタ(c, m.主用原料コード)).短縮名 ?? null });
+          if (項目 === "計量元数") {
+            v.ケース = fix(n(値) / 規格枚数);
+            v.商品kg = n(r.入数) * v.ケース;
+            const 箱詰 = v.商品kg / 規格kg;
+            Object.assign(v, { 箱詰枚数: 数の文字(箱詰), 仕掛枚数: cint(n(値) - 箱詰) });
+            if (v.ケース !== n(r.ケース)) 計画変更 = true;
+          }
+          if (項目 === "ケース") {
+            v.商品kg = n(r.入数) * n(値);
+            const 箱詰 = v.商品kg / 規格kg;
+            Object.assign(v, { 箱詰枚数: 数の文字(箱詰), 仕掛枚数: cint(n(r.計量元数) - 箱詰) });
+            if (n(r.ケース) !== 0 && n(r.ケース) !== n(値)) 計画変更 = true;
+          }
+          if (項目 === "入庫日") 計画変更 = true;
           if (項目 === "箱詰枚数") Object.assign(v, await 箱詰めから(m, 新));
         }
         if (画面 === "yotei") {
