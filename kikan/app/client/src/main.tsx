@@ -33,6 +33,7 @@ import WsZaikoPallet from "./pages/WsZaikoPallet";
 import WsHaichi from "./pages/WsHaichi";
 import WsMaster from "./pages/WsMasters";
 import WsOsaka from "./pages/WsOsaka";
+import { KeikakuMenu, KeikakuHenko, KeikakuLog, KeikakuCalendar, KeikakuDay } from "./pages/Keikaku";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
 import WsYusoChu from "./pages/WsYusoChu";
@@ -89,6 +90,11 @@ function App() {
       <Route path="/juchu/aite" element={<WsMaster kind="j-aite" key="j-aite" />} />
       <Route path="/juchu/aite-todoke" element={<WsMaster kind="j-todoke" key="j-todoke" />} />
       <Route path="/ws/osaka" element={<WsOsaka />} />
+      <Route path="/keikaku" element={<KeikakuMenu />} />
+      <Route path="/keikaku/henko" element={<KeikakuHenko />} />
+      <Route path="/keikaku/log" element={<KeikakuLog />} />
+      <Route path="/keikaku/calendar" element={<KeikakuCalendar />} />
+      <Route path="/keikaku/day" element={<KeikakuDay />} />
       <Route path="/ws/zaikochu" element={<WsZaikoChu />} />
       <Route path="/ws/shukkachu" element={<WsShukkaChu />} />
       <Route path="/ws/yusochu" element={<WsYusoChu />} />

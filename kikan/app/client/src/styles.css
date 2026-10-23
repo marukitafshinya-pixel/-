@@ -1567,3 +1567,43 @@ input.yc-in.s { width: 60px; }
 .yp-group { font-size: 15px; font-weight: bold; display: flex; gap: 40px; margin: 4px 0; }
 .yp-grid td, .yp-grid th { border: 1px solid #000; }
 @media print { .yp-page { page-break-after: always; } }
+
+/* 製造計画 */
+.kk { padding: 10px 14px; }
+.kk-title { font-size: 20px; font-weight: bold; color: #1f3864; margin-right: 12px; }
+.kk-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.kk-box { border: 1px solid #9bb; background: #f3f8fb; padding: 10px; margin: 8px 0; max-width: 720px; }
+.kk-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.kk-row .lbl { width: 120px; }
+.kk-date { width: 110px; }
+.kk-v { font-weight: bold; }
+.kk-big { padding: 6px 18px; font-weight: bold; }
+.kk-done { color: #064; margin-top: 6px; }
+.kk-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.kk-btns button { min-width: 150px; padding: 8px 10px; }
+.kk-part { margin-bottom: 14px; }
+.kk-sub { font-weight: bold; background: #1f3864; color: #fff; padding: 2px 8px; }
+.kk-grid { border-collapse: collapse; font-size: 13px; }
+.kk-grid th { background: #dde6f0; border: 1px solid #889; padding: 2px 6px; }
+.kk-grid td { border: 1px solid #bbc; padding: 2px 6px; white-space: nowrap; }
+.kk-grid .r { text-align: right; }
+.kk-grid .c { text-align: center; }
+.kk-新規 td:first-child { background: #e2f0d9; }
+.kk-製造変更 td:first-child { background: #fbe5d6; }
+.kk-kg変更 td:first-child { background: #fff2cc; }
+.kk-包装日変更 td:first-child { background: #deebf7; }
+.kk-month td { background: #eee; font-weight: bold; }
+.kk-sum td { border-top: 2px solid #000; font-weight: bold; }
+.kk-toggle button.on { background: #1f3864; color: #fff; }
+.kk-cal { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 2px; }
+.kk-w { text-align: center; font-weight: bold; background: #ddd; }
+.kk-day { background: #003366; color: #fff; min-height: 110px; padding: 2px 4px; cursor: default; }
+.kk-day.out { background: #004182; }
+.kk-day.past { color: #bfbfbf; }
+.kk-dl { font-size: 13px; color: #ebebeb; }
+.kk-day.out .kk-dl { font-size: 11px; }
+.kk-dl.sun { color: #ff9900; }
+.kk-dl.sat { color: #00ffff; }
+.kk-dl.red { color: #ff4040; }
+.kk-dl.today { font-weight: bold; text-decoration: underline; }
+.kk-item { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; }

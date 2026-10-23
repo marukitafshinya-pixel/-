@@ -95,7 +95,7 @@ for tb in [
     "ws_fe.TM_合否判定", "ws_fe.TM_商品区分", "ws_fe.TM_商品状態マスタ", "ws_fe.TM_商品輸送区分", "ws_fe.TM_地区コード",
     "ws_fe.TM_得意先区分", "ws_fe.TM_混載区分", "ws_fe.TM_訂正科目マスタ", "ws_fe.TM_車両区分", "ws_fe.TM_輸送区分", "ws_fe.TM_運賃分類マスタ",
     "ws_fe.TM_運賃輸送区分", "ws_fe.TM_配達区分",
-    "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ",
+    "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ", "keikaku.TM_商品検査区分作成",
     # マスタ管理の選択肢
     "master_fe.TM_商品区分", "master_fe.TM_テープマスタ", "master_fe.TM_ハイ積みマスタ", "master_fe.TM_産地マスタ",
     "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード", "master_fe.TM_配達区分", "master.TM_運賃扱いマスタ",
@@ -261,8 +261,17 @@ ins("ws.TD_在庫", 在庫ID=70008, 倉庫ID=343, 倉庫名="見本冷蔵　船�
 # ---------------- 生産計画（作り物）：製造管理の入庫 ----------------
 for nid, code, cs, d, tag in [(90006, 48, 50, 0, "②"), (90001, 55, 100, 2, "①"), (90002, 91, 150, 3, "①"), (90003, 97, 80, 1, "①"), (90004, 633, 60, 4, "①"), (90005, 91, 120, 6, "②")]:
     name, kikaku, irisu = 商品名[code]
-    ins("seizo.TD_入庫", 入庫ID=nid, 入庫日=day(d), 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(d - 1),
-        chk=False, 倉庫ID=11, 倉庫名="丸北　北海道", 商品区分=1, タグ=tag, 数量確定フラグ=-1 if d == 0 else 0, 入庫元数=cs, 製造ケース=cs, 製造kg=cs * irisu, 在庫ケース=cs, 在庫kg=cs * irisu)
+    ins("seizo.TD_入庫", 入庫ID=nid, 製造ID=nid - 10000, 入庫日=day(d), 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(d - 1),
+        chk=False, 作業場="1工場" if code in (48, 97) else "2工場", 倉庫ID=11, 倉庫名="丸北　北海道", 商品区分=1, タグ=tag, 数量確定フラグ=-1 if d == 0 else 0, 入庫元数=cs, 製造ケース=cs, 製造kg=cs * irisu, 在庫ケース=cs, 在庫kg=cs * irisu)
+
+# 大阪で入れた生産計画（作り物）。製造ID は上の入庫と同じ。91（製造ID 80002）は kg を変え、1 件は新しく足してある（生産計画インポートで「kg変更」「新規」になる）
+for mid, code, cs, d in [(80006, 48, 50, 0), (80001, 55, 100, 2), (80002, 91, 180, 3), (80003, 97, 80, 1), (80004, 633, 60, 4), (80005, 91, 120, 6), (80007, 97, 120, 8)]:
+    name, kikaku, irisu = 商品名[code]
+    ins("kyoyu.大阪丸北生産計画", 製造ID=mid, 入庫日=day(d), 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(d - 1),
+        賞味期限=day(d - 2 + 730), 倉庫ID=11, 作業場="1工場" if code in (48, 97) else "2工場", 作成日=day(0, "09:00:00"))
+ins("keikaku.T_生産計画変更案内", 生産計画変更日=day(-3, "10:00:00"))
+for i, (n, a, b, c) in enumerate([(-30, 3, 0, 1), (-17, 1, 1, 0), (-3, 2, 0, 0)], 1):
+    ins("keikaku.T_製造変更ログ", ID=i, 製造変更日=day(n, "10:00:00"), 新規件数=a, 製造変更件数=b, kg変更件数=c, 合計件数=a + b + c)
 
 # 検査結果登録の見本：製造側の入庫に「〇」が入っていて、検査結果登録を開くと在庫に写る
 ins("seizo.TD_入庫", 入庫ID=90010, 入庫日=day(-5), 商品コード=91, 商品名=商品名[91][0], 規格=商品名[91][1], 入数=商品名[91][2], ケース=200,
