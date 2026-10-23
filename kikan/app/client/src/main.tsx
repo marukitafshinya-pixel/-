@@ -33,7 +33,7 @@ import WsZaikoPallet from "./pages/WsZaikoPallet";
 import WsHaichi from "./pages/WsHaichi";
 import WsMaster from "./pages/WsMasters";
 import WsOsaka from "./pages/WsOsaka";
-import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei } from "./pages/Seizo";
+import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku } from "./pages/Seizo";
 import { KeikakuMenu, KeikakuHenko, KeikakuLog, KeikakuCalendar, KeikakuDay } from "./pages/Keikaku";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
@@ -96,6 +96,7 @@ function App() {
       <Route path="/seizo/hoso" element={<SeizoHoso />} />
       <Route path="/seizo/dekidaka" element={<SeizoDekidaka />} />
       <Route path="/seizo/yotei" element={<SeizoYotei />} />
+      <Route path="/seizo/kensaku" element={<SeizoKensaku />} />
       <Route path="/keikaku/henko" element={<KeikakuHenko />} />
       <Route path="/keikaku/log" element={<KeikakuLog />} />
       <Route path="/keikaku/calendar" element={<KeikakuCalendar />} />

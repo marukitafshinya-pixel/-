@@ -61,6 +61,7 @@ export function SeizoMenu() {
           <button onClick={() => nav(`/seizo/dekidaka?date=${日}`)}>計量数登録</button>
           <button onClick={() => nav(`/seizo/yotei?date=${日}`)}>包装予定追加</button>
           <button onClick={() => nav(`/seizo/hoso?date=${日}&soko=191`)}>他工場 生産登録</button>
+          <button onClick={() => nav("/seizo/kensaku")}>検索</button>
           <button onClick={() => nav("/")}>閉じる</button>
         </div>
       </div>
@@ -503,6 +504,84 @@ export function SeizoYotei() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 検索（Access の F_取引先商品製造一覧）。工場・取引先・商品・製造日で、生産履歴（製造日ごとのケース・kg）か出荷履歴（出荷日でも絞る）を出す。
+ * ［表示］で一覧、［出力］で Excel。
+ */
+export function SeizoKensaku() {
+  const nav = useNavigate();
+  const [種類, set種類] = useState<"seisan" | "shukka">("seisan");
+  const [c, setC] = useState<Record<string, string>>({ f: "", t: "", s1: "", s2: "" });
+  const [opts, setOpts] = useState<{ 工場: Opt[]; 得意先: Opt[] }>({ 工場: [], 得意先: [] });
+  const [商品, set商品] = useState<Opt[]>([]);
+  const [rows, setRows] = useState<Rec[] | null>(null);
+  useEffect(() => {
+    api.get<typeof opts>("/api/seizo/kensaku/opts").then(setOpts, エラー);
+  }, []);
+  useEffect(() => {
+    api.get<Opt[]>("/api/seizo/kensaku/shohin", { tokui: c.tokui ?? "" }).then(set商品, エラー);
+  }, [c.tokui]);
+  const 条件 = () => ({ type: 種類 === "shukka" ? "shukka" : "seisan", ...Object.fromEntries(Object.entries(c).filter(([, v]) => v)) });
+  const 選ぶ = (題: string, k: string, list: Opt[]) => (
+    <label className="sz-k">
+      <span className="lbl">{題}</span>
+      <select value={c[k] ?? ""} onChange={(e) => setC((x) => ({ ...x, [k]: e.target.value }))}>
+        <option value="">（すべて）</option>
+        {list.map((o) => <option key={o.id} value={o.id}>{o.id}　{o.name}</option>)}
+      </select>
+    </label>
+  );
+  const 日 = (題: string, k1: string, k2: string) => (
+    <label className="sz-k">
+      <span className="lbl">{題}</span>
+      <Field kind="date" value={c[k1]} className="sz-d" onCommit={(v) => setC((x) => ({ ...x, [k1]: 日付に(v) }))} />
+      <span>～</span>
+      <Field kind="date" value={c[k2]} className="sz-d" onCommit={(v) => setC((x) => ({ ...x, [k2]: 日付に(v) }))} />
+    </label>
+  );
+  const 列 = 種類 === "shukka"
+    ? ["出荷日", "倉庫名", "商品コード", "商品名", "ケース", "商品kg", "届け先", "製造日", "賞味期限", "納品日", "運送会社名", "車番", "取引先名"]
+    : ["倉庫ID", "製造日", "商品コード", "商品名", "ケース", "商品kg", "取引先ID", "取引先名"];
+  const 数 = new Set(["ケース", "商品kg"]);
+  return (
+    <div className="sz">
+      <div className="sz-head">
+        <div className="sz-title">取引先商品製造一覧</div>
+        <span className="sz-toggle">
+          <button className={種類 === "seisan" ? "on" : ""} onClick={() => (set種類("seisan"), setRows(null))}>生産履歴</button>
+          <button className={種類 === "shukka" ? "on" : ""} onClick={() => (set種類("shukka"), setRows(null))}>出荷履歴</button>
+        </span>
+        <span className="sz-btns">
+          <button className="navy" onClick={async () => setRows(await api.get<Rec[]>("/api/seizo/kensaku", 条件()).catch((e) => (エラー(e), null)))}>表示</button>
+          <button onClick={() => Excelを受け取る("/api/seizo/kensaku?" + new URLSearchParams({ ...条件(), excel: "1" }).toString(), "履歴.xlsx").catch(エラー)}>出力</button>
+          <button onClick={() => (setC({ f: "", t: "", s1: "", s2: "" }), setRows(null))}>クリア</button>
+          <button onClick={() => nav(-1)}>閉じる</button>
+        </span>
+      </div>
+      <div className="sz-cond">
+        {選ぶ("工場", "soko", opts.工場)}
+        {選ぶ("得意先", "tokui", opts.得意先)}
+        {選ぶ("商品", "shohin", 商品)}
+        {日("製造日", "f", "t")}
+        {種類 === "shukka" && 日("出荷日", "s1", "s2")}
+      </div>
+      {rows && (
+        <div className="sz-list">
+          <table className="sz-grid">
+            <thead><tr>{列.map((k) => <th key={k}>{k}</th>)}</tr></thead>
+            <tbody>
+              {rows.map((r, i) => <tr key={i}>{列.map((k) => <td key={k} className={数.has(k) ? "r" : ""}>{数.has(k) ? num(r[k]) : k.endsWith("日") || k === "賞味期限" ? 短い日(r[k]) : r[k]}</td>)}</tr>)}
+            </tbody>
+            <tfoot>
+              <tr>{列.map((k, i) => <td key={k} className="r">{数.has(k) ? num(rows.reduce((a, r) => a + Number(r[k] ?? 0), 0)) : i === 0 ? `${rows.length} 件` : ""}</td>)}</tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

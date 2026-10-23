@@ -457,4 +457,64 @@ export function seizoRoutes(app: FastifyInstance) {
       return { ok: true, 知らせ: 計画変更の知らせ(await 計画の変更を知らせる(c, n(req.body.入庫ID), 2)) };
     }),
   );
+
+  // ================= 検索（F_取引先商品製造一覧）：生産履歴・出荷履歴 =================
+  app.get("/api/seizo/kensaku/opts", async () => ({
+    工場: await q(`SELECT "短縮コード" AS id, "短縮名" AS name FROM ${得意先マスタ} WHERE "短縮コード" IN (11, 191, 1187, 1271) ORDER BY "短縮コード"`),
+    得意先: await q(
+      `SELECT t."短縮コード" AS id, t."短縮名" AS name FROM ${商品マスタ} m JOIN ${得意先マスタ} t ON t."短縮コード" = m."取引先ID"
+       GROUP BY t."短縮コード", t."短縮名" ORDER BY COUNT(*) DESC, t."短縮コード"`,
+    ),
+  }));
+  app.get<{ Querystring: { tokui?: string } }>("/api/seizo/kensaku/shohin", async (req) =>
+    n(req.query.tokui)
+      ? q(`SELECT "商品コード" AS id, "商品名" AS name FROM ${商品マスタ} WHERE "取引先ID" = $1 ORDER BY "商品コード"`, [n(req.query.tokui)])
+      : q(`SELECT "商品コード" AS id, MIN("商品名") AS name FROM ${入庫} GROUP BY "商品コード" ORDER BY "商品コード"`),
+  );
+  type 検索 = { type: string; soko?: string; tokui?: string; shohin?: string; f?: string; t?: string; s1?: string; s2?: string; excel?: string };
+  app.get<{ Querystring: 検索 }>("/api/seizo/kensaku", async (req, reply) => {
+    const p = req.query;
+    const w: string[] = [];
+    const a: unknown[] = [];
+    const add = (s: string, v: unknown) => (a.push(v), w.push(s.replace("?", `$${a.length}`)));
+    const 出荷 = p.type === "shukka";
+    const x = 出荷 ? "s" : "i";
+    if (n(p.soko)) add(`${x}."倉庫ID" = ?`, n(p.soko));
+    if (n(p.tokui)) add(`m."取引先ID" = ?`, n(p.tokui));
+    if (n(p.shohin)) add(`${x}."商品コード" = ?`, n(p.shohin));
+    if (p.f) {
+      add(`${x}."製造日" >= ?::date`, p.f);
+      add(`${x}."製造日" <= ?::date`, p.t || p.f);
+    }
+    if (出荷) {
+      if (p.s1) add(`s."出荷日" >= ?::date`, p.s1);
+      if (p.s2) add(`s."出荷日" <= ?::date`, p.s2);
+    }
+    const where = w.length ? `WHERE ${w.join(" AND ")}` : "";
+    const rows = 出荷
+      ? await q(
+          `SELECT s."出荷日"::date::text AS "出荷日", s."倉庫名", s."商品コード", s."商品名", s."ケース", s."商品kg", s."届け先", s."製造日"::date::text AS "製造日",
+                  s."賞味期限"::date::text AS "賞味期限", s."納品日"::date::text AS "納品日", p."運送会社名", p."車番", m."取引先名"
+           FROM ${t("ws", "TD_輸送計画")} p JOIN ${t("ws", "TD_出荷")} s ON s."輸送ID" = p."輸送ID" LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+           ${where} ORDER BY s."輸送ID", s."商品コード", s."製造日", p."運送会社ID" LIMIT 5000`,
+          a,
+        )
+      : await q(
+          `SELECT i."倉庫ID", i."製造日"::date::text AS "製造日", i."商品コード", i."商品名", SUM(i."ケース")::float8 AS "ケース", SUM(i."商品kg")::float8 AS "商品kg",
+                  m."取引先ID", m."取引先名"
+           FROM ${入庫} i LEFT JOIN ${商品マスタ} m ON m."商品コード" = i."商品コード"
+           ${where} GROUP BY i."倉庫ID", i."製造日", i."商品コード", i."商品名", m."取引先ID", m."取引先名" ORDER BY i."商品コード", i."製造日" LIMIT 5000`,
+          a,
+        );
+    if (!p.excel) return rows;
+    const 列 = 出荷
+      ? ["出荷日", "倉庫名", "商品コード", "商品名", "ケース", "商品kg", "届け先", "製造日", "賞味期限", "納品日", "運送会社名", "車番", "取引先名"].map((key) => ({ key, width: 12 }))
+      : ["倉庫ID", "製造日", "商品コード", "商品名", "ケース", "商品kg", "取引先ID", "取引先名"].map((key) => ({ key, width: key === "商品名" || key === "取引先名" ? 26 : 12 }));
+    const 名前 = 出荷 ? "出荷履歴" : "生産履歴";
+    const buf = await 一覧のExcel(名前, 列, rows);
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(名前 + ".xlsx")}`);
+    return reply.send(buf);
+  });
 }
