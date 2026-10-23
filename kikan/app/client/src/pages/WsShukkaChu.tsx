@@ -22,20 +22,28 @@ const 行: { 名: string; 見出し: number; 並べる: string; 条件?: string;
   { 名: "分類ID", 見出し: 9, 並べる: "分類ID", 条件: "分類", 探す: "bunrui" },
   { 名: "取引元ID", 見出し: 10, 並べる: "取引元ID", 条件: "取引元", 探す: "tokui" },
 ];
-/** 印刷の列（Access の R_出荷履歴_簡易・R_出荷履歴_標準） */
-const 印刷の列: Record<number, { k: string; 名: string; 数?: boolean; 日?: boolean }[]> = {
+/** 印刷の列（Access の R_出荷履歴_簡易・R_出荷履歴_標準。いただいた印刷の見本と同じ並び） */
+type 印刷の列 = { k: string; 名: string; 数?: boolean; 右?: boolean; 日?: "長" | "短" | "月日"; 中?: boolean; 幅?: number };
+const 印刷の列: Record<number, 印刷の列[]> = {
   0: [
-    { k: "出荷日", 名: "出荷日", 日: true }, { k: "倉庫名", 名: "出荷場所" }, { k: "商品コード", 名: "商品ｺｰﾄﾞ" }, { k: "商品名", 名: "商品名" },
-    { k: "ケース", 名: "ケース", 数: true }, { k: "商品kg", 名: "商品kg", 数: true }, { k: "届け先", 名: "届け先" }, { k: "製造日", 名: "製造日", 日: true },
-    { k: "賞味期限", 名: "賞味期限", 日: true }, { k: "納品日", 名: "納品日", 日: true }, { k: "運送会社名", 名: "運送会社" },
+    { k: "出荷日", 名: "出荷日", 日: "月日", 中: true, 幅: 7 }, { k: "運送会社名", 名: "運送会社", 中: true, 幅: 11 }, { k: "届け先", 名: "届け先", 幅: 13 },
+    { k: "倉庫名", 名: "出荷場所", 幅: 11 }, { k: "商品コード", 名: "ｺｰﾄﾞ", 右: true, 幅: 4 }, { k: "商品名", 名: "商品名", 幅: 18 },
+    { k: "製造日", 名: "製造日", 日: "短", 中: true, 幅: 7 }, { k: "賞味期限", 名: "賞味期限", 日: "短", 中: true, 幅: 7 },
+    { k: "ケース", 名: "ケース", 数: true, 幅: 4 }, { k: "商品kg", 名: "商品kg", 数: true, 幅: 7 }, { k: "納品日", 名: "納品日", 日: "月日", 中: true, 幅: 7 },
   ],
   1: [
-    { k: "出荷日", 名: "出荷日", 日: true }, { k: "倉庫名", 名: "出荷場所" }, { k: "商品コード", 名: "商品ｺｰﾄﾞ" }, { k: "商品名", 名: "商品名" },
-    { k: "ケース", 名: "ケース", 数: true }, { k: "商品kg", 名: "商品kg", 数: true }, { k: "届け先", 名: "届け先" }, { k: "製造日", 名: "製造日", 日: true },
-    { k: "賞味期限", 名: "賞味期限", 日: true }, { k: "納品日", 名: "納品日", 日: true }, { k: "入庫No", 名: "入庫No" }, { k: "入庫前名義", 名: "入庫前名義" },
-    { k: "入庫後名義", 名: "入庫後名義" }, { k: "運送会社名", 名: "運送会社名" },
+    { k: "出荷日", 名: "出荷日", 日: "長", 中: true, 幅: 7 }, { k: "倉庫名", 名: "出荷場所", 中: true, 幅: 9 }, { k: "商品コード", 名: "ｺｰﾄﾞ", 中: true, 幅: 3.5 },
+    { k: "商品名", 名: "商品名", 中: true, 幅: 11 }, { k: "ケース", 名: "ケース", 数: true, 幅: 4 }, { k: "商品kg", 名: "商品kg", 数: true, 幅: 4.5 },
+    { k: "届け先", 名: "届け先", 中: true, 幅: 9 }, { k: "製造日", 名: "製造日", 日: "短", 中: true, 幅: 5 }, { k: "賞味期限", 名: "賞味期限", 日: "短", 中: true, 幅: 5 },
+    { k: "納品日", 名: "納品日", 日: "月日", 中: true, 幅: 5 }, { k: "入庫前名義", 名: "入庫前名義", 中: true, 幅: 7.5 },
+    { k: "入庫後名義", 名: "入庫後名義", 中: true, 幅: 7.5 }, { k: "入庫No", 名: "入庫No", 中: true, 幅: 5.5 }, { k: "運送会社名", 名: "運送会社名", 中: true, 幅: 8 },
+    { k: "車番", 名: "車番", 中: true, 幅: 5 },
   ],
 };
+const 印刷の日 = (v: string | null, 形: "長" | "短" | "月日") =>
+  !v ? "" : 形 === "長" ? 日(v) : 形 === "短" ? 短い日(v) : `${v.slice(5, 7)}月${v.slice(8, 10)}日`;
+/** 見出しの番号の名前（Access の GroupName） */
+const 見出しの名前: Record<number, string> = { 1: "出荷月", 2: "製造月", 3: "届け先", 4: "倉庫名", 5: "運送会社名", 6: "商品名", 7: "入庫前名義", 8: "入庫後名義", 9: "分類ID", 10: "取引元", 12: "帳合先" };
 
 /**
  * 出荷抽出帳票（Access の FSD_出荷抽出帳票）。メニューの「出荷抽出帳票」から開く。
@@ -179,7 +187,7 @@ export default function WsShukkaChu() {
 
   const 列 = 印刷の列[タイプ] ?? 印刷の列[1];
 
-  if (印刷 && rows) return <ShukkaPrint rows={rows} 列={列} 表題={表題} 宛名={宛名} c={c} ヘッダー={ヘッダー} フッダー={フッダー} onClose={() => set印刷(false)} />;
+  if (印刷 && rows) return <ShukkaPrint rows={rows} 列={列} タイプ={タイプ} 表題={表題} 宛名={宛名} c={c} ヘッダー={ヘッダー} フッダー={フッダー} onClose={() => set印刷(false)} />;
 
   return (
     <div className="sc">
@@ -323,9 +331,12 @@ function 日付欄(c: Rec, setC: (f: (p: Rec) => Rec) => void, k: string) {
   );
 }
 
-/** 印刷（Access の R_出荷履歴_簡易・標準：ヘッダーの見出しごとに区切り、フッダーの見出しごとに小計、最後に合計） */
+/**
+ * 印刷（Access の R_出荷履歴_簡易・標準）。いただいた印刷の見本に合わせた横向きの表。
+ * ヘッダーの見出しが変わるところで太い線で区切り、フッダーの見出しごとに小計、最後にケース・商品kg の合計。
+ */
 function ShukkaPrint(props: {
-  rows: Rec[]; 列: { k: string; 名: string; 数?: boolean; 日?: boolean }[]; 表題: string; 宛名: string; c: Rec; ヘッダー: number; フッダー: number; onClose: () => void;
+  rows: Rec[]; 列: 印刷の列[]; タイプ: number; 表題: string; 宛名: string; c: Rec; ヘッダー: number; フッダー: number; onClose: () => void;
 }) {
   const { rows, 列 } = props;
   type 塊 = { 見出し: string; 小: { 見出し: string; rows: Rec[] }[] };
@@ -340,28 +351,50 @@ function ShukkaPrint(props: {
     b.rows.push(r);
   }
   const 計 = (rs: Rec[], k: string) => rs.reduce((x, r) => x + Number(r[k] ?? 0), 0);
+  const 合計の列 = new Set(["ケース", "商品kg"]);
   const 小計 = (題: string, rs: Rec[], cls: string) => (
     <tr className={cls}>
       {列.map((x, i) => (
-        <td key={x.k} className={x.数 ? "r" : ""}>{x.数 ? num(計(rs, x.k)) : i === 0 ? 題 : ""}</td>
+        <td key={x.k} className={x.数 ? "r" : ""}>{合計の列.has(x.k) ? num(計(rs, x.k)) : i === 0 ? 題 : ""}</td>
       ))}
     </tr>
   );
+  const 期間 = `${日(props.c.出荷日1)}　～　${日(props.c.出荷日2)}`;
+  const 今 = new Date();
+  const 印刷日時 = `${今.getFullYear()}/${String(今.getMonth() + 1).padStart(2, "0")}/${String(今.getDate()).padStart(2, "0")} ${今.getHours()}:${String(今.getMinutes()).padStart(2, "0")}:${String(今.getSeconds()).padStart(2, "0")}`;
+  const 全幅 = 列.reduce((s, x) => s + (x.幅 ?? 5), 0);
   return (
-    <div className="sp">
+    <div className={"sp sp-type" + props.タイプ}>
+      <style>{"@page { size: A4 landscape; margin: 10mm; }"}</style>
       <div className="no-print sp-bar">
         <button onClick={() => window.print()}>印刷</button>
         <button onClick={props.onClose}>戻る</button>
       </div>
-      <div className="sp-head">
-        <div className="sp-to">{props.宛名}</div>
-        <div className="sp-title">{props.表題}</div>
-        <div className="sp-right">
-          <div>{日(props.c.出荷日1)} ～ {日(props.c.出荷日2)}</div>
-          <div>丸北北海道</div>
+      {props.タイプ === 0 ? (
+        <div className="sp-head0">
+          <div className="sp-title0">{props.表題}</div>
+          <div className="sp-range0">{期間}</div>
+          <div className="sp-right0">
+            <div className="sp-time">{印刷日時}</div>
+            <div className="sp-co">丸北北海道</div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="sp-head1">
+          <div className="sp-to">{props.宛名}</div>
+          <div className="sp-center1">
+            <div className="sp-title1">{props.表題}</div>
+            <div className="sp-range1">{期間}</div>
+          </div>
+          <div className="sp-co">丸北北海道</div>
+        </div>
+      )}
+      {props.タイプ === 0 && props.宛名 ? <div className="sp-to">{props.宛名}</div> : null}
+      {props.タイプ === 1 && (props.ヘッダー || props.フッダー) ? (
+        <div className="sp-groups">{[見出しの名前[props.ヘッダー], 見出しの名前[props.フッダー]].filter(Boolean).join("　　")}</div>
+      ) : null}
       <table className="sp-grid">
+        <colgroup>{列.map((x) => <col key={x.k} style={{ width: `${((x.幅 ?? 5) / 全幅) * 100}%` }} />)}</colgroup>
         <thead><tr>{列.map((x) => <th key={x.k}>{x.名}</th>)}</tr></thead>
         <tbody>
           {塊.map((a, i) => (
@@ -370,14 +403,18 @@ function ShukkaPrint(props: {
               {a.小.map((b, j) => (
                 <FragmentRows key={j}>
                   {b.rows.map((r) => (
-                    <tr key={r.出庫ID}>{列.map((x) => <td key={x.k} className={x.数 ? "r" : ""}>{x.日 ? 短い日(r[x.k]) : x.数 ? num(r[x.k]) : r[x.k]}</td>)}</tr>
+                    <tr key={r.出庫ID}>
+                      {列.map((x) => (
+                        <td key={x.k} className={x.数 || x.右 ? "r" : x.中 ? "c" : ""}>{x.日 ? 印刷の日(r[x.k], x.日) : x.数 ? num(r[x.k]) : r[x.k]}</td>
+                      ))}
+                    </tr>
                   ))}
                   {props.フッダー ? 小計(`${b.見出し || "（なし）"} 計`, b.rows, "sp-f") : null}
                 </FragmentRows>
               ))}
             </FragmentRows>
           ))}
-          {小計("合計", rows, "sp-t")}
+          {小計("", rows, "sp-t")}
         </tbody>
       </table>
     </div>

@@ -883,7 +883,8 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .sh-renraku { margin-top: 2mm; font-size: 9pt; font-weight: bold; }
 @media print {
   @page { size: A4 portrait; margin: 0; }
-  body * { visibility: hidden; }
+  /* 発注書などの印刷プレビュー（.pv）があるときだけ、ほかを隠す（ほかの画面の印刷が白紙にならないように） */
+  body:has(.pv) * { visibility: hidden; }
   .pv, .pv * { visibility: visible; }
   .pv { position: absolute; inset: 0; background: #fff; display: block; }
   .pv-bar { display: none; }
@@ -1527,13 +1528,26 @@ input.sc-in, input.sc-date { width: 128px; background: #cff; }
 .sp-to { font-size: 16px; min-width: 200px; }
 .sp-title { font-size: 22px; font-weight: bold; text-decoration: underline; }
 .sp-right { text-align: right; font-size: 13px; }
-.sp-grid { border-collapse: collapse; width: 100%; font-size: 11px; }
-.sp-grid th { border-bottom: 2px solid #000; padding: 2px 4px; text-align: left; }
-.sp-grid td { border-bottom: 1px solid #ccc; padding: 1px 4px; }
+.sp-grid { border-collapse: collapse; width: 100%; font-size: 11px; table-layout: fixed; }
+.sp-grid th { border: 1px solid #000; padding: 1px 3px; text-align: center; font-weight: normal; font-size: 12px; }
+.sp-grid td { border: 1px solid #000; padding: 1px 3px; overflow: hidden; }
 .sp-grid td.r { text-align: right; }
-.sp-grid tr.sp-h td { background: #eee; font-weight: bold; border-top: 1px solid #000; }
-.sp-grid tr.sp-f td { font-weight: bold; border-bottom: 1px solid #000; }
-.sp-grid tr.sp-t td { font-weight: bold; border-top: 2px double #000; }
+.sp-grid td.c { text-align: center; }
+.sp-grid tr.sp-h td { font-weight: bold; border-top: 2px solid #000; }
+.sp-grid tr.sp-f td { font-weight: bold; border-bottom: 2px solid #000; }
+.sp-grid tr.sp-t td { font-weight: bold; border-top: 2px solid #000; height: 18px; }
+.sp-head0 { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; margin-bottom: 14px; }
+.sp-title0 { font-size: 22px; font-family: serif; }
+.sp-range0 { font-size: 14px; font-weight: bold; }
+.sp-right0 { text-align: right; }
+.sp-time { font-size: 11px; font-weight: bold; }
+.sp-co { font-size: 17px; font-weight: bold; text-align: right; }
+.sp-head1 { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; margin-bottom: 8px; }
+.sp-center1 { text-align: center; }
+.sp-title1 { font-size: 16px; font-weight: bold; }
+.sp-range1 { font-size: 12px; font-weight: bold; }
+.sp-groups { font-size: 14px; font-weight: bold; margin: 0 0 4px 24px; }
+.sp-type0 .sp-grid tbody td { font-size: 11px; }
 @media print { @page { size: A4 landscape; margin: 8mm; } }
 /* 輸送抽出帳票（FSD_輸送抽出帳票） */
 .yc { min-height: 100vh; background: #e4e1c8; padding: 6px 10px; }
@@ -1607,3 +1621,70 @@ input.yc-in.s { width: 60px; }
 .kk-dl.red { color: #ff4040; }
 .kk-dl.today { font-weight: bold; text-decoration: underline; }
 .kk-item { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; }
+
+/* 在庫報告書（ロット別在庫一覧表）の印刷 */
+.lz-print { font-weight: bold; color: #000; }
+.lz-page { page-break-after: always; }
+.lz-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 10px; }
+.lz-title { font-size: 18px; font-weight: bold; }
+.lz-date { text-align: right; font-size: 10px; }
+.lz-soko { font-size: 15px; font-weight: bold; margin: 0 0 6px 8px; }
+.lz-meigi { margin-left: 24px; font-size: 13px; }
+.lz-grid { border-collapse: collapse; width: 100%; font-size: 10px; }
+.lz-grid th { border: 1px solid #000; border-bottom: 2px solid #000; padding: 2px 3px; font-weight: bold; }
+.lz-grid td { border: 1px solid #000; padding: 3px 3px; height: 18px; }
+.lz-grid td.r { text-align: right; }
+.lz-grid td.c { text-align: center; }
+.lz-grid th:nth-child(1) { width: 6%; } .lz-grid th:nth-child(2) { width: 36%; } .lz-grid th:nth-child(3) { width: 10%; }
+.lz-grid th:nth-child(4), .lz-grid th:nth-child(5) { width: 10%; } .lz-grid th:nth-child(6), .lz-grid th:nth-child(7) { width: 8%; }
+.lz-co { text-align: right; margin: 18px 60px 0 0; font-size: 11px; }
+
+/* 在庫商品パレット確認の印刷 */
+.pp-page { page-break-after: always; font-size: 12px; color: #000; }
+.pp-head { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; margin: 0 0 6px 16px; }
+.pp-title { font-size: 17px; }
+.pp-no { font-size: 14px; }
+.pp-time { text-align: right; font-size: 13px; }
+.pp-cols, .pp-row { display: grid; grid-template-columns: 52px 148px 74px 52px 64px 74px 52px repeat(10, 37px) 12px 94px; align-items: stretch; }
+.pp-cols { font-size: 11px; text-align: center; }
+.pp-cols .pp-n { text-align: center; }
+.pp-cols span:nth-child(7) { grid-column: 7 / 8; }
+.pp-row { margin-bottom: 8px; height: 50px; }
+.pp-row > div:not(.pp-ok) { border: 1px solid #000; border-left: none; padding: 2px 3px; display: flex; flex-direction: column; justify-content: center; }
+.pp-row > .pp-c1 { border-left: 1px solid #000 !important; text-align: right; align-items: flex-end; }
+.pp-row .r { align-items: flex-end; }
+.pp-name { font-size: 11px; }
+.pp-big { font-size: 16px; }
+.pp-c4.c { align-items: center; }
+.pp-blue { color: #3060c0; font-size: 14px; min-height: 16px; }
+.pp-kg { font-size: 11px; justify-content: flex-end !important; }
+.pp-row > .pp-c7 { border: none !important; padding: 0 2px !important; justify-content: flex-start !important; }
+.pp-calc { display: flex; border: 1px solid #8080c0; height: 16px; }
+.pp-calc span { flex: 1; text-align: right; color: #3060c0; font-size: 11px; border-right: 1px solid #8080c0; padding-right: 2px; }
+.pp-bar { height: 10px; margin-top: 2px; background: #eee; border: 1px solid #888; }
+.pp-grid { grid-column: 8 / 18; border-collapse: collapse; width: 100%; height: 50px; }
+.pp-grid td { border: 1px solid #000; width: 10%; height: 15px; font-size: 12px; line-height: 14px; padding: 0 2px; text-align: left; vertical-align: top; }
+.pp-ok { grid-column: 19 / 20; border: 1px solid #000; height: 36px; text-align: center; color: #3060c0; font-size: 16px; }
+.pp-sum { display: grid; grid-template-columns: 326px 52px 64px 74px; margin-top: 4px; }
+.pp-sumlbl { grid-column: 2; text-align: center; align-self: center; }
+.pp-sumv { border: 1px solid #000; text-align: right; font-size: 16px; padding: 4px 3px; }
+
+/* 保管庫 配置図の印刷（いただいた見本に合わせる） */
+.pz-phead { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; margin: 0 0 6px 60px; }
+.pz-pdate { font-size: 17px; margin-left: 30px; }
+.pz-ptitle { font-size: 18px; font-weight: bold; }
+.pz-ptime { font-size: 13px; }
+.pz-door { font-weight: bold; font-size: 14px; text-align: right; padding-top: 50px; }
+@media print {
+  .pz-body { display: block; }
+  .pz-map { border-spacing: 0 8px; margin-left: 40px; }
+  .pz-slot { border: none; box-shadow: inset 0 0 0 1px #999; width: 146px; height: 80px; padding: 2px 3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pz-slot.pz-gap { border-left: 7px solid #fff; }
+  .pz-slot.pz-target { background: #fff; }
+  .pz-name { display: none; }
+  .pz-text { font-size: 11px; color: #000; }
+  .pz-none { width: 146px; }
+}
+@media print { .sp-bar { display: none; } }
+/* 画面だけのもの（ボタンなど）は、あとで display を決めているものも含めて印刷しない */
+@media print { .no-print { display: none !important; } }

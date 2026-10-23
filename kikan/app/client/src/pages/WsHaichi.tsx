@@ -15,6 +15,13 @@ const 行 = [7, 6, 5, 4, 3, 2, 1].map((i) => [
   i >= 3 ? `R${i - 2}-1` : i === 2 ? "T2" : "T1",
 ]);
 
+/** 印刷した日時（2026/10/23 10:02:46） */
+function 印刷日時() {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 /**
  * パレット配置図（Access の AF_パレット配置図）。メニューの「パレット配置図」から開く。
  * 右の一覧（その日の時点の工場の在庫）から、在庫を枠へ引っぱって置く（または一覧で選んで枠を押す）。
@@ -97,7 +104,12 @@ export default function WsHaichi() {
           <button onClick={() => nav(-1)}>閉じる</button>
         </div>
       </div>
-      <div className="print-only zp-ptitle">パレット配置図　{日.replace(/-/g, "/")}</div>
+      <style>{"@media print { @page { size: A4 landscape; margin: 10mm; } }"}</style>
+      <div className="print-only pz-phead">
+        <div className="pz-pdate">{`${Number(日.slice(5, 7))}月${Number(日.slice(8, 10))}日(${"日月火水木金土"[new Date(日 + "T00:00:00").getDay()]})`}</div>
+        <div className="pz-ptitle">保管庫　配置図</div>
+        <div className="pz-ptime">{印刷日時()}</div>
+      </div>
       <div className="pz-body">
         <table className="pz-map">
           <tbody>
@@ -105,11 +117,11 @@ export default function WsHaichi() {
               <tr key={i}>
                 {r.map((欄, j) =>
                   欄 === null ? (
-                    <td key={j} className="pz-none" />
+                    <td key={j} className="pz-none">{i === 行.length - 1 && j === 4 ? <div className="print-only pz-door">入口</div> : null}</td>
                   ) : (
                     <td
                       key={j}
-                      className={"pz-slot" + (j === 3 ? " pz-gap" : "") + (選択 ? " pz-target" : "")}
+                      className={"pz-slot" + (j === 3 || j === 5 ? " pz-gap" : "") + (選択 ? " pz-target" : "")}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();

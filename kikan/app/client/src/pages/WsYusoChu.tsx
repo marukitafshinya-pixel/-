@@ -330,49 +330,73 @@ function 日付欄(c: Rec, setC: (f: (p: Rec) => Rec) => void, k: string) {
 function YusoPrint(props: { 列: string[]; rows: Rec[]; 題: string; 頭名: string; 足名: string; 担当: string; c: Rec; onClose: () => void }) {
   const { 列, rows } = props;
   const 数の列 = new Set(列.filter((k) => rows.some((r) => typeof r[k] === "number")));
-  type 塊 = { 頭: string; 足: string; rows: Rec[] };
-  const 塊: 塊[] = [];
+  // ページの列（頭）が変わるところで改ページ、改行の列（足）が変わるところで計、最後に合計
+  type 段 = { 足: string; rows: Rec[] };
+  type 頁 = { 頭: string; 段: 段[] };
+  const 頁: 頁[] = [];
   for (const r of rows) {
     const h = String(r._頭 ?? "");
     const f = String(r._足 ?? "");
-    const a = 塊[塊.length - 1];
-    if (!a || a.頭 !== h || a.足 !== f) 塊.push({ 頭: h, 足: f, rows: [r] });
-    else a.rows.push(r);
+    let a = 頁[頁.length - 1];
+    if (!a || a.頭 !== h) 頁.push((a = { 頭: h, 段: [] }));
+    let b = a.段[a.段.length - 1];
+    if (!b || b.足 !== f) a.段.push((b = { 足: f, rows: [] }));
+    b.rows.push(r);
   }
   const 表示 = (k: string, v: unknown) => (数の列.has(k) ? num(v as number) : (v as ReactNode) ?? "");
+  const 計の行 = (題: string, rs: Rec[], cls: string) => (
+    <tr className={cls}>
+      {列.map((k, j) => (
+        <td key={k} className={数の列.has(k) ? "r" : ""}>{数の列.has(k) ? num(rs.reduce((x, r) => x + n(r[k]), 0)) : j === 0 ? 題 : ""}</td>
+      ))}
+    </tr>
+  );
+  const d = new Date();
+  const 日時 = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const 期間 = `${props.c.開始?.replace(/-/g, "/") ?? ""}　～　${props.c.終了?.replace(/-/g, "/") ?? ""}`;
+  const 分ける = props.足名 && props.足名 !== props.頭名;
   return (
     <div className="sp">
+      <style>{"@page { size: A4 landscape; margin: 10mm; }"}</style>
       <div className="no-print sp-bar">
         <button onClick={() => window.print()}>印刷</button>
         <button onClick={props.onClose}>戻る</button>
-        <span className="small">{rows.length} 行</span>
+        <span className="small">{rows.length} 行・{頁.length} ページ</span>
       </div>
-      {塊.map((a, i) => (
-        <div key={i} className={i < 塊.length - 1 ? "yp-page" : ""}>
-          <div className="sp-head">
+      {頁.map((a, i) => (
+        <div key={i} className={i < 頁.length - 1 ? "yp-page" : ""}>
+          <div className="sp-head1">
             <div className="sp-to">{props.担当}</div>
-            <div className="sp-title">{props.題}</div>
-            <div className="sp-right">{props.c.開始?.replace(/-/g, "/")} ～ {props.c.終了?.replace(/-/g, "/")}</div>
+            <div className="sp-center1">
+              <div className="sp-title1">{props.題}</div>
+              <div className="sp-range1">{期間}</div>
+            </div>
+            <div className="sp-right0">
+              <div className="sp-time">{日時}　{i + 1} / {頁.length}</div>
+              <div className="sp-co">丸北北海道</div>
+            </div>
           </div>
-          <div className="yp-group">
-            <span>{a.頭}</span>
-            {a.足 !== a.頭 && <span>{a.足}</span>}
-          </div>
+          {props.頭名 ? <div className="yp-group">{props.頭名}：{a.頭 || "（なし）"}</div> : null}
           <table className="sp-grid yp-grid">
             <thead><tr>{列.map((k) => <th key={k}>{k}</th>)}</tr></thead>
             <tbody>
-              {a.rows.map((r, j) => (
-                <tr key={j}>{列.map((k) => <td key={k} className={数の列.has(k) ? "r" : ""}>{表示(k, r[k])}</td>)}</tr>
+              {a.段.map((b, j) => (
+                <FragmentRows key={j}>
+                  {b.rows.map((r, x) => (
+                    <tr key={x}>{列.map((k) => <td key={k} className={数の列.has(k) ? "r" : ""}>{表示(k, r[k])}</td>)}</tr>
+                  ))}
+                  {分ける ? 計の行(`${b.足 || "（なし）"} 計`, b.rows, "sp-f") : null}
+                </FragmentRows>
               ))}
-              <tr className="sp-f">
-                {列.map((k, j) => (
-                  <td key={k} className={数の列.has(k) ? "r" : ""}>{数の列.has(k) ? num(a.rows.reduce((x, r) => x + n(r[k]), 0)) : j === 0 ? "計" : ""}</td>
-                ))}
-              </tr>
+              {計の行(props.頭名 ? `${a.頭 || "（なし）"} 計` : "計", a.段.flatMap((b) => b.rows), "sp-t")}
+              {i === 頁.length - 1 && 頁.length > 1 ? 計の行("合計", rows, "sp-t") : null}
             </tbody>
           </table>
         </div>
       ))}
     </div>
   );
+}
+function FragmentRows(props: { children: ReactNode }) {
+  return <>{props.children}</>;
 }

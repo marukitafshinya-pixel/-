@@ -71,8 +71,8 @@ export default function WsZaikoChu() {
       <div className="zc-top no-print">
         <div className="zc-total"><span>{num(ケース計)}</span><span>{num(kg計)}</span></div>
       </div>
-      <div className="print-only zp-ptitle">在庫報告書　{名義名 ? `${名義名} 名義分` : ""}</div>
-      <div className="zc-list">
+      <ZaikoPrint rows={rows} 名義名={名義名} />
+      <div className="zc-list no-print">
         <table className="zc-grid">
           <thead>
             <tr><th>保管庫</th><th>入庫名義</th><th>分類</th><th>コード</th><th>商品名</th><th>製造日</th><th>賞味期限</th><th>元数</th><th>ケース</th><th>Kg</th></tr>
@@ -93,9 +93,6 @@ export default function WsZaikoChu() {
               </tr>
             ))}
           </tbody>
-          <tfoot className="print-only">
-            <tr><td colSpan={8} className="r">合計</td><td className="r">{num(ケース計)}</td><td className="r">{num(kg計)}</td></tr>
-          </tfoot>
         </table>
       </div>
       <div className="zc-bottom no-print">
@@ -119,6 +116,58 @@ export default function WsZaikoChu() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 伝票印刷（Access の 在庫報告書）。いただいた印刷の見本（ロット別在庫一覧表）に合わせた縦向きの表。
+ * 保管庫ごとに名前を出し、コード・商品名・規格・製造日・賞味期限・元数・ケース・商品kg を並べる。
+ */
+function ZaikoPrint({ rows, 名義名 }: { rows: Rec[]; 名義名?: string }) {
+  const d = new Date();
+  const 日付 = `${d.getFullYear() - 2018}年${d.getMonth() + 1}月${d.getDate()}日${"日月火水木金土"[d.getDay()]}曜日`;
+  const 保管庫: { 名: string; rows: Rec[] }[] = [];
+  // 保管庫ごとに、コード・製造日の順（いただいた見本と同じ）
+  const 並べた = [...rows].sort((a, b) => Number(a.商品コード ?? 0) - Number(b.商品コード ?? 0) || String(a.製造日 ?? "").localeCompare(String(b.製造日 ?? "")));
+  for (const r of 並べた) {
+    let g = 保管庫.find((x) => x.名 === (r.倉庫名 ?? ""));
+    if (!g) 保管庫.push((g = { 名: r.倉庫名 ?? "", rows: [] }));
+    g.rows.push(r);
+  }
+  return (
+    <div className="print-only lz-print">
+      <style>{"@page { size: A4 portrait; margin: 12mm; }"}</style>
+      {保管庫.map((g, i) => (
+        <div key={i} className="lz-page">
+          <div className="lz-head">
+            <div />
+            <div className="lz-title">ロット別在庫一覧表</div>
+            <div className="lz-date">{日付}</div>
+          </div>
+          <div className="lz-soko">{g.名}{名義名 ? <span className="lz-meigi">{名義名} 名義分</span> : null}</div>
+          <table className="lz-grid">
+            <thead>
+              <tr><th>ｺｰﾄﾞ</th><th>商品名</th><th>規格</th><th>製造日</th><th>賞味期限</th><th>元数</th><th>ケース</th><th>商品kg</th></tr>
+            </thead>
+            <tbody>
+              {g.rows.map((r) => (
+                <tr key={r.在庫ID}>
+                  <td className="r">{r.商品コード}</td>
+                  <td>{r.商品名}</td>
+                  <td className="c">{r.規格}</td>
+                  <td className="c">{短い日(r.製造日)}</td>
+                  <td className="c">{短い日(r.賞味期限)}</td>
+                  <td className="r">{num(r.入庫元数)}</td>
+                  <td className="r">{num(r.在庫ケース)}</td>
+                  <td className="r">{num(r.在庫kg)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="lz-co">丸北北海道</div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { 一連で } from "./ws.js";
 // 工場の在庫（倉庫 11・13）のロットごとに、パレット 1〜25 枚目に何ケース載っているかを入れ、在庫ケースと合うかを確かめる
 const 在庫 = t("ws", "TD_在庫");
 const 数パレット = t("ws", "TD_在庫商品数パレット");
+const 商品区分 = t("ws_fe", "TM_商品区分");
 
 const n = (v: unknown) => Number(v ?? 0) || 0;
 /** パレットの欄（01A〜25A） */
@@ -20,9 +21,10 @@ export function wsZaikoPalletRoutes(app: FastifyInstance) {
   app.get("/api/ws/zpallet", async () =>
     q(
       `SELECT z."在庫ID", z."倉庫ID", z."倉庫名", z."商品コード", z."商品名", z."製造日"::date::text AS "製造日", z."賞味期限"::date::text AS "賞味期限",
-              z."タグ", z."在庫ケース", z."在庫kg", z."訂正chk", z."入庫日"::date::text AS "入庫日", p."パレット単位", p."パレット数",
+              z."タグ", z."在庫ケース", z."在庫kg", z."訂正chk", z."入庫日"::date::text AS "入庫日", z."商品区分", k."区分名" AS "商品区分名", p."パレット単位", p."パレット数",
               ${パレット欄.map((k) => `p."${k}"`).join(", ")}, (${合計式("p")}) AS "A計"
        FROM ${在庫} z LEFT JOIN ${数パレット} p ON p."在庫ID" = z."在庫ID"
+         LEFT JOIN LATERAL (SELECT "区分名" FROM ${商品区分} WHERE "区分ID" = z."商品区分" LIMIT 1) k ON true
        WHERE z."商品コード" <> 697 AND z."在庫ケース" <> 0 AND z."入庫日" <= (now() AT TIME ZONE 'Asia/Tokyo')::date AND (z."倉庫ID" = 11 OR z."倉庫ID" = 13)
        ORDER BY z."商品コード", z."製造日", z."賞味期限", z."タグ", z."在庫ケース", z."在庫ID"`,
     ),

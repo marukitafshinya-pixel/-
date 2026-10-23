@@ -55,8 +55,8 @@ export default function WsZaikoPallet() {
           <button onClick={() => nav(-1)}>閉じる</button>
         </div>
       </div>
-      <div className="print-only zp-ptitle">在庫商品パレット確認</div>
-      <div className="kn-list zp-list">
+      <PalletPrint rows={出す} />
+      <div className="kn-list zp-list no-print">
         <table className="kn-grid zp-grid">
           <thead>
             <tr>
@@ -88,6 +88,81 @@ export default function WsZaikoPallet() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 印刷（Access の R_在庫商品パレット確認）。いただいた印刷の見本に合わせ、商品区分（製品など）ごとに、1 ページ 10 行。
+ * 行ごとに 商品コード・商品名・製造日・区分（タグ）・在庫数（上の青い数はパレットの合計）・在庫kg、
+ * 計算（パレット単位・パレット数）、パレット 1〜25 枚目のケース（10 列 × 3 段）、合っていれば「OK」。区分の最後に合計。
+ */
+function PalletPrint({ rows }: { rows: Rec[] }) {
+  const d = new Date();
+  const 日時 = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+  const 区分: { 名: string; 番: number; rows: Rec[] }[] = [];
+  for (const r of [...rows].sort((a, b) => Number(a.商品区分 ?? 0) - Number(b.商品区分 ?? 0))) {
+    let g = 区分.find((x) => x.番 === Number(r.商品区分 ?? 0));
+    if (!g) 区分.push((g = { 名: r.商品区分名 ?? "", 番: Number(r.商品区分 ?? 0), rows: [] }));
+    g.rows.push(r);
+  }
+  const ページ: { 名: string; rows: Rec[]; 合計?: Rec[] }[] = [];
+  for (const g of 区分)
+    for (let i = 0; i < g.rows.length; i += 10) ページ.push({ 名: g.名, rows: g.rows.slice(i, i + 10), 合計: i + 10 >= g.rows.length ? g.rows : undefined });
+  const 製 = (v: string | null) => (v ? `${v.slice(2, 4)}.${v.slice(5, 7)}.${v.slice(8, 10)}` : "");
+  const 数 = (v: unknown) => (v === null || v === undefined || v === "" ? "" : String(Number(v)));
+  return (
+    <div className="print-only pp-print">
+      <style>{"@page { size: A4 landscape; margin: 8mm; }"}</style>
+      {ページ.map((p, i) => (
+        <div key={i} className="pp-page">
+          <div className="pp-head">
+            <div className="pp-title">{p.名}</div>
+            <div className="pp-no">{i + 1} / {ページ.length}</div>
+            <div className="pp-time">{日時}</div>
+          </div>
+          <div className="pp-cols">
+            <span className="pp-c1">商品ｺｰﾄﾞ</span><span className="pp-c2">商品名</span><span className="pp-c3">製造日</span><span className="pp-c4">区分</span>
+            <span className="pp-c5">在庫数</span><span className="pp-c6">在庫kg</span><span className="pp-c7">計算</span>
+            {Array.from({ length: 10 }, (_, k) => <span key={k} className="pp-n">{k + 1}</span>)}
+          </div>
+          {p.rows.map((r) => {
+            const 合う = Number(r.A計 ?? 0) === Number(r.在庫ケース ?? 0);
+            return (
+              <div key={r.在庫ID} className="pp-row">
+                <div className="pp-c1 r">{r.商品コード}</div>
+                <div className="pp-c2 pp-name">{r.商品名}</div>
+                <div className="pp-c3 pp-big">{製(r.製造日)}</div>
+                <div className="pp-c4 pp-big c">{r.タグ}</div>
+                <div className="pp-c5 r"><div className="pp-blue">{Number(r.A計 ?? 0) ? 数(r.A計) : ""}</div><div className="pp-big">{数(r.在庫ケース)}</div></div>
+                <div className="pp-c6 r pp-kg">{数(r.在庫kg)}</div>
+                <div className="pp-c7"><div className="pp-calc"><span>{数(r.パレット単位 ?? 0)}</span><span>{数(r.パレット数 ?? 0)}</span></div><div className="pp-bar" /></div>
+                <table className="pp-grid">
+                  <tbody>
+                    {[0, 10, 20].map((s) => (
+                      <tr key={s}>
+                        {Array.from({ length: 10 }, (_, k) => {
+                          const n = s + k + 1;
+                          const v = n <= 25 ? r[`${String(n).padStart(2, "0")}A`] : null;
+                          return <td key={k}>{v ? 数(v) : ""}</td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="pp-ok">{合う ? "OK" : ""}</div>
+              </div>
+            );
+          })}
+          {p.合計 && (
+            <div className="pp-sum">
+              <span className="pp-sumlbl">合計</span>
+              <span className="pp-sumv">{p.合計.reduce((a, r) => a + Number(r.在庫ケース ?? 0), 0)}</span>
+              <span className="pp-sumv">{Math.round(p.合計.reduce((a, r) => a + Number(r.在庫kg ?? 0), 0) * 100) / 100}</span>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
