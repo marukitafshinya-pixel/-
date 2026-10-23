@@ -159,7 +159,7 @@ async function 入庫待ちを合わせる(c: PoolClient, 期間: number, 今: s
 }
 
 /** 在庫と入庫待ちを比べて 不一致フラグ・不一致備考 を付ける（C_入庫チェック）。不一致の印のあるロットと、入庫日が今日の 期間 日前〜期間＋5 日後のロット */
-async function 入庫を比べる(c: PoolClient, 期間: number, 今: string) {
+export async function 入庫を比べる(c: PoolClient, 期間: number, 今: string) {
   const lots = (
     await c.query(`SELECT * FROM ${倉庫の在庫} WHERE "不一致フラグ" = true OR ("出庫ID" <> 0 AND "入庫日" BETWEEN $1::date AND $2::date) ORDER BY "在庫ID"`, [
       日を足す(今, -期間),
