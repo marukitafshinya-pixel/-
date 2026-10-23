@@ -1826,3 +1826,35 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .kk-in.w-name { width: 160px; }
 .menu-grid button:disabled { color: #999; background: #f6f6f6; border-style: solid; }
 .soko-info { margin: 0 16px 16px; min-height: 1.4em; color: #444; font-size: 13px; }
+/* 倉庫管理の出庫入力 */
+.sko { padding: 6px 10px; font-size: 13px; }
+.sko-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.sko-title { font-size: 18px; font-weight: bold; color: #1f3864; margin-right: 10px; }
+.sko-date { width: 100px; }
+.sko-wa { font-weight: bold; }
+.sko-sp { flex: 1; }
+.sko-notice { background: #d00; color: #fff; padding: 1px 8px; border-radius: 3px; }
+.sko-body { display: flex; gap: 8px; align-items: flex-start; }
+.sko-bins { width: 190px; flex: none; display: flex; flex-direction: column; gap: 4px; }
+.sko-bins-h { font-weight: bold; color: #1f3864; }
+.sko-bin { text-align: left; padding: 4px 6px; background: #f4f4f4; border: 1px solid #bbb; }
+.sko-bin.on { background: #fff6c8; border-color: #c90; }
+.sko-bin.done { color: #555; }
+.sko-add { display: flex; gap: 4px; margin-top: 6px; }
+.sko-add select { flex: 1; min-width: 0; }
+.sko-main { flex: 1; min-width: 0; }
+.sko-empty { color: #666; }
+.sko-head { background: #eef2f8; border: 1px solid #aab; padding: 4px 6px; margin-bottom: 6px; }
+.sko-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 2px 0; }
+.sko-f { display: inline-flex; align-items: center; gap: 4px; }
+.sko-f > span { color: #333; font-size: 12px; }
+.sko-code { width: 56px; }
+.sko-name { min-width: 80px; }
+.sko-state { padding: 1px 8px; border: 1px solid #888; background: #fff; }
+.sko-state.done { background: #c8e6c9; }
+.sko-btns { margin-top: 4px; }
+.sko-gridwrap { overflow: auto; max-height: calc(100vh - 260px); }
+.sko-grid tr.done td { background: #eef5ee; }
+.sko-grid input { font-size: 12px; }
+.sko-foot { display: flex; gap: 16px; align-items: center; padding: 4px 2px; font-weight: bold; }
+.sko .w3 { width: 36px; } .sko .w4 { width: 50px; } .sko .w5 { width: 56px; } .sko .w8 { width: 90px; } .sko .w10 { width: 110px; } .sko .w12 { width: 140px; } .sko .w20 { width: 220px; } .sko .w30 { width: 300px; }

@@ -24,7 +24,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
   {
     分類: "出庫",
     items: [
-      { label: "出庫入力", 説明: "出庫登録画面です。" },
+      { label: "出庫入力", to: "/soko/shukko", 説明: "出庫登録画面です。" },
       { label: "出庫参照", 説明: "出庫の明細を見る画面です。" },
       { label: "出庫抽出帳票", to: "/soko/shukkachu", 説明: "抽出した条件で出庫の明細を印刷表示できます。" },
       { label: "出荷関連報告書", 説明: "出庫に関する印刷選択画面です。" },
