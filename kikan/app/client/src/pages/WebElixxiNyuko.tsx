@@ -95,7 +95,7 @@ export function WebElixxiNyuko() {
           ) : (
             <>
               <div className="sko-pad">
-                拠点：{m.拠点コード}（{m.拠点名}）　入庫日：{m.入庫日}　扱い便名：{m.扱い便名}　{m.件数} 件・合計 {num(m.ケース計)} 個
+                拠点：{m.拠点コード ? `${m.拠点コード}（${m.拠点名}）` : "elixxi 拠点コードマスタにない届け先です"}　入庫日：{m.入庫日}　扱い便名：{m.扱い便名}　{m.件数} 件・合計 {num(m.ケース計)} 個
               </div>
               <div className="sko-gridwrap">
                 <table className="sz-grid sko-grid">

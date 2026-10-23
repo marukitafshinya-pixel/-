@@ -96,7 +96,7 @@ export function WebElixxiShukko() {
             <>
               <table className="sz-grid sko-grid" style={{ margin: "0 8px 8px" }}>
                 <tbody>
-                  <tr><th>拠点</th><td>{中身.拠点コード}（{中身.拠点名}）</td><th>出庫日</th><td>{中身.出庫日}</td><th>納品日</th><td>{中身.納品日}</td></tr>
+                  <tr><th>拠点</th><td>{中身.拠点コード ? `${中身.拠点コード}（${中身.拠点名}）` : "elixxi 拠点コードマスタにない倉庫です"}</td><th>出庫日</th><td>{中身.出庫日}</td><th>納品日</th><td>{中身.納品日}</td></tr>
                   <tr><th>依頼No</th><td>{中身.依頼No}</td><th>摘要</th><td colSpan={3}>{中身.摘要}</td></tr>
                   <tr><th>出庫先コード</th><td>{中身.出庫先コード}</td><th>出庫先名</th><td colSpan={3}>{中身.出庫先名}</td></tr>
                   <tr><th>扱い便コード</th><td>{中身.扱い便コード}</td><th>扱い便名</th><td colSpan={3}>{中身.扱い便名}</td></tr>
