@@ -30,7 +30,7 @@ export function 文字にする(buf: Buffer): string {
 }
 
 /** CSV を行と列に分ける（"..." の中のカンマ・改行もそのまま読む） */
-function csvを読む(text: string): string[][] {
+export function csvを読む(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";

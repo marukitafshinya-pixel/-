@@ -160,3 +160,11 @@ CREATE TABLE IF NOT EXISTS app."外部サイトのログイン" (
   "更新者"       TEXT NOT NULL DEFAULT '',
   PRIMARY KEY ("サイト", "利用者")
 );
+
+-- WEB連携の MerQurius 枝番：出庫ID ごとに 1 行（Access は主キー。移した表には無いので足す）
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'web_fe' AND table_name = 'MQ_枝番') THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS "MQ_枝番_出庫ID_key" ON web_fe."MQ_枝番" ("出庫ID");
+  END IF;
+END $$;

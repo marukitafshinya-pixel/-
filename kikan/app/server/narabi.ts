@@ -30,3 +30,21 @@ export function 鍵で比べる(a: number[], b: number[]): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] - b[i];
   return a.length - b.length;
 }
+
+/** 文字列を Shift_JIS のバイトにする（表に無い文字は「?」）。CSV を Shift_JIS で渡すときに使う */
+export function sjisにする(s: string): Buffer {
+  番号表 ??= 表を作る();
+  const out: number[] = [];
+  const dec = new TextDecoder("shift_jis");
+  for (const ch of s) {
+    const c = ch.codePointAt(0)!;
+    if (c < 0x80) out.push(c);
+    else if (c >= 0xff61 && c <= 0xff9f) out.push(c - 0xff61 + 0xa1); // 半角カナ
+    else {
+      const v = 番号表.get(ch);
+      if (v !== undefined && dec.decode(new Uint8Array([v >> 8, v & 0xff])) === ch) out.push(v >> 8, v & 0xff);
+      else out.push(0x3f);
+    }
+  }
+  return Buffer.from(out);
+}

@@ -17,7 +17,7 @@ export function WebMenu() {
     { label: "MerQurius 発注元マスタ", to: "/web/mq", 説明: "取引元と MerQurius の Web-EDI のコード" },
     { label: "elixxi 入庫依頼・出庫依頼", 説明: "これから作ります" },
     { label: "ランテック輸送手配・送り状照合", 説明: "これから作ります" },
-    { label: "MerQurius 納入日程", 説明: "これから作ります" },
+    { label: "MerQurius 納入日程", to: "/web/merqurius", 説明: "納入日程 CSV を取り込んで照合し、登録用 CSV を作る" },
     { label: "販盛 在庫移動・仕入", 説明: "やり方を決めてから作ります" },
   ];
   return (
