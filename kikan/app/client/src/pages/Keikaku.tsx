@@ -253,59 +253,109 @@ export function KeikakuCalendar() {
   );
 }
 
-/** その日の計画（Access の FM_製造計画入力）。大阪の生産計画を、日と工場で絞って見る */
+/**
+ * 製造計画入力（Access の FM_製造計画入力）。製造カレンダーの日を押すと開く。その日・その工場の大阪の計画を入れる・直す・消す。
+ * 商品コードを入れると商品名・規格・入数・賞味期限が入る。ケースを入れると商品kg（入数×ケース）、商品kg を入れるとケース（商品kg÷入数）を出す。
+ * 入れた計画は、製造計画の［生産計画のインポート］で製造管理の入庫予定に取り込まれる。
+ */
 export function KeikakuDay() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const [日, set日] = useState(sp.get("date") ?? today());
   const 倉庫 = Number(sp.get("soko") ?? 11);
   const [rows, setRows] = useState<Rec[]>([]);
+  const [opts, setOpts] = useState<Rec>({ 倉庫: [], 作業場: [], 商品: [], 原料: [] });
+  const 読む = (d = 日) => api.get<Rec[]>("/api/keikaku/day", { date: d, soko: 倉庫 }).then(setRows).catch(エラー);
   useEffect(() => {
-    api.get<Rec[]>("/api/keikaku/day", { date: 日, soko: 倉庫 }).then(setRows).catch(エラー);
+    api.get<Rec>("/api/keikaku/day/opts").then(setOpts).catch(エラー);
+  }, []);
+  useEffect(() => {
+    読む(日);
   }, [日, 倉庫]);
   const ずらす = (n: number) => {
     const d = new Date(日 + "T00:00:00Z");
     d.setUTCDate(d.getUTCDate() + n);
     set日(d.toISOString().slice(0, 10));
   };
+  async function 直す(r: Rec, 項目: string, 値: unknown) {
+    try {
+      await api.post("/api/keikaku/day/save", { 製造ID: r.製造ID, 項目, 値 });
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  async function 足す() {
+    try {
+      await api.post("/api/keikaku/day/new", { date: 日, soko: 倉庫 });
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  async function 消す(r: Rec) {
+    if (!confirm(`${r.商品名 ?? "この行"} を削除します。よろしいですか？`)) return;
+    try {
+      await api.post("/api/keikaku/day/delete", { 製造ID: r.製造ID });
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  const 選ぶ = (r: Rec, 項目: string, 一覧: Rec[], 数 = true) => (
+    <select className="kk-sel" value={r[項目] ?? ""} onChange={(e) => 直す(r, 項目, e.target.value === "" ? null : 数 ? Number(e.target.value) : e.target.value)}>
+      <option value="" />
+      {!一覧.some((o) => String(o.id) === String(r[項目] ?? "")) && r[項目] != null && <option value={r[項目]}>{r[項目]}</option>}
+      {一覧.map((o) => <option key={o.id} value={o.id}>{o.id}{o.name ? `　${o.name}` : ""}</option>)}
+    </select>
+  );
   return (
     <div className="kk">
       <div className="kk-head">
-        <div className="kk-title">製造計画</div>
+        <div className="kk-title">製造計画入力</div>
+        <button onClick={() => opts.最初 && set日(opts.最初)} title="いちばん古い製造日">|◀</button>
         <button onClick={() => ずらす(-1)}>◀</button>
         <Field kind="date" value={日} className="kk-date" onCommit={(v) => v && set日(v.replace(/\//g, "-"))} />
         <button onClick={() => ずらす(1)}>▶</button>
+        <button onClick={() => opts.最後 && set日(opts.最後)} title="いちばん新しい製造日">▶|</button>
         <span className="kk-v">{月日曜(日)}</span>
+        <button onClick={() => 読む()}>再表示</button>
+        <button className="blue" onClick={足す}>新しい行</button>
         <button onClick={() => nav(-1)}>閉じる</button>
       </div>
-      <table className="kk-grid">
+      <table className="kk-grid kk-edit">
         <thead>
-          <tr><th>作業場</th><th>コード</th><th>商品名</th><th>原料</th><th>規格</th><th>入数</th><th>ケース</th><th>商品kg</th><th>包装日</th><th>賞味期限</th><th>備考</th><th>製造ID</th></tr>
+          <tr><th>工場</th><th>作業場</th><th>商品コード</th><th>商品名</th><th>原料</th><th>規格</th><th>入数</th><th>ケース</th><th>商品kg</th><th>原料kg</th><th>製造日</th><th>包装日</th><th>賞味期限</th><th>備考</th><th>製造ID</th><th /></tr>
         </thead>
         <tbody>
+          {rows.length === 0 && <tr><td colSpan={16} className="c">この日の計画はありません</td></tr>}
           {rows.map((r) => (
             <tr key={r.製造ID}>
-              <td className="c">{r.作業場}</td>
-              <td className="r">{r.商品コード}</td>
-              <td>{r.商品名}</td>
-              <td>{r.原料}</td>
+              <td>{選ぶ(r, "倉庫ID", opts.倉庫)}</td>
+              <td>{選ぶ(r, "作業場", opts.作業場.map((x: string) => ({ id: x })), false)}</td>
+              <td>{選ぶ(r, "商品コード", opts.商品)}</td>
+              <td><Field value={r.商品名} className="kk-in w-name" onCommit={(v) => 直す(r, "商品名", v)} /></td>
+              <td>{選ぶ(r, "原料コード", opts.原料)}</td>
               <td>{r.規格}</td>
               <td className="r">{r.入数}</td>
-              <td className="r">{num(r.ケース)}</td>
-              <td className="r">{num(r.商品kg)}</td>
-              <td>{月日曜(r.入庫日)}</td>
-              <td>{r.賞味期限?.replace(/-/g, "/")}</td>
-              <td>{r.備考}</td>
+              <td><Field value={r.ケース} kind="num" className="kk-in w-num" onCommit={(v) => 直す(r, "ケース", v.trim() === "" ? null : Number(v))} /></td>
+              <td><Field value={r.商品kg} kind="num" className="kk-in w-num" onCommit={(v) => 直す(r, "商品kg", v.trim() === "" ? null : Number(v))} /></td>
+              <td><Field value={r.原料kg} kind="num" className="kk-in w-num" onCommit={(v) => 直す(r, "原料kg", v.trim() === "" ? null : Number(v))} /></td>
+              <td><Field value={r.製造日} kind="date" className="kk-in w-date" onCommit={(v) => 直す(r, "製造日", v.replace(/\//g, "-") || null)} /></td>
+              <td><Field value={r.入庫日} kind="date" className="kk-in w-date" onCommit={(v) => 直す(r, "入庫日", v.replace(/\//g, "-") || null)} /></td>
+              <td><Field value={r.賞味期限} kind="date" className="kk-in w-date" onCommit={(v) => 直す(r, "賞味期限", v.replace(/\//g, "-") || null)} /></td>
+              <td><Field value={r.備考} className="kk-in w-name" onCommit={(v) => 直す(r, "備考", v)} /></td>
               <td className="r">{r.製造ID}</td>
+              <td><button className="small" onClick={() => 消す(r)}>削除</button></td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={6} className="r">計</td>
+            <td colSpan={7} className="r">計</td>
             <td className="r">{num(rows.reduce((s, r) => s + Number(r.ケース ?? 0), 0))}</td>
             <td className="r">{num(rows.reduce((s, r) => s + Number(r.商品kg ?? 0), 0))}</td>
-            <td colSpan={4} />
+            <td colSpan={7} />
           </tr>
         </tfoot>
       </table>

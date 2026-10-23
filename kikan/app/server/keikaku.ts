@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { cint } from "./hanmori.js";
-import { 一連で } from "./ws.js";
+import { 一連で, 賞味期限計算 } from "./ws.js";
 
 // 製造計画（Access の 製造計画.accdb）。
 // 大阪で入れた生産計画（大阪丸北生産計画）を、製造管理の入庫予定（TD_入庫）に取り込み、変わったところを WorkStation の出荷に知らせる。
@@ -22,6 +22,7 @@ const 得意先マスタ = t("kyotsu", "TM_得意先マスタ");
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
 const 空 = (v: unknown) => v === null || v === undefined;
+const 日付 = (v: unknown) => (v ? String(v).slice(0, 10) : null);
 /** VBA の a <> b（どちらかが Null なら「違う」にならない） */
 const 違う = (a: unknown, b: unknown) => !空(a) && !空(b) && String(a) !== String(b);
 /** Access の日付の通し番号（CLng(日付)） */
@@ -379,11 +380,80 @@ export function keikakuRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { date: string; soko: string } }>("/api/keikaku/day", async (req, reply) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(req.query.date ?? "")) return reply.code(400).send({ error: "日付が正しくありません" });
     return q(
-      `SELECT "製造ID", "倉庫ID", "倉庫名", "作業場", "商品コード", "商品名", "原料コード", "原料", "規格", "入数", "ケース", "商品kg",
+      `SELECT "製造ID", "倉庫ID", "倉庫名", "作業場", "商品コード", "商品名", "原料コード", "原料", "規格", "入数", "ケース", "商品kg", "原料kg",
               "製造日"::date::text AS "製造日", "入庫日"::date::text AS "入庫日", "賞味期限"::date::text AS "賞味期限", "備考", "作成日"::text AS "作成日"
        FROM ${大阪の計画} WHERE "製造日" = $1::date AND "倉庫ID" = $2
        ORDER BY "倉庫ID", "作業場", "商品コード", "商品kg"`,
       [req.query.date, n(req.query.soko) || 11],
     );
+  });
+
+  // 製造計画入力の選ぶもの（倉庫・作業場は新規生産計画にあるもの、商品は分類のあるもの）
+  app.get("/api/keikaku/day/opts", async () => ({
+    倉庫: await q(`SELECT "倉庫ID" AS id, MAX("倉庫名") AS name FROM ${新規生産計画} WHERE "倉庫ID" IS NOT NULL AND "倉庫名" IS NOT NULL GROUP BY "倉庫ID" ORDER BY "倉庫ID"`),
+    作業場: (await q(`SELECT DISTINCT "作業場" AS id FROM ${新規生産計画} WHERE "作業場" IS NOT NULL ORDER BY 1`)).map((r) => r.id),
+    商品: await q(
+      `SELECT m."商品コード" AS id, m."商品名" AS name FROM ${商品マスタ} m
+       WHERE m."商品コード" IS NOT NULL AND COALESCE(m."分類ID", 0) <> 0 ORDER BY m."商品コード"`,
+    ),
+    原料: await q(`SELECT "商品コード" AS id, "商品名" AS name FROM ${商品マスタ} WHERE "商品コード" IS NOT NULL ORDER BY "商品コード"`),
+    最初: (await q(`SELECT MIN("製造日")::date::text AS v FROM ${入庫}`))[0]?.v ?? null,
+    最後: (await q(`SELECT MAX("製造日")::date::text AS v FROM ${入庫}`))[0]?.v ?? null,
+  }));
+
+  // 製造計画入力の 1 つの項目を直す（各項目の AfterUpdate と同じ）
+  app.post<{ Body: { 製造ID: number; 項目: string; 値: unknown } }>("/api/keikaku/day/save", async (req, reply) => {
+    const 項目 = req.body.項目;
+    const 直せる = ["倉庫ID", "作業場", "商品コード", "商品名", "原料コード", "製造日", "入庫日", "ケース", "商品kg", "原料kg", "賞味期限", "備考"];
+    if (!直せる.includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
+    return 一連で(async (c) => {
+      const r = (await c.query(`SELECT * FROM ${大阪の計画} WHERE "製造ID" = $1 FOR UPDATE`, [n(req.body.製造ID)])).rows[0];
+      if (!r) return reply.code(404).send({ error: "この計画はありません" });
+      let 値: any = req.body.値 === "" ? null : req.body.値;
+      if (["倉庫ID", "商品コード", "原料コード", "ケース", "原料kg"].includes(項目) && 値 !== null) 値 = cint(Number(値));
+      const v: Rec = { [項目]: 値 };
+      const 新 = { ...r, ...v };
+      const マスタ = async (code: unknown) => (await c.query(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(code)])).rows[0];
+      const 製造日 = 新.製造日 ? 日付(新.製造日) : null;
+      const 識別 = () => (製造日 ? `${日の番号(製造日)}#${数の文字(新.商品コード)}#${数の文字(新.倉庫ID)}#${新.作業場 ?? ""}` : null);
+      if (項目 === "商品コード") {
+        const m = await マスタ(値);
+        Object.assign(v, { 商品名: m?.商品名 ?? null, 規格: m?.規格 ?? null, 入数: m?.入数 ?? null, 賞味期限: await 賞味期限計算(c, 製造日, 値) });
+      } else if (項目 === "原料コード") {
+        v.原料 = (await マスタ(値))?.商品名 ?? null;
+      } else if (項目 === "ケース") {
+        const m = await マスタ(新.商品コード);
+        Object.assign(v, { 商品kg: m ? n(m.入数) * n(値) : null, 製造識別コード: 識別(), 作成日: 日本の今().日時 });
+      } else if (項目 === "商品kg") {
+        const m = await マスタ(新.商品コード);
+        // Access は ケース（整数の項目）に 商品kg ÷ 入数 を入れる（端数は偶数への丸め）
+        Object.assign(v, { ケース: m && n(m.入数) ? cint(n(値) / n(m.入数)) : null, 製造識別コード: 識別(), 作成日: 日本の今().日時 });
+      } else if (項目 === "製造日") {
+        v.賞味期限 = await 賞味期限計算(c, 製造日, 新.商品コード);
+      }
+      const k = Object.keys(v);
+      await c.query(`UPDATE ${大阪の計画} SET ${k.map((x, i) => `"${x}" = $${i + 2}`).join(", ")} WHERE "製造ID" = $1`, [r.製造ID, ...k.map((x) => v[x])]);
+      return { ok: true };
+    });
+  });
+
+  // 新しい行（製造日は開いている日。工場は選んでいる工場）
+  app.post<{ Body: { date: string; soko: number } }>("/api/keikaku/day/new", async (req, reply) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(req.body.date ?? "")) return reply.code(400).send({ error: "日付が正しくありません" });
+    return 一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('大阪丸北生産計画.製造ID'))`);
+      const id = n((await c.query(`SELECT COALESCE(MAX("製造ID"), 0) + 1 AS m FROM ${大阪の計画}`)).rows[0].m);
+      await c.query(
+        `INSERT INTO ${大阪の計画} ("製造ID", "製造日", "倉庫ID", "ケース", "商品kg", "原料kg", "入数", "chk", "抽出区分", "ユーザーchk", "確認済みチェック", "冷凍原料手配区分")
+         VALUES ($1, $2::date, $3, 0, 0, 0, 0, false, false, false, false, false)`,
+        [id, req.body.date, n(req.body.soko) || 11],
+      );
+      return { 製造ID: id };
+    });
+  });
+
+  app.post<{ Body: { 製造ID: number } }>("/api/keikaku/day/delete", async (req) => {
+    await q(`DELETE FROM ${大阪の計画} WHERE "製造ID" = $1`, [n(req.body.製造ID)]);
+    return { ok: true };
   });
 }
