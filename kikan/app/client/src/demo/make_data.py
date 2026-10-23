@@ -98,7 +98,7 @@ for tb in [
     "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ", "keikaku.TM_商品検査区分作成",
     # 倉庫管理の選択肢
     "soko_fe.TM_冷凍区分", "soko_fe.TM_輸送区分", "soko_fe.TM_配達区分", "soko_fe.TM_車両区分", "soko_fe.TM_運賃分類マスタ", "soko_fe.TM_運賃輸送区分",
-    "soko_fe.TD_商品分類", "soko_fe.TM_地区コード", "soko.TM_丸め計算マスタ", "soko.TM_経費項目マスタ",
+    "soko_fe.TD_商品分類", "soko_fe.TM_地区コード", "soko.TM_丸め計算マスタ", "soko.TM_経費項目マスタ", "soko_fe.オブジェクト一覧",
     # マスタ管理の選択肢
     "master_fe.TM_商品区分", "master_fe.TM_テープマスタ", "master_fe.TM_ハイ積みマスタ", "master_fe.TM_産地マスタ",
     "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード", "master_fe.TM_配達区分", "master.TM_運賃扱いマスタ",

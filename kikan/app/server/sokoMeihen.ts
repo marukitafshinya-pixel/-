@@ -32,7 +32,7 @@ async function 短縮名(c: PoolClient, code: unknown): Promise<string | null> {
 }
 
 /** 買取単価コード（Access の Sum_買取単価コード）。製造日があれば製造日の単価（計算区分 1）、なければ・合わなければ着日（変更日）以後に終わる最初の単価 */
-async function 買取単価コード(c: PoolClient, 買取先: unknown, 商品: unknown, 着日: string | null, ロット: string | null): Promise<number> {
+export async function 買取単価コード(c: PoolClient, 買取先: unknown, 商品: unknown, 着日: string | null, ロット: string | null): Promise<number> {
   if (!着日) return 0;
   const rows = (await c.query(`SELECT * FROM ${買取単価マスタ} WHERE "買取先コード" = $1 AND "商品コード" = $2 ORDER BY "終了日"`, [n(買取先), n(商品)])).rows as Rec[];
   if (ロット) {
