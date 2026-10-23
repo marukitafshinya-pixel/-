@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoHokan, sokoKeihi, sokoKensaku, master, sakujo] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoHokan, sokoKeihi, sokoKensaku, sokoChinritsu, master, sakujo] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -84,6 +84,7 @@ async function main() {
     import("../../../server/sokoHokan"),
     import("../../../server/sokoKeihi"),
     import("../../../server/sokoKensaku"),
+    import("../../../server/sokoChinritsu"),
     import("../../../server/master"),
     import("../../../server/sakujo"),
   ]);
@@ -125,6 +126,7 @@ async function main() {
   sokoHokan.sokoHokanRoutes(fakeApp);
   sokoKeihi.sokoKeihiRoutes(fakeApp);
   sokoKensaku.sokoKensakuRoutes(fakeApp);
+  sokoChinritsu.sokoChinritsuRoutes(fakeApp);
   master.masterRoutes(fakeApp);
   sakujo.sakujoRoutes(fakeApp);
   fetchを回す();
