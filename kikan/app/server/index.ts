@@ -48,6 +48,7 @@ import { sokoSeikyuRoutes } from "./sokoSeikyu.js";
 import { sokoFuitchiRoutes } from "./sokoFuitchi.js";
 import { webRenkeiRoutes } from "./webRenkei.js";
 import { webMqRoutes } from "./webMq.js";
+import { webLantecRoutes } from "./webLantec.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -100,6 +101,7 @@ await app.register(async (a) => sokoSeikyuRoutes(a));
 await app.register(async (a) => sokoFuitchiRoutes(a));
 await app.register(async (a) => webRenkeiRoutes(a));
 await app.register(async (a) => webMqRoutes(a));
+await app.register(async (a) => webLantecRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 

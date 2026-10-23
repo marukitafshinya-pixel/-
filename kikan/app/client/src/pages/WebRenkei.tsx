@@ -16,7 +16,7 @@ export function WebMenu() {
     { label: "ランテック賞味期限表示マスタ", to: "/web/lantec", 説明: "ランテックの発注の備考に賞味期限を書く届け先" },
     { label: "MerQurius 発注元マスタ", to: "/web/mq", 説明: "取引元と MerQurius の Web-EDI のコード" },
     { label: "elixxi 入庫依頼・出庫依頼", 説明: "これから作ります" },
-    { label: "ランテック輸送手配・送り状照合", 説明: "これから作ります" },
+    { label: "ランテック輸送手配・送り状照合", to: "/web/lantec-okurijo", 説明: "便の送り状番号を見る・直す。ランテックの発注一覧明細 CSV を取り込んで便に送り状番号を書く（発注の自動入力はこれから作ります）" },
     { label: "MerQurius 納入日程", to: "/web/merqurius", 説明: "納入日程 CSV を取り込んで照合し、登録用 CSV を作る" },
     { label: "販盛 在庫移動・仕入", 説明: "やり方を決めてから作ります" },
   ];
