@@ -9,7 +9,7 @@ const 短い日 = (v: string | null) => (v ? `${v.slice(2, 4)}/${v.slice(5, 7)}/
 
 /** 倉庫管理のメニュー（Access の T_画面一覧 の分類ごと）。to のないものはまだ作っていない */
 const メニュー: { 分類: string; items: { label: string; to?: string; 説明: string }[] }[] = [
-  { 分類: "倉庫", items: [{ label: "倉庫別データ検索", 説明: "倉庫別にデータを参照します。" }] },
+  { 分類: "倉庫", items: [{ label: "倉庫別データ検索", to: "/soko/kensaku", 説明: "倉庫別にデータを参照します。" }] },
   {
     分類: "在庫・保管料",
     items: [

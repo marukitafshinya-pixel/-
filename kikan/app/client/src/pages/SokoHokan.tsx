@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
 import { Field, parseDate } from "../formParts";
 
@@ -17,6 +17,9 @@ let 点検済み = false;
  */
 export function SokoHokan() {
   const nav = useNavigate();
+  const [sp] = useSearchParams();
+  /** 商品別在庫から開いたときの冷蔵庫・商品 */
+  const [指定] = useState(() => ({ soko: Number(sp.get("soko")) || null, shohin: Number(sp.get("shohin")) || null }));
   const [soko, setSoko] = useState<number | null>(null);
   const [sokoName, setSokoName] = useState("");
   const [mode, setMode] = useState(0);
@@ -36,13 +39,13 @@ export function SokoHokan() {
         try {
           const r = await 処理中(() => api.post<{ soko: number }>("/api/soko/hokan/open", {}));
           点検済み = true;
-          setSoko(r.soko);
+          setSoko(指定.soko ?? r.soko);
           return;
         } catch (e) {
           エラー(e);
         }
       }
-      setSoko((await api.get<選択肢[]>("/api/soko/hokan/soko").catch(() => []))[0]?.id ?? 0);
+      setSoko(指定.soko ?? (await api.get<選択肢[]>("/api/soko/hokan/soko").catch(() => []))[0]?.id ?? 0);
     })();
   }, []);
   // 冷蔵庫・在庫表示を変えたら商品の一覧を作り直し、いちばん小さい商品コードを出す（cmb_倉庫_AfterUpdate）
@@ -53,7 +56,7 @@ export function SokoHokan() {
       .get<{ list: 選択肢[]; 最初: number | null }>("/api/soko/hokan/shohin", { soko: String(soko), mode: String(mode) })
       .then((r) => {
         setShohins(r.list);
-        setShohin(r.最初);
+        setShohin(指定.soko === soko && 指定.shohin ? 指定.shohin : r.最初);
       })
       .catch(エラー);
   }, [soko, mode]);

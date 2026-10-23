@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { Field, parseDate } from "../formParts";
 
@@ -18,6 +18,7 @@ const 月を足す = (m: string, k: number) => {
  */
 export function SokoKeihi() {
   const nav = useNavigate();
+  const [sp] = useSearchParams();
   const [opts, setOpts] = useState<{ 倉庫: 選択肢[]; 名義: 選択肢[]; 経費: 選択肢[]; 最初: { 最初: string; 最後: string } } | null>(null);
   const [soko, setSoko] = useState<number | null>(null);
   const [meigi, setMeigi] = useState<number | null>(null);
@@ -30,7 +31,7 @@ export function SokoKeihi() {
   useEffect(() => {
     api.get<any>("/api/soko/keihi/choices").then((o) => {
       setOpts(o);
-      setSoko(o.倉庫[0]?.id ?? null);
+      setSoko(Number(sp.get("soko")) || (o.倉庫[0]?.id ?? null));
       setMeigi(o.名義[0]?.id ?? null);
     }).catch(エラー);
   }, []);
