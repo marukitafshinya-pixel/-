@@ -404,6 +404,90 @@ export function sokoRoutes(app: FastifyInstance) {
     }),
   );
 
+  // ---------------- 入庫確認（F_入庫確認・F_入庫確認FS）：入庫日ごとの冷蔵庫、ロットの入庫No の入力とグループ化 ----------------
+  app.get<{ Querystring: { date: string } }>("/api/soko/nyuko-kakunin", async (req) =>
+    q(
+      `SELECT z."倉庫ID", MIN(m."得意先名") AS "得意先名", SUM(z."入庫元数")::float AS "入庫元数の合計"
+       FROM ${倉庫の在庫} z LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = z."倉庫ID"
+       WHERE z."入庫日" = $1::date GROUP BY z."倉庫ID" HAVING SUM(z."入庫元数") <> 0 ORDER BY MIN(m."得意先名")`,
+      [req.query.date],
+    ),
+  );
+  app.get<{ Querystring: { date: string; soko: string } }>("/api/soko/nyuko-kakunin/lots", async (req) =>
+    q(
+      `SELECT "在庫ID", "倉庫ID", "倉庫名", "入庫後名義ID", "商品コード", "商品名", "規格", "入数", "入庫元数", "在庫ケース", "在庫kg", "賞味期限"::date::text AS "賞味期限",
+              "製造日"::date::text AS "製造日", "入庫日"::date::text AS "入庫日", "タグ", "入庫No", "不一致備考"
+       FROM ${倉庫の在庫} WHERE "入庫日" = $1::date AND "倉庫ID" = $2
+       ORDER BY "倉庫ID", "入庫後名義ID", "商品コード", "賞味期限", "タグ", "入庫No", "商品名"`,
+      [req.query.date, n(req.query.soko)],
+    ),
+  );
+  // 入庫No を入れる（同じ在庫ID の出庫の入庫No も書き換える）
+  app.post<{ Body: { 在庫ID: number; 入庫No: string | null } }>("/api/soko/nyuko-kakunin/no", async (req) =>
+    一連で(async (c) => {
+      await c.query(`UPDATE ${倉庫の在庫} SET "入庫No" = $2 WHERE "在庫ID" = $1`, [n(req.body.在庫ID), req.body.入庫No || null]);
+      await c.query(`UPDATE ${倉庫の出荷} SET "入庫No" = $2 WHERE "在庫ID" = $1`, [n(req.body.在庫ID), req.body.入庫No || null]);
+      return { ok: true };
+    }),
+  );
+  // グループ化：同じ商品・賞味期限のロットを 1 つにまとめる（最初のロットに入庫元数を合わせ、ほかは消す。出庫は最初のロットに付け替えて「グループ化」の知らせ）
+  app.post<{ Body: { 在庫ID: number[] } }>("/api/soko/nyuko-kakunin/group", async (req, reply) =>
+    一連で(async (c) => {
+      const lots = (
+        await c.query(`SELECT * FROM ${倉庫の在庫} WHERE "在庫ID" = ANY($1::int[]) ORDER BY "倉庫ID", "入庫後名義ID", "賞味期限", "タグ", "在庫ID" FOR UPDATE`, [(req.body.在庫ID ?? []).map(n)])
+      ).rows as Rec[];
+      const 個数 = lots.reduce((a, z) => a + n(z.入庫元数), 0);
+      const 商品 = new Set(lots.map((z) => n(z.商品コード)));
+      const 期限 = new Set(lots.map((z) => 日付(z.賞味期限) ?? ""));
+      if (商品.size > 1 || 期限.size > 1) return reply.code(400).send({ error: "グループ化するレコードが別のロットを選択しています。" });
+      if (!個数) return reply.code(400).send({ error: "グループ化する商品にチェックが入ってないか、数量が0です" });
+      const 先 = lots[0];
+      let 知らせ = 0;
+      for (const z of lots) {
+        const r = await c.query(
+          `UPDATE ${倉庫の出荷} SET "在庫ID" = $2, "認識ID" = $3, "通知" = 'グループ化', "計画変更chk" = true, "変更通知" = 'レコードのグループ化' WHERE "在庫ID" = $1`,
+          [z.在庫ID, 先.在庫ID, String(先.在庫ID)],
+        );
+        知らせ += r.rowCount ?? 0;
+        if (z !== 先) await c.query(`DELETE FROM ${倉庫の在庫} WHERE "在庫ID" = $1`, [z.在庫ID]);
+      }
+      // Access は最初のロットの登録済み出庫だけを引くため、ほかのロットから付け替えた出庫と名変の分の在庫が多く残る。Web 版は付け替えたあとの全部と名変を引く
+      const 出 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の出荷} WHERE "在庫ID" = $1 AND "chk" = true`, [先.在庫ID])).rows[0].v);
+      const 名 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の名変} WHERE "在庫No" = ANY($1::int[]) AND "変更Check" = true`, [lots.map((z) => z.在庫ID)])).rows[0].v);
+      const 繰越 = 個数 - 出 - 名;
+      await c.query(
+        `UPDATE ${倉庫の在庫} SET "入庫元数" = $2, "繰越ケース" = $3, "製造ケース" = 0, "出庫ケース" = 0, "在庫ケース" = $3, "タグ" = '', "繰越kg" = $3 * "入数", "出荷kg" = 0, "製造kg" = 0,
+           "在庫kg" = $3 * "入数" WHERE "在庫ID" = $1`,
+        [先.在庫ID, 個数, 繰越],
+      );
+      return { 知らせ };
+    }),
+  );
+
+  // ---------------- 出庫確認（F_出庫確認・F_出庫確認FS）：出荷日ごとの冷蔵庫、出庫に「出庫済み」の印 ----------------
+  app.get<{ Querystring: { date: string } }>("/api/soko/shukko-kakunin", async (req) =>
+    q(
+      `SELECT s."倉庫ID", MIN(m."得意先名") AS "得意先名", SUM(s."ケース")::float AS "ケースの合計", SUM(s."商品kg")::float AS "商品kgの合計"
+       FROM ${倉庫の出荷} s LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = s."倉庫ID"
+       WHERE s."出荷日" = $1::date GROUP BY s."倉庫ID" HAVING SUM(s."商品kg") <> 0 ORDER BY left(s."倉庫ID"::text, 1), MIN(m."得意先名")`,
+      [req.query.date],
+    ),
+  );
+  app.get<{ Querystring: { date: string; soko: string } }>("/api/soko/shukko-kakunin/rows", async (req) =>
+    q(
+      `SELECT s."出庫ID", s."出荷日"::date::text AS "出荷日", s."入庫No", s."商品コード", s."商品名", s."規格", s."ケース", s."商品kg", s."賞味期限"::date::text AS "賞味期限",
+              s."製造日"::date::text AS "製造日", s."届け先コード", s."届け先", s."タグ", s."納品日"::date::text AS "納品日", s."出庫済み", s."chk", p."運送会社名"
+       FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+       WHERE s."在庫ID" <> 0 AND s."出荷日" = $1::date AND s."倉庫ID" = $2
+       ORDER BY s."出荷日", s."入庫No", s."商品名", s."賞味期限", s."届け先コード", s."タグ"`,
+      [req.query.date, n(req.query.soko)],
+    ),
+  );
+  app.post<{ Body: { 出庫ID: number; 出庫済み: boolean } }>("/api/soko/shukko-kakunin/set", async (req) => {
+    await q(`UPDATE ${倉庫の出荷} SET "出庫済み" = $2 WHERE "出庫ID" = $1`, [n(req.body.出庫ID), req.body.出庫済み === true]);
+    return { ok: true };
+  });
+
   // 入庫登録（ｲﾝﾎﾟｰﾄ）の一覧（FM_入庫未登録一覧(ver2)：入庫フラグあり・まだ登録していない入庫待ち）
   app.get("/api/soko/nyuko", async () => ({
     rows: await q(

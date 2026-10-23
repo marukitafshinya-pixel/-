@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field } from "../formParts";
+import { Field, today } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -32,7 +32,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
     ],
   },
   { 分類: "名義変更", items: [{ label: "名義変更", 説明: "名義変更・登録を行います" }, { label: "名義変更関連印刷", 説明: "名義変更に関する印刷選択画面です。" }] },
-  { 分類: "確認", items: [{ label: "入庫確認", 説明: "入庫データの確認" }, { label: "出庫確認", 説明: "出庫の確認" }] },
+  { 分類: "確認", items: [{ label: "入庫確認", to: "/soko/nyuko-kakunin", 説明: "入庫データの確認" }, { label: "出庫確認", to: "/soko/shukko-kakunin", 説明: "出庫の確認" }] },
   {
     分類: "入庫",
     items: [
@@ -279,6 +279,162 @@ export function SokoIdou() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+const 日を足す = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") + k * 86400000).toISOString().slice(0, 10);
+function 日付の欄(props: { 日: string; set日: (d: string) => void }) {
+  return (
+    <>
+      <button onClick={() => props.set日(日を足す(props.日, -1))}>◀</button>
+      <Field kind="date" value={props.日} className="sko-date" onCommit={(v) => v && props.set日(v.replace(/\//g, "-"))} />
+      <button onClick={() => props.set日(日を足す(props.日, 1))}>▶</button>
+    </>
+  );
+}
+
+/**
+ * 入庫確認（Access の F_入庫確認・F_入庫確認FS）。入庫日ごとに冷蔵庫を選び、冷蔵庫から届いた入庫No を入れる（同じロットの出庫の入庫No も変わる）。
+ * 同じ商品・賞味期限のロットに印を付けて［グループ化］すると、最初のロットにまとめ、ほかは消す（出庫は最初のロットに付け替えて「グループ化」の知らせ）。
+ */
+export function SokoNyukoKakunin() {
+  const nav = useNavigate();
+  const [日, set日] = useState(today());
+  const [倉庫, set倉庫] = useState<Rec[]>([]);
+  const [選んだ, set選んだ] = useState<number | null>(null);
+  const [lots, setLots] = useState<Rec[]>([]);
+  const [印, set印] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    api.get<Rec[]>("/api/soko/nyuko-kakunin", { date: 日 }).then(set倉庫).catch(エラー);
+    set選んだ(null);
+    setLots([]);
+  }, [日]);
+  const ロット = (soko = 選んだ) => (soko ? api.get<Rec[]>("/api/soko/nyuko-kakunin/lots", { date: 日, soko: String(soko) }).then(setLots).catch(エラー) : Promise.resolve());
+  useEffect(() => {
+    set印(new Set());
+    ロット();
+  }, [選んだ]);
+  async function グループ化() {
+    if (!confirm("商品をグループ化します。よろしいですか？")) return;
+    try {
+      const r = await api.post<Rec>("/api/soko/nyuko-kakunin/group", { 在庫ID: [...印] });
+      if (r.知らせ) alert(`変更により、出荷計画に${r.知らせ} 件の変更通知を送ります。`);
+    } catch (e) {
+      エラー(e);
+    }
+    set印(new Set());
+    ロット();
+  }
+  const 印の数 = lots.filter((z) => 印.has(z.在庫ID)).reduce((a, z) => a + Number(z.入庫元数 ?? 0), 0);
+  return (
+    <div className="sz">
+      <div className="kk-head">
+        <div className="kk-title">入庫確認</div>
+        <span>入庫日</span>
+        <日付の欄 日={日} set日={set日} />
+        <span className="small">{選んだ ? (印.size ? "グループ化するレコードにチェックを入れてください。" : "入庫Noを登録して下さい。") : "確認する冷蔵庫を選択して下さい。"}</span>
+        <button onClick={() => nav(-1)}>閉じる</button>
+      </div>
+      <div className="sko-body">
+        <div className="sko-bins">
+          {倉庫.length === 0 && <div className="small">この入庫日の入庫はありません</div>}
+          {倉庫.map((w) => (
+            <button key={w.倉庫ID} className={"sko-bin" + (w.倉庫ID === 選んだ ? " on" : "")} onClick={() => set選んだ(w.倉庫ID)}>
+              <div><b>{w.得意先名 ?? w.倉庫ID}</b></div>
+              <div className="small">入庫 {num(w.入庫元数の合計)} ケース</div>
+            </button>
+          ))}
+        </div>
+        <div className="sko-main">
+          {選んだ && (
+            <>
+              <table className="sz-grid">
+                <thead><tr><th>選択</th><th>名義</th><th>コード</th><th>商品名</th><th>規格</th><th>製造日</th><th>賞味期限</th><th>区分</th><th>入庫元数</th><th>在庫</th><th>入庫No</th><th>不一致</th></tr></thead>
+                <tbody>
+                  {lots.map((z) => (
+                    <tr key={z.在庫ID} className={印.has(z.在庫ID) ? "sel" : ""}>
+                      <td className="c"><input type="checkbox" checked={印.has(z.在庫ID)} onChange={(e) => set印((s) => { const x = new Set(s); e.target.checked ? x.add(z.在庫ID) : x.delete(z.在庫ID); return x; })} /></td>
+                      <td className="r">{z.入庫後名義ID}</td><td className="r">{z.商品コード}</td><td className="name">{z.商品名}</td><td>{z.規格}</td><td>{z.製造日}</td><td>{z.賞味期限}</td>
+                      <td className="c">{z.タグ}</td><td className="r">{num(z.入庫元数)}</td><td className="r">{num(z.在庫ケース)}</td>
+                      <td><Field value={z.入庫No} className="sz-in w10" onCommit={async (v) => { await api.post("/api/soko/nyuko-kakunin/no", { 在庫ID: z.在庫ID, 入庫No: v }).catch(エラー); ロット(); }} /></td>
+                      <td className="small red">{z.不一致備考}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="sko-foot">
+                <button className="blue" disabled={印.size < 2} onClick={グループ化}>グループ化</button>
+                <span>グループ化個数計 {num(印の数)}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 出庫確認（Access の F_出庫確認・F_出庫確認FS）。出荷日ごとに冷蔵庫を選び、冷蔵庫からの出庫の報告と照らして「出庫済み」の印を付ける。
+ */
+export function SokoShukkoKakunin() {
+  const nav = useNavigate();
+  const [日, set日] = useState(today());
+  const [倉庫, set倉庫] = useState<Rec[]>([]);
+  const [選んだ, set選んだ] = useState<number | null>(null);
+  const [rows, setRows] = useState<Rec[]>([]);
+  useEffect(() => {
+    api.get<Rec[]>("/api/soko/shukko-kakunin", { date: 日 }).then(set倉庫).catch(エラー);
+    set選んだ(null);
+    setRows([]);
+  }, [日]);
+  const 読む = (soko = 選んだ) => (soko ? api.get<Rec[]>("/api/soko/shukko-kakunin/rows", { date: 日, soko: String(soko) }).then(setRows).catch(エラー) : Promise.resolve());
+  useEffect(() => {
+    読む();
+  }, [選んだ]);
+  async function 印(r: Rec, on: boolean) {
+    if (on && !confirm("確認よろしいですか？")) return;
+    await api.post("/api/soko/shukko-kakunin/set", { 出庫ID: r.出庫ID, 出庫済み: on }).catch(エラー);
+    読む();
+  }
+  return (
+    <div className="sz">
+      <div className="kk-head">
+        <div className="kk-title">出庫確認</div>
+        <span>出荷日</span>
+        <日付の欄 日={日} set日={set日} />
+        <span className="small">{選んだ ? "" : "確認する冷蔵庫を選択して下さい。"}</span>
+        <button onClick={() => nav(-1)}>閉じる</button>
+      </div>
+      <div className="sko-body">
+        <div className="sko-bins">
+          {倉庫.length === 0 && <div className="small">この出荷日の出庫はありません</div>}
+          {倉庫.map((w) => (
+            <button key={w.倉庫ID} className={"sko-bin" + (w.倉庫ID === 選んだ ? " on" : "")} onClick={() => set選んだ(w.倉庫ID)}>
+              <div><b>{w.得意先名 ?? w.倉庫ID}</b></div>
+              <div className="small">{num(w.ケースの合計)} ケース・{num(w.商品kgの合計)} kg</div>
+            </button>
+          ))}
+        </div>
+        <div className="sko-main">
+          {選んだ && (
+            <table className="sz-grid">
+              <thead><tr><th>出庫済み</th><th>入庫No</th><th>コード</th><th>商品名</th><th>規格</th><th>製造日</th><th>賞味期限</th><th>区分</th><th>ケース</th><th>kg</th><th>届け先</th><th>納品日</th><th>運送会社</th><th>登録</th></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.出庫ID} className={r.出庫済み ? "sel" : ""}>
+                    <td className="c"><input type="checkbox" checked={!!r.出庫済み} onChange={(e) => 印(r, e.target.checked)} /></td>
+                    <td>{r.入庫No}</td><td className="r">{r.商品コード}</td><td className="name">{r.商品名}</td><td>{r.規格}</td><td>{r.製造日}</td><td>{r.賞味期限}</td>
+                    <td className="c">{r.タグ}</td><td className="r">{num(r.ケース)}</td><td className="r">{num(r.商品kg)}</td><td>{r.届け先}</td><td>{r.納品日}</td><td>{r.運送会社名}</td>
+                    <td className="c">{r.chk ? "済" : ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
