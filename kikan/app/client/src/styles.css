@@ -1903,3 +1903,4 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hs-grid td.r { text-align: right; } .hs-grid tr.b td { font-weight: bold; }
 .hs-pageno { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 12px; }
 @media print { @page { size: A4 landscape; margin: 6mm; } .hs-page { page-break-after: always; border: none; } }
+.hs-grid tr.hs-subtotal td { border-left: none; border-right: none; border-bottom: none; border-top: 2px solid #000; }

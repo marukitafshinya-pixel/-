@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
 import { Field, parseDate, today } from "../formParts";
@@ -177,16 +177,20 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
     const k = `${r.倉庫ID}-${r.入庫後名義ID}`;
     (組.get(k) ?? 組.set(k, []).get(k)!).push(r);
   }
-  // ページを作る（倉庫・名義ごとに 1 枚目＋明細を 明細の行数 ずつ）
-  type ページ = { 種類: "表紙" | "明細"; rows: Rec[]; 最後: boolean };
+  // ページを作る（Access と同じく、倉庫・名義ごとに 1 枚目のあと、商品コードごとに改ページして小計。倉庫全体の諸経費〈コード 0〉が先頭。
+  // 1 つの商品が 明細の行数 を超えるときは続きのページに）
+  type ページ = { 種類: "表紙" | "明細"; rows: Rec[]; 小計: Rec[] | null; 組: Rec[] };
   const ページ: ページ[] = [];
   for (const rows of 組.values()) {
-    ページ.push({ 種類: "表紙", rows, 最後: false });
-    for (let i = 0; i < Math.max(rows.length, 1); i += 明細の行数) ページ.push({ 種類: "明細", rows: rows.slice(i, i + 明細の行数), 最後: i + 明細の行数 >= rows.length });
+    ページ.push({ 種類: "表紙", rows, 小計: null, 組: rows });
+    const 商品 = new Map<number, Rec[]>();
+    for (const r of [...rows].sort((a, b) => Number(a.商品コード ?? 0) - Number(b.商品コード ?? 0) || String(a.入庫日 ?? "").localeCompare(String(b.入庫日 ?? "")) || String(a.入庫No ?? "").localeCompare(String(b.入庫No ?? ""))))
+      (商品.get(Number(r.商品コード ?? 0)) ?? 商品.set(Number(r.商品コード ?? 0), []).get(Number(r.商品コード ?? 0))!).push(r);
+    for (const g of 商品.values())
+      for (let i = 0; i < g.length; i += 明細の行数) ページ.push({ 種類: "明細", rows: g.slice(i, i + 明細の行数), 小計: i + 明細の行数 >= g.length ? g : null, 組: rows });
   }
   const 計 = (rows: Rec[], k: string) => rows.reduce((a, r) => a + Number(r[k] ?? 0), 0);
   const 行の計 = (r: Rec) => Number(r.当月入出庫料 ?? 0) + Number(r.当月保管料 ?? 0) + Number(r.諸経費 ?? 0);
-  let 組の行: Rec[] = [];
   return (
     <div className="hs-wrap">
       <div className="no-print hs-bar">
@@ -195,18 +199,21 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
         <span className="small">減額分は内容を確かめてから入れます（いまは 0）。</span>
       </div>
       {ページ.map((p, i) => {
-        if (p.種類 === "表紙") 組の行 = p.rows;
+        const 組の行 = p.組;
         const h = 組の行[0] ?? {};
+        // 小計の 期 の欄は、Access と同じく その倉庫・名義の請求期のいちばん大きい数
+        const 最大の期 = Math.max(0, ...組の行.map((r) => Number(r.請求期 ?? 0)));
+        const kg = (v: unknown) => num(Math.round(Number(v ?? 0)));
         const 頭 = (
           <>
             <div className="hs-time">{props.印刷日時}</div>
             <div className="hs-title">月別保管料明細表</div>
             <div className="hs-head">
               <div>
-                <div>倉庫 {h.倉庫短縮名 ?? h.倉庫名}</div>
-                <div>名義 {h.名義名 ?? h.名義短縮名}</div>
+                <div>倉庫 {h.倉庫得意先名 ?? h.倉庫名}</div>
+                <div>名義 {h.名義得意先名 ?? h.名義名}</div>
               </div>
-              <div className="hs-day">{年月日(props.開始)}　　～ {年月日(props.終了)}</div>
+              <div className="hs-day">{年月日(props.開始)} ～ {年月日(props.終了)}</div>
             </div>
           </>
         );
@@ -239,21 +246,20 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
                 <tbody>
                   {p.rows.map((r, j) => (
                     <tr key={j}>
-                      <td>{年月日(r.入庫日)}</td><td>{r.入庫No}</td><td className="r">{r.商品コード || ""}</td><td>{r.商品名}</td><td>{年月日(r.賞味期限)}</td>
-                      <td className="r">{r.在庫ID ? r.請求期 : ""}</td><td className="r">{r.在庫ID ? num(r.入庫元数) : ""}</td><td className="r">{r.在庫ID ? num(r.請求個数) : ""}</td><td className="r">{r.在庫ID ? num(r.請求kg) : ""}</td>
-                      <td className="r">{r.在庫ID ? 円(r.当月入出庫料) : ""}</td><td className="r">{r.在庫ID ? 円(r.当月保管料) : ""}</td><td className="r">{r.在庫ID ? 円(r.荷役料) : ""}</td>
-                      <td className="r">{r.在庫ID ? 円(r.名変料) : ""}</td><td className="r">{r.在庫ID ? 円(r.割増料) : ""}</td><td className="r">{円(行の計(r))}</td>
+                      <td>{年月日(r.入庫日)}</td><td>{r.入庫No}</td><td className="r">{Number(r.商品コード ?? 0)}</td><td>{r.商品名}</td><td>{年月日(r.賞味期限)}</td>
+                      <td className="r">{Number(r.請求期 ?? 0)}</td><td className="r">{num(r.入庫元数 ?? 0)}</td><td className="r">{num(r.請求個数 ?? 0)}</td><td className="r">{kg(r.請求kg)}</td>
+                      <td className="r">{円(r.当月入出庫料)}</td><td className="r">{円(r.当月保管料)}</td><td className="r">{円(r.荷役料)}</td>
+                      <td className="r">{円(r.名変料)}</td><td className="r">{円(r.割増料)}</td><td className="r">{円(行の計(r))}</td>
                     </tr>
                   ))}
-                  {p.最後 && (
-                    <Fragment>
-                      <tr className="b">
-                        <td /><td /><td /><td /><td /><td /><td />
-                        <td className="r">{num(計(組の行, "請求個数"))}</td><td className="r">{num(計(組の行, "請求kg"))}</td><td className="r">{円(計(組の行, "当月入出庫料"))}</td>
-                        <td className="r">{円(計(組の行, "当月保管料"))}</td><td className="r">{円(計(組の行, "荷役料"))}</td><td className="r">{円(計(組の行, "名変料"))}</td>
-                        <td className="r">{円(計(組の行, "割増料"))}</td><td className="r">{円(組の行.reduce((a, r) => a + 行の計(r), 0))}</td>
-                      </tr>
-                    </Fragment>
+                  {p.小計 && (
+                    <tr className="b hs-subtotal">
+                      <td /><td /><td /><td /><td />
+                      <td className="r">{最大の期}</td><td />
+                      <td className="r">{num(計(p.小計, "請求個数"))}</td><td className="r">{kg(計(p.小計, "請求kg"))}</td><td className="r">{円(計(p.小計, "当月入出庫料"))}</td>
+                      <td className="r">{円(計(p.小計, "当月保管料"))}</td><td className="r">{円(計(p.小計, "荷役料"))}</td><td className="r">{円(計(p.小計, "名変料"))}</td>
+                      <td className="r">{円(計(p.小計, "割増料"))}</td><td className="r">{円(p.小計.reduce((a, r) => a + 行の計(r), 0))}</td>
+                    </tr>
                   )}
                 </tbody>
               </table>

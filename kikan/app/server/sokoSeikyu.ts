@@ -221,7 +221,9 @@ export function sokoSeikyuRoutes(app: FastifyInstance) {
     return q(
       `SELECT *, "入庫日"::date::text AS "入庫日", "製造日"::date::text AS "製造日", "賞味期限"::date::text AS "賞味期限", "集計終了日"::date::text AS "集計終了日",
               (SELECT "短縮名" FROM ${得意先マスタ} m WHERE m."短縮コード" = x."倉庫ID" LIMIT 1) AS "倉庫短縮名",
-              (SELECT "短縮名" FROM ${得意先マスタ} m WHERE m."短縮コード" = x."入庫後名義ID" LIMIT 1) AS "名義短縮名"
+              (SELECT "短縮名" FROM ${得意先マスタ} m WHERE m."短縮コード" = x."入庫後名義ID" LIMIT 1) AS "名義短縮名",
+              (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = x."倉庫ID" LIMIT 1) AS "倉庫得意先名",
+              (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = x."入庫後名義ID" LIMIT 1) AS "名義得意先名"
        FROM ${計算表} x ${w.length ? "WHERE " + w.join(" AND ") : ""}
        ORDER BY x."倉庫ID", x."入庫後名義ID", x."在庫ID" IS NULL, x."入庫日", x."入庫No", x."在庫ID"`,
       a,
