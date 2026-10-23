@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { Field, parseDate } from "../formParts";
 
@@ -32,7 +32,15 @@ export function SokoChinritsu() {
   const [合言葉, set合言葉] = useState<string | null>(null);
   const [詳細, set詳細] = useState<number | null>(null);
   const 冷蔵庫 = 一覧[i];
-  const 読む = () => api.get<any>("/api/soko/chinritsu").then((r) => { set一覧(r.冷蔵庫); set丸め(r.丸め); }).catch(エラー);
+  // ?code=短縮コード で開いたときは、その冷蔵庫を出す（マスタ管理の得意先マスタ登録の［入庫条件詳細設定］から）
+  const [sp] = useSearchParams();
+  const 読む = () =>
+    api.get<any>("/api/soko/chinritsu").then((r) => {
+      set一覧(r.冷蔵庫);
+      set丸め(r.丸め);
+      const k = (r.冷蔵庫 as Rec[]).findIndex((x) => String(x.id) === sp.get("code"));
+      if (k >= 0) setI(k);
+    }).catch(エラー);
   useEffect(() => {
     読む();
   }, []);

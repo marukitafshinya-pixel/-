@@ -436,6 +436,7 @@ export function TokuiForm() {
         <div className="tf-name">得意先マスタ登録</div>
         <div className="mf-btns">
           <button onClick={登録} disabled={ro}>登録</button>
+          {!新規 && <button onClick={() => nav(`/soko/chinritsu?code=${v.短縮コード}`)} title="倉庫管理の「倉庫賃率・入庫設定」をこの冷蔵庫で開きます">入庫条件詳細設定</button>}
           <button onClick={() => nav("/master/tokui")}>閉じる</button>
         </div>
       </div>
