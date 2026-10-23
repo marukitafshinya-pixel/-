@@ -39,6 +39,7 @@ import { WebElixxi } from "./pages/WebElixxi";
 import { WebElixxiNyuko } from "./pages/WebElixxiNyuko";
 import { WebElixxiShukko } from "./pages/WebElixxiShukko";
 import { WebHojo } from "./pages/WebHojo";
+import { WebHanmoriIdou, WebHanmoriShiire } from "./pages/WebHanmori";
 import WsOsaka from "./pages/WsOsaka";
 import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
@@ -112,6 +113,8 @@ function App() {
       <Route path="/web/elixxi-nyuko" element={<WebElixxiNyuko />} />
       <Route path="/web/elixxi-shukko" element={<WebElixxiShukko />} />
       <Route path="/web/hojo" element={<WebHojo />} />
+      <Route path="/web/hanmori-idou" element={<WebHanmoriIdou />} />
+      <Route path="/web/hanmori-shiire" element={<WebHanmoriShiire />} />
       <Route path="/web/elixxi" element={<WsMaster kind="w-elixxi" key="w-elixxi" />} />
       <Route path="/web/tsumi" element={<WsMaster kind="w-tsumi" key="w-tsumi" />} />
       <Route path="/web/lantec" element={<WsMaster kind="w-lantec" key="w-lantec" />} />
