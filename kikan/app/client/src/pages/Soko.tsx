@@ -14,7 +14,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
     分類: "在庫・保管料",
     items: [
       { label: "倉庫商品一覧", to: "/soko/hokan", 説明: "倉庫ごとの商品別詳細データ" },
-      { label: "予定在庫・パレット表示", 説明: "倉庫、商品、名義別の在庫合計" },
+      { label: "予定在庫・パレット表示", to: "/soko/yotei", 説明: "倉庫、商品、名義別の在庫合計" },
       { label: "在庫抽出帳票", to: "/soko/zaikochu", 説明: "在庫表を表示します。Excel に出力も出来ます。" },
       { label: "諸経費登録", to: "/soko/keihi", 説明: "資料代、手数料などの諸経費を登録します。" },
       { label: "請求書印刷", to: "/soko/seikyu", 説明: "倉庫別、名義別の各請求書を印刷します。" },
@@ -25,7 +25,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
     分類: "出庫",
     items: [
       { label: "出庫入力", to: "/soko/shukko", 説明: "出庫登録画面です。" },
-      { label: "出庫参照", 説明: "出庫の明細を見る画面です。" },
+      { label: "出庫参照", to: "/soko/shukko", 説明: "出庫の明細を見る画面です。（出庫入力と同じ画面）" },
       { label: "出庫抽出帳票", to: "/soko/shukkachu", 説明: "抽出した条件で出庫の明細を印刷表示できます。" },
       { label: "出荷関連報告書", 説明: "出庫に関する印刷選択画面です。" },
       { label: "出庫リスト表示", to: "/soko/shukko-list", 説明: "ニチレイ用　出庫リスト表示" },

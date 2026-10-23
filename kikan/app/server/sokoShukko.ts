@@ -140,7 +140,7 @@ async function 残ケース処理(c: PoolClient, 受注ID: number, 削除ケー�
  * 在庫kg が 0 でないロット（商品はグループ商品コードで、倉庫を指定すればその倉庫）を繰越にし、まだ登録していない出庫（日付は見ない）を認識ID で引く。
  * 在庫から選ぶときも「架空」から選ぶときも、Access は同じ結果になる（架空入庫を足す引数を渡していないため）。
  */
-export async function 倉庫の在庫見込み(c: PoolClient, 商品コード: number, 倉庫ID: number): Promise<Rec[]> {
+export async function 倉庫の在庫見込み(c: PoolClient, 商品コード: number, 倉庫ID: number, 集計日?: string): Promise<Rec[]> {
   const 今日 = 日本の今().日付;
   const g = n((await c.query(`SELECT "グループ商品コード" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品コード])).rows[0]?.グループ商品コード);
   const w: string[] = [];
@@ -172,13 +172,34 @@ export async function 倉庫の在庫見込み(c: PoolClient, 商品コード: n
       手配元ID: z.運賃振分区分, 最終出庫日: null, 通知: null,
     });
   }
-  // まだ登録していない出庫（Q_出荷レコード：グループ商品コードは商品マスタの値）を出荷日の順に
+  // 集計日を渡したとき（予定在庫・パレット表示。CC_KakuZaikoSum の 9）：WorkStation からこの冷蔵庫に来る、まだ取り込んでいない出荷（出荷日が今日〜集計日）を
+  // 入庫予定（架空）の行として足す（CC_仮入庫入力）
+  if (集計日 && 倉庫ID) {
+    const 予定 = (
+      await c.query(
+        `SELECT s."出庫ID", s."入庫日"::date::text AS "入庫日", s."届け先コード", s."届け先", s."商品コード", s."商品名", s."規格", s."入数", s."入庫後名義ID",
+                s."製造日"::date::text AS "製造日", s."賞味期限"::date::text AS "賞味期限", s."ケース", s."商品kg", s."タグ", m."グループ商品コード"
+         FROM ${t("ws", "TD_出荷")} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+         WHERE s."出荷区分" = false AND s."出荷日" BETWEEN $1::date AND $2::date AND s."届け先コード" = $3 ORDER BY s."出荷日", s."出庫ID"`,
+        [今日, 集計日, 倉庫ID],
+      )
+    ).rows as Rec[];
+    for (const y of 予定)
+      行.set(`仮${y.出庫ID}`, {
+        入庫日: y.入庫日, 倉庫ID: y.届け先コード, 倉庫名: y.届け先, 商品コード: y.商品コード, 商品名: y.商品名, 規格: y.規格, 入数: y.入数, 入庫後名義ID: y.入庫後名義ID,
+        製造日: y.製造日, 賞味期限: y.賞味期限, 繰越ケース: n(y.ケース), 繰越kg: n(y.商品kg), 製造ケース: 0, 製造kg: 0, 出庫ケース: 0, 出荷kg: 0, タグ: y.タグ,
+        備考在庫: y.入庫日 && y.入庫日 > 今日 ? "輸送中" : "", 入庫元数: n(y.ケース), 架空実物: true, 在庫ケース: n(y.ケース), 在庫kg: n(y.商品kg),
+        グループ商品コード: y.グループ商品コード, 認識ID: null, 最終出庫日: null, 通知: null,
+      });
+  }
+  // まだ登録していない出庫（Q_出荷レコード：グループ商品コードは商品マスタの値）を出荷日の順に。集計日を渡したときは便の出荷計画日が集計日までのもの
   const 出庫 = (
     await c.query(
       `SELECT x."認識ID", x."ケース", x."商品kg", x."出荷日"::date::text AS "出荷日"
-       FROM (SELECT s.*, m."グループ商品コード" FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード") x
-       WHERE ${条件} x."chk" = false ORDER BY x."出荷日", x."出庫ID"`,
-      a,
+       FROM (SELECT s.*, m."グループ商品コード", p."出荷計画日" FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+               LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID") x
+       WHERE ${条件} x."chk" = false ${集計日 ? `AND x."出荷計画日" <= $${a.length + 1}::date` : ""} ORDER BY x."出荷日", x."出庫ID"`,
+      集計日 ? [...a, 集計日] : a,
     )
   ).rows as Rec[];
   for (const s of 出庫) {

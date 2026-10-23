@@ -424,3 +424,70 @@ export function SokoShukkoList() {
     </div>
   );
 }
+
+/**
+ * 予定在庫・パレット表示（Access の F_在庫_日付指定）。冷蔵庫と集計日を選んで［集計］すると、その日までの予定在庫（在庫＋WorkStation から来る入庫予定−集計日までの出庫）と
+ * パレット枚数（今の在庫・予定の在庫・空く予定）を出す。印刷（在庫表〈パレット表示〉・ロット別在庫表）は見本をいただいてから。
+ */
+export function SokoYotei() {
+  const nav = useNavigate();
+  const [倉庫, set倉庫] = useState<選択肢[]>([]);
+  const [soko, setSoko] = useState(0);
+  const [日, set日] = useState<string | null>(today());
+  const [rows, setRows] = useState<Rec[] | null>(null);
+  useEffect(() => {
+    api.get<{ 出荷元: 選択肢[] }>("/api/soko/shohinbetsu/choices").then((r) => set倉庫(r.出荷元)).catch(エラー);
+  }, []);
+  async function 集計() {
+    if (!日) return alert("集計する日付を選択してください。");
+    if (!soko) return alert("冷蔵庫を選んでください。");
+    try {
+      setRows(await 処理中(() => api.get<Rec[]>("/api/soko/yotei", { soko: String(soko), date: 日 })));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  const 計 = (f: string) => (rows ?? []).reduce((a, r) => a + Number(r[f] ?? 0), 0);
+  return (
+    <div className="sz sko">
+      <div className="kk-head">
+        <div className="kk-title">予定在庫・パレット表示</div>
+        <span>冷蔵庫</span>
+        <select value={soko} onChange={(e) => { setSoko(Number(e.target.value)); setRows(null); }}>
+          <option value={0} />
+          {倉庫.map((o) => <option key={o.id} value={o.id}>{o.id} {o.name}</option>)}
+        </select>
+        <span>集計日</span>
+        <日の欄 value={日} set={set日} />
+        <button className="blue" onClick={集計}>集計</button>
+        <button disabled title="印刷の見本をいただいてから作ります">印刷</button>
+        <button disabled title="印刷の見本をいただいてから作ります">在庫表印刷</button>
+        <button onClick={() => nav(-1)}>閉じる</button>
+      </div>
+      <div className="sko-gridwrap">
+        {rows === null ? (
+          <p className="sko-pad">冷蔵庫と集計日を選んで［集計］を押してください。</p>
+        ) : (
+          <table className="sz-grid sko-grid">
+            <thead>
+              <tr><th>入庫日</th><th>コード</th><th>商品名</th><th>規格</th><th>製造日</th><th>賞味期限</th><th>区分</th><th>入庫No</th><th>名義</th><th>今の在庫</th><th>出庫予定</th><th>予定在庫</th><th>kg</th><th>パレット（今）</th><th>パレット（予定）</th><th>空き予定</th><th>備考</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className={r.架空実物 ? "done" : ""}>
+                  <td>{年月日2(r.入庫日)}</td><td className="r">{r.商品コード}</td><td className="name">{r.商品名}{r.架空実物 && <span className="small blue">（入庫予定）</span>}</td><td>{r.規格}</td>
+                  <td>{年月日2(r.製造日)}</td><td>{年月日2(r.賞味期限)}</td><td className="c">{r.タグ}</td><td>{r.入庫No}</td><td>{r.名義名}</td>
+                  <td className="r">{num(r.繰越ケース)}</td><td className="r">{num(r.出庫ケース)}</td><td className="r bold">{num(r.在庫ケース)}</td><td className="r">{num(r.在庫kg)}</td>
+                  <td className="r">{num(r.パレット積載元数)}</td><td className="r">{num(r.パレット積載数)}</td><td className="r">{num(r.空き予定パレット数)}</td><td className="small pre">{r.備考在庫}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr><td colSpan={9}>合計（{rows.length} 行）</td><td className="r">{num(計("繰越ケース"))}</td><td className="r">{num(計("出庫ケース"))}</td><td className="r">{num(計("在庫ケース"))}</td><td className="r">{num(計("在庫kg"))}</td><td className="r">{num(計("パレット積載元数"))}</td><td className="r">{num(計("パレット積載数"))}</td><td className="r">{num(計("空き予定パレット数"))}</td><td /></tr>
+            </tfoot>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -4,6 +4,8 @@ import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一覧のExcel } from "./excel.js";
 import { 倉庫の在庫, 倉庫の出荷, 倉庫の便, 倉庫の名変, 倉庫詳細設定 } from "./soko.js";
+import { 倉庫の在庫見込み } from "./sokoShukko.js";
+import { 小数点計算 } from "./sokoHokan.js";
 
 // 倉庫管理System の倉庫別データ検索（Access の FSD_倉庫選択・FM_倉庫情報〈在庫一覧・入庫一覧・出庫一覧・名変一覧・倉庫設定〉・
 // FSD_配送商品検索・FM_商品別在庫〈仮締め CC_KariJimeSum〉）。どれも見るだけ。
@@ -112,6 +114,31 @@ export function sokoKensakuRoutes(app: FastifyInstance) {
        WHERE s."倉庫ID" = $1 AND s."出荷日" >= $2::date AND s."出荷日" <= $3::date ORDER BY p."出荷計画日", s."商品コード", s."出庫ID"`,
       [n(req.query.soko), req.query.from, req.query.to],
     );
+  });
+
+  // 予定在庫・パレット表示（F_在庫_日付指定）：集計日までの予定在庫（在庫＋WorkStation からの入庫予定−集計日までの未登録の出庫）と、パレット枚数
+  // （ニチレイパレット積載マスタの 冷蔵庫×商品 の積載数、なければ 30 ケース。繰上げ）
+  app.get<{ Querystring: { soko: string; date: string } }>("/api/soko/yotei", async (req, reply) => {
+    if (!日付か(req.query.date)) return reply.code(400).send({ error: "集計する日付を選択してください。" });
+    const c = await pool.connect();
+    try {
+      const rows = (await 倉庫の在庫見込み(c, 0, n(req.query.soko), req.query.date)).filter((r) => n(r.在庫ケース) !== 0 || n(r.繰越ケース) !== 0);
+      const 積載 = new Map<string, number>();
+      for (const m of (await c.query(`SELECT "倉庫ID", "商品コード", "パレット積載数" FROM ${t("soko_fe", "TM_ニチレイパレット積載マスタ")} ORDER BY "ID"`)).rows as Rec[]) {
+        const k = `${m.倉庫ID}-${m.商品コード}`;
+        if (!積載.has(k)) 積載.set(k, n(m.パレット積載数));
+      }
+      const 枚数 = (倉庫: unknown, 商品: unknown, 個数: number) => 小数点計算(個数 / (積載.get(`${倉庫}-${商品}`) || 30), 2);
+      for (const r of rows) {
+        r.パレット積載元数 = 枚数(r.倉庫ID, r.商品コード, n(r.繰越ケース));
+        r.パレット積載数 = 枚数(r.倉庫ID, r.商品コード, n(r.在庫ケース));
+        r.空き予定パレット数 = r.パレット積載元数 - r.パレット積載数;
+        r.名義名 = (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(r.入庫後名義ID)])).rows[0]?.短縮名 ?? null;
+      }
+      return rows.sort((a, b) => n(a.商品コード) - n(b.商品コード) || Number(a.架空実物) - Number(b.架空実物) || String(a.賞味期限 ?? "").localeCompare(String(b.賞味期限 ?? "")));
+    } finally {
+      c.release();
+    }
   });
 
   // 出庫リスト表示（F_出庫リスト表示。ニチレイ用）：倉庫・出荷日の範囲の出庫
