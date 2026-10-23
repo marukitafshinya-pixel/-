@@ -104,3 +104,27 @@ export async function 一覧のExcel(シート名: string, 列: { key: string; �
   ws.views = [{ state: "frozen", ySplit: 1 }];
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
+
+/**
+ * Access が Excel を直接動かして作る表（手配出力用カレンダーのニチレイ輸送手配など）。
+ * 1 行目に見出し、2 行目から値を入れ、区切りの行の上に線を引き、列の幅を中身に合わせる（Columns.AutoFit）。
+ */
+export async function 手配表のExcel(見出し: string[], 行: unknown[][], 区切り: boolean[], 線の列数: number): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Sheet1");
+  ws.addRow(見出し);
+  行.forEach((r, i) => {
+    const row = ws.addRow(r.map((v) => (v === undefined ? null : v)));
+    if (区切り[i]) for (let c = 1; c <= 線の列数; c++) row.getCell(c).border = { top: { style: "thin" } };
+  });
+  const 列数 = Math.max(見出し.length, ...行.map((r) => r.length));
+  for (let c = 1; c <= 列数; c++) {
+    let w = 0;
+    ws.getColumn(c).eachCell({ includeEmpty: false }, (cell) => {
+      const s = String(cell.value ?? "");
+      w = Math.max(w, [...s].reduce((a, ch) => a + (ch.charCodeAt(0) > 0xff ? 2 : 1), 0));
+    });
+    ws.getColumn(c).width = Math.max(8.43, w + 1.5);
+  }
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}

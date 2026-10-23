@@ -35,6 +35,7 @@ import WsMaster from "./pages/WsMasters";
 import WsOsaka from "./pages/WsOsaka";
 import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
+import { TehaiCalendar } from "./pages/Tehai";
 import { KeikakuMenu, KeikakuHenko, KeikakuLog, KeikakuCalendar, KeikakuDay } from "./pages/Keikaku";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
@@ -95,6 +96,7 @@ function App() {
       <Route path="/keikaku" element={<KeikakuMenu />} />
       <Route path="/seizo" element={<SeizoMenu />} />
       <Route path="/housou/junbi" element={<HousouJunbi />} />
+      <Route path="/tehai" element={<TehaiCalendar />} />
       <Route path="/housou/robot" element={<WsMaster kind="robot" key="robot" />} />
       <Route path="/seizo/hoso" element={<SeizoHoso />} />
       <Route path="/seizo/dekidaka" element={<SeizoDekidaka />} />

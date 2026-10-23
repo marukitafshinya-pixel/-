@@ -24,6 +24,8 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   { title: "製造管理　丸北", items: [{ label: "製造管理メニュー", to: "/seizo" }, { label: "丸北 計量枚数登録", to: "/seizo/dekidaka" }, { label: "丸北 包装日誌登録", to: "/seizo/hoso" }, { label: "包装予定追加", to: "/seizo/yotei" }, { label: "他工場 計量日誌登録", to: "/seizo/tako" }, { label: "他工場 包装日誌登録", to: "/seizo/hoso?soko=191" }, { label: "取引先商品製造一覧", to: "/seizo/kensaku" }] },
   // 包装場管理System（Access の 包装場管理System.accdb。作っている途中）
   { title: "包装場管理", items: [{ label: "包装準備", to: "/housou/junbi" }, { label: "ロボットハイ積みマスタ", to: "/housou/robot" }] },
+  // 手配出力用カレンダー（Access の 手配出力用カレンダー.accdb）
+  { title: "手配出力用カレンダー", items: [{ label: "配送予定カレンダー", to: "/tehai" }] },
   // 製造計画（Access の 製造計画.accdb のメニュー）
   { title: "製造計画", items: [{ label: "生産計画インポート", to: "/keikaku" }, { label: "変更内容確認", to: "/keikaku/henko" }, { label: "製造カレンダー確認", to: "/keikaku/calendar" }, { label: "変更履歴表示", to: "/keikaku/log" }] },
   // マスタ管理（Access の「Accessマスタ管理」）

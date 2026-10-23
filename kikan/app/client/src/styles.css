@@ -1790,3 +1790,31 @@ input.yc-in.s { width: 60px; }
 input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-size: 16px; width: 70px; }
 .dk-grid td { font-size: 14px; vertical-align: middle; }
 .dk-ok { color: #e00000; font-size: 11px; }
+
+/* 手配出力用カレンダー（配送予定カレンダー） */
+.tc { padding: 8px 12px; background: #4a5a78; min-height: 100vh; }
+.tc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; color: #fff; }
+.tc-title { font-size: 20px; font-weight: bold; margin-right: 8px; }
+.tc-toggle button.on { background: #ffcc00; font-weight: bold; }
+.tc-out { display: flex; align-items: center; gap: 4px; margin-left: 14px; }
+.tc-d { width: 100px; }
+.tc-out button.navy { background: #1f3864; color: #fff; }
+.tc-cal { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 2px; }
+.tc-w { text-align: center; font-weight: bold; background: #ddd; }
+.tc-day { background: #fff; min-height: 120px; padding: 1px 3px; }
+.tc-day.out { background: #d7d8db; }
+.tc-day.full { background: #ff0000; }
+.tc-day.past .tc-list td { color: #339966; }
+.tc-top { display: flex; justify-content: space-between; align-items: center; background: #33334f; padding: 0 3px; }
+.tc-dl { font-size: 13px; color: #ebebeb; }
+.tc-day.out .tc-dl { font-size: 11px; }
+.tc-dl.hol { color: #ff9900; }
+.tc-dl.sat { color: #00ffff; }
+.tc-dl.today { color: #ffff00; font-weight: bold; }
+.tc-t { color: #fff; font-size: 12px; padding: 0 4px; min-width: 34px; text-align: right; }
+.tc-t.blue { background: #0066cc; } .tc-t.magenta { background: #ff00ff; } .tc-t.red { background: #ff0a0a; }
+.tc-list { width: 100%; border-collapse: collapse; font-size: 11px; }
+.tc-list td { padding: 0 2px; white-space: nowrap; cursor: pointer; }
+.tc-list td.u { max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+.tc-list td.r { text-align: right; }
+.tc-list tr:hover td { background: #fff3c0; }

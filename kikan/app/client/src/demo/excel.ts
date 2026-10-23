@@ -8,3 +8,6 @@ export async function 古いデータのExcel(): Promise<never> {
 export async function 一覧のExcel(): Promise<never> {
   throw new Error("見本版では Excel 出力は使えません。");
 }
+export async function 手配表のExcel(): Promise<never> {
+  throw new Error("見本版では Excel 出力は使えません。");
+}
