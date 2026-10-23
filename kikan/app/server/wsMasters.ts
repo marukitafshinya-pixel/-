@@ -67,6 +67,27 @@ const 表 = {
     表: t("kyotsu", "TM_相手先届け先マスタ"), 鍵: "ID", 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 絞る列: "相手先コード", 並び: `"ID"`,
     列: ["相手先コード", "相手先名", "自社コード", "届け先", "相手方届け先コード", "備考"], 数の列: ["相手先コード", "自社コード"],
   },
+  // WEB連携のマスタ（web_fe。Access の FM_マスタ管理）
+  // elixxi の拠点コード（自社の届け先コード ↔ elixxi の拠点コード。Access に直す画面は無く、表を直接直していた）
+  "w-elixxi": {
+    表: t("web_fe", "TM_elixxi倉庫コードマスタ"), 鍵: "ID", 合言葉: false, 絞る列: "自社コード", 並び: `"ID"`,
+    列: ["自社コード", "届け先", "相手方届け先コード", "備考"], 数の列: ["自社コード"],
+  },
+  // 大谷地からの出庫で「○月○日(曜) 積み」を摘要に書く届け先（FM_積み非表示マスタ）
+  "w-tsumi": {
+    表: t("web_fe", "TM_ニチレイ大谷地積み日指定表示マスタ"), 鍵: null, 合言葉: false, 絞る列: "得意先短縮コード", 並び: `"得意先短縮コード"`,
+    列: ["得意先短縮コード", "得意先名", "備考"], 数の列: ["得意先短縮コード"],
+  },
+  // ランテックの発注の備考に賞味期限を書く届け先（FM_ランテック賞味期限表示マスタ）
+  "w-lantec": {
+    表: t("web_fe", "TM_ランテック賞味期限表示マスタ"), 鍵: null, 合言葉: false, 絞る列: "得意先短縮コード", 並び: `"得意先短縮コード"`,
+    列: ["得意先短縮コード", "得意先名", "備考", "社内コメント"], 数の列: ["得意先短縮コード"],
+  },
+  // MerQurius の発注元（取引元 ↔ Web-EDI のコード）
+  "w-mq": {
+    表: t("web_fe", "MQ_発注元対応"), 鍵: null, 合言葉: false, 絞る列: "取引元ID", 並び: `"取引元ID"`,
+    列: ["取引元ID", "WebEDIコード", "発注元名"], 数の列: ["取引元ID"],
+  },
 } satisfies Record<string, 設定>;
 type 種類 = keyof typeof 表;
 const 表を選ぶ = (k: string): 設定 | null => (k in 表 ? 表[k as 種類] : null);
@@ -138,6 +159,11 @@ export function wsMastersRoutes(app: FastifyInstance) {
       const v: Rec = { [項目]: 値 };
       const k = req.params.kind as 種類;
       if ((k === "aite" || k === "j-aite") && 項目 === "得意先短縮コード") v.得意先名 = await 短縮名(c, 値);
+      if ((k === "w-tsumi" || k === "w-lantec") && 項目 === "得意先短縮コード") v.得意先名 = await 短縮名(c, 値);
+      if (k === "w-elixxi" && 項目 === "自社コード") {
+        const 今 = (await c.query(`SELECT "届け先" FROM ${s.表} WHERE "ID" = $1`, [n(req.body.鍵)])).rows[0];
+        if (今 && !今.届け先) v.届け先 = await 短縮名(c, 値);
+      }
       if (k === "j-aite" && 項目 === "商品コード") {
         // 商品コード_AfterUpdate：商品名と本社コード
         v.商品名 = await 商品名(c, 値);
@@ -184,6 +210,9 @@ export function wsMastersRoutes(app: FastifyInstance) {
       }
       if (k === "stock") Object.assign(v, { 区分: code || 1, 倉庫ID除外コード: 0, 通知区分: false });
       if (k === "robot") Object.assign(v, { パレット: req.body.code ? String(req.body.code) : null, 低圧設定: false });
+      if (k === "w-tsumi" || k === "w-lantec") Object.assign(v, { 得意先短縮コード: code || null, 得意先名: code ? await 短縮名(c, code) : null });
+      if (k === "w-mq") Object.assign(v, { 取引元ID: code || null });
+      if (k === "w-elixxi") Object.assign(v, { 自社コード: code || null });
       if (k === "pallet") Object.assign(v, { 集荷先ID: code, 集荷先: await 短縮名(c, code), 商品コード: 0, パレット単位: 0, 特定パレット単位: 0, 段数: 0 });
       if (s.鍵) {
         await c.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [s.表]);

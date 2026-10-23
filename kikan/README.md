@@ -95,6 +95,7 @@ PGURL=... npm start                # http://localhost:3000 で開く
 - 開発中は `npm run dev`（画面は http://localhost:5173）。
 - 受注の削除には、Access と同じく合言葉が要る。合言葉はプログラムに書かず、サーバーを動かすときに `JUCHU_DELETE_PASSWORD` で渡す（今の Access と同じものにする。2026/10/20 確認）。渡していないときは削除できない。
 - ほかの合言葉も同じく、サーバーを動かすときに渡す：`JUCHU_EDIT_PASSWORD`（訂正など）、`JUCHU_MASTER_PASSWORD`（受注のマスタ）、`MASTER_PASSWORD`（マスタ管理・古いデータの削除）、`SOKO_PASSWORD`（倉庫管理の倉庫商品一覧の修正・訂正。Access の倉庫管理の TD_USER のパスワードと同じものにする）。
+- WEB連携の相手先サイトのパスワードを暗号にする鍵 `WEB_RENKEI_KEY`（長めの好きな文字列。変えると保存したパスワードが読めなくなるので、変えたら入れ直す）。
 
 ### 見本版（Artifacts で試すもの）
 
@@ -488,6 +489,16 @@ PGURL=... npm start                # http://localhost:3000 で開く
   - 新しい行は開いている日・工場で作る（製造ID は今の最大＋1）。工場の選択肢は Access と同じく新規生産計画に倉庫名があるものだけ（いまは無いので、今の値だけが出る）。
   - Access の［包装登録］（製造計画出来高入力を開く）は作っていない。
 - 繁盛生産計画出力：使わない（2026/10/23 回答。OneDrive の参照はやめた）。
+
+### WEB連携（Access の WEB連携。作っている途中）
+
+elixxi（ニチレイ）・ランテック・販盛・MerQurius（日本食研）など、相手先のサイトへの入力（Access は Edge を自動で動かす）。調べたことは作業用のメモ（wr_survey.md）にまとめた。
+
+- メニュー（`/web`）。できたものから押せる。
+- 相手先サイトの設定（`/web/settei`。FM_UP管理・FM_Webアドレス管理）：サイトごとのログイン画面の住所・備考と、ログインID・パスワード・寄託者など（全員で使うもの、または Web 版の利用者ごと）。
+  - パスワードは暗号（AES-256-GCM）にして `app."外部サイトのログイン"` に保存し、画面には出さない（変えるときだけ入れる）。鍵はサーバーの設定 `WEB_RENKEI_KEY`。直すにはマスタ管理の合言葉（`MASTER_PASSWORD`。Access はプログラムに書いた番号）。
+  - Access の表やプログラムに書かれていた ID・パスワード・住所は写していない（入れ直す。パスワードは変えてもらう）。
+- マスタ（WorkStation の小さなマスタと同じ画面）：elixxi 拠点コード（`/web/elixxi`。Access に直す画面は無かった）、大谷地 積み日表示（`/web/tsumi`。FM_積み非表示マスタ）、ランテック賞味期限表示（`/web/lantec`）、MerQurius 発注元（`/web/mq`）。届け先コードを入れると名前が入る。
 
 ### マスタ管理（Access の「Accessマスタ管理」）
 - メニューの「マスタ管理」（商品マスタ・得意先マスタ・マスタ選択）。`server/master.ts`、画面は `client/src/pages/Master.tsx`。

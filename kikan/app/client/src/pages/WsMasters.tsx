@@ -9,7 +9,7 @@ const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : Stri
 
 type 列 = { k: string; 見出し: string; 数?: boolean; 探す?: "tokui" | "shohin"; 読むだけ?: boolean; 幅?: number; 複数行?: boolean; 名前?: string };
 type 設定 = {
-  kind: "aite" | "todoke" | "pallet" | "stock" | "j-aite" | "j-todoke" | "robot";
+  kind: "aite" | "todoke" | "pallet" | "stock" | "j-aite" | "j-todoke" | "robot" | "w-elixxi" | "w-tsumi" | "w-lantec" | "w-mq";
   題: string;
   絞り: string;
   列: 列[];
@@ -97,6 +97,40 @@ const 設定一覧: Record<string, 設定> = {
       { k: "届け先", 見出し: "届け先", 幅: 260 },
       { k: "相手方届け先コード", 見出し: "相手先コード", 幅: 100 },
       { k: "備考", 見出し: "備考", 幅: 160 },
+    ],
+  },
+  "w-elixxi": {
+    kind: "w-elixxi", 題: "elixxi 拠点コードマスタ", 絞り: "届け先", 合言葉: false, 絞りの探し方: "select",
+    列: [
+      { k: "自社コード", 見出し: "自社コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "届け先", 見出し: "届け先", 幅: 200 },
+      { k: "相手方届け先コード", 見出し: "elixxi の拠点コード", 幅: 110 },
+      { k: "備考", 見出し: "備考", 幅: 200 },
+    ],
+  },
+  "w-tsumi": {
+    kind: "w-tsumi", 題: "大谷地 積み日表示マスタ", 絞り: "届け先", 合言葉: false, 絞りの探し方: "select",
+    列: [
+      { k: "得意先短縮コード", 見出し: "届け先コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "得意先名", 見出し: "届け先", 読むだけ: true },
+      { k: "備考", 見出し: "備考", 幅: 260 },
+    ],
+  },
+  "w-lantec": {
+    kind: "w-lantec", 題: "ランテック賞味期限表示マスタ", 絞り: "届け先", 合言葉: false, 絞りの探し方: "select",
+    列: [
+      { k: "得意先短縮コード", 見出し: "届け先コード", 数: true, 探す: "tokui", 幅: 60 },
+      { k: "得意先名", 見出し: "届け先", 読むだけ: true },
+      { k: "備考", 見出し: "備考（入っていると届け先コード＋賞味期限 1 つ）", 幅: 300 },
+      { k: "社内コメント", 見出し: "社内コメント", 幅: 260, 複数行: true },
+    ],
+  },
+  "w-mq": {
+    kind: "w-mq", 題: "MerQurius 発注元マスタ", 絞り: "取引元", 合言葉: false, 絞りの探し方: "select",
+    列: [
+      { k: "取引元ID", 見出し: "取引元コード", 数: true, 探す: "tokui", 幅: 70 },
+      { k: "WebEDIコード", 見出し: "Web-EDI のコード", 幅: 120 },
+      { k: "発注元名", 見出し: "発注元名", 幅: 260 },
     ],
   },
   pallet: {

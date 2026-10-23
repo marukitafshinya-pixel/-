@@ -23,6 +23,7 @@ export default defineConfig({
       { find: /^\.\/auth\.js$/, replacement: demo("auth.ts") },
       { find: /^\.\.\/\.\.\/\.\.\/server\/auth$/, replacement: demo("auth.ts") },
       { find: /^\.\/excel\.js$/, replacement: demo("excel.ts") },
+      { find: /^\.\/himitsu\.js$/, replacement: demo("himitsu.ts") },
     ],
   },
   optimizeDeps: { exclude: ["@electric-sql/pglite"] },

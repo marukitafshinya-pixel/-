@@ -30,6 +30,8 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   { title: "倉庫管理System", items: [{ label: "倉庫管理メニュー", to: "/soko" }, { label: "入庫登録(ｲﾝﾎﾟｰﾄ)", to: "/soko/nyuko" }, { label: "在庫抽出帳票", to: "/soko/zaikochu" }, { label: "出庫抽出帳票", to: "/soko/shukkachu" }] },
   // 製造計画（Access の 製造計画.accdb のメニュー）
   { title: "製造計画", items: [{ label: "生産計画インポート", to: "/keikaku" }, { label: "変更内容確認", to: "/keikaku/henko" }, { label: "製造カレンダー確認", to: "/keikaku/calendar" }, { label: "変更履歴表示", to: "/keikaku/log" }] },
+  // WEB連携（Access の WEB連携。elixxi・ランテック・販盛・MerQurius への出力）
+  { title: "WEB連携", items: [{ label: "WEB連携メニュー", to: "/web" }, { label: "相手先サイトの設定", to: "/web/settei" }] },
   // マスタ管理（Access の「Accessマスタ管理」）
   { title: "マスタ管理", items: [{ label: "商品マスタ", to: "/master/shohin" }, { label: "得意先マスタ", to: "/master/tokui" }, { label: "運送会社マスタ", to: "/master/unso" }, { label: "ユーザーマスタ", to: "/master/user" }, { label: "ユーザーマスタ未設定", to: "/master/misettei" }, { label: "カレンダー設定", to: "/master/calendar" }, { label: "古いデータを消す", to: "/master/sakujo" }, { label: "マスタ選択", to: "/master" }] },
 ];

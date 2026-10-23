@@ -32,6 +32,7 @@ import { WsKensa, WsKensaMachi, WsSample } from "./pages/WsKensa";
 import WsZaikoPallet from "./pages/WsZaikoPallet";
 import WsHaichi from "./pages/WsHaichi";
 import WsMaster from "./pages/WsMasters";
+import { WebMenu, WebSettei } from "./pages/WebRenkei";
 import WsOsaka from "./pages/WsOsaka";
 import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
@@ -97,6 +98,12 @@ function App() {
       <Route path="/ws/zpallet" element={<WsZaikoPallet />} />
       <Route path="/ws/haichi" element={<WsHaichi />} />
       <Route path="/ws/aite" element={<WsMaster kind="aite" key="aite" />} />
+      <Route path="/web" element={<WebMenu />} />
+      <Route path="/web/settei" element={<WebSettei />} />
+      <Route path="/web/elixxi" element={<WsMaster kind="w-elixxi" key="w-elixxi" />} />
+      <Route path="/web/tsumi" element={<WsMaster kind="w-tsumi" key="w-tsumi" />} />
+      <Route path="/web/lantec" element={<WsMaster kind="w-lantec" key="w-lantec" />} />
+      <Route path="/web/mq" element={<WsMaster kind="w-mq" key="w-mq" />} />
       <Route path="/ws/aite-todoke" element={<WsMaster kind="todoke" key="todoke" />} />
       <Route path="/ws/shuka-pallet" element={<WsMaster kind="pallet" key="pallet" />} />
       <Route path="/ws/stock" element={<WsMaster kind="stock" key="stock" />} />

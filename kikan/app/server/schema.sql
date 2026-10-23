@@ -132,3 +132,31 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+-- WEB連携：相手先サイト（elixxi・ランテック・販盛・MerQurius）のログイン画面の住所と、ログイン情報。
+-- Access は ID・パスワードを表やプログラムにそのまま書いていた。Web 版ではパスワードを暗号にして保存し、画面には出さない（鍵はサーバーの設定 WEB_RENKEI_KEY）。
+CREATE TABLE IF NOT EXISTS app."外部サイト" (
+  "サイト" TEXT PRIMARY KEY,
+  "並び"   INTEGER NOT NULL DEFAULT 0,
+  "名前"   TEXT NOT NULL DEFAULT '',
+  "住所"   TEXT NOT NULL DEFAULT '',
+  "備考"   TEXT NOT NULL DEFAULT ''
+);
+INSERT INTO app."外部サイト" ("サイト", "並び", "名前") VALUES
+  ('elixxi', 1, 'elixxi（ニチレイ）'),
+  ('lantec', 2, 'ランテック'),
+  ('hanmori', 3, '販盛（販売管理システム）'),
+  ('merqurius', 4, 'MerQurius（日本食研）'),
+  ('merqurius-test', 5, 'MerQurius（テスト）')
+ON CONFLICT DO NOTHING;
+-- 利用者が '' のときは全員で使うログイン。利用者ごとに分けるときは Web 版のログインID を入れる
+CREATE TABLE IF NOT EXISTS app."外部サイトのログイン" (
+  "サイト"       TEXT NOT NULL REFERENCES app."外部サイト"("サイト") ON DELETE CASCADE,
+  "利用者"       TEXT NOT NULL DEFAULT '',
+  "ログインID"   TEXT NOT NULL DEFAULT '',
+  "パスワード暗号" TEXT NOT NULL DEFAULT '',
+  "寄託者"       TEXT NOT NULL DEFAULT '',
+  "更新日時"     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  "更新者"       TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY ("サイト", "利用者")
+);
