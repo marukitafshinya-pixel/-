@@ -36,7 +36,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
   {
     分類: "入庫",
     items: [
-      { label: "入庫登録(出庫時)", 説明: "入庫未登録(出庫時)のデータを登録します。" },
+      { label: "入庫登録(出庫時)", to: "/soko/idou", 説明: "入庫未登録(出庫時)のデータを登録します。" },
       { label: "入庫登録(ｲﾝﾎﾟｰﾄ)", to: "/soko/nyuko", 説明: "WorkStation からインポートして、入庫未登録のデータを登録します。" },
       { label: "入庫訂正データ", 説明: "入庫データと一致しないデータを検出します。" },
       { label: "重複データ(在庫)", 説明: "在庫データの重複（インポートの重複）を検出します。" },
@@ -210,6 +210,68 @@ export function SokoNyuko() {
           </tfoot>
         </table>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 入庫登録(出庫時)（Access の FM_入庫未登録一覧）。冷蔵庫から冷蔵庫へ移した出庫（締めのときに入庫フラグが付いたもの）を、選んで［登録］で届け先の冷蔵庫の在庫にする。
+ * Access はこの画面で行を消すと出庫そのものが消えるので、Web 版では消せないようにした。
+ */
+export function SokoIdou() {
+  const nav = useNavigate();
+  const [rows, setRows] = useState<Rec[]>([]);
+  const 読む = () => api.get<Rec[]>("/api/soko/idou").then(setRows).catch(エラー);
+  useEffect(() => {
+    読む();
+  }, []);
+  async function 選ぶ(r: Rec, v: boolean) {
+    await api.post("/api/soko/idou/select", { 出庫ID: r.出庫ID, 選ぶ: v }).catch(エラー);
+    読む();
+  }
+  async function 登録() {
+    if (!confirm("入庫データ(出庫)を登録しますが宜しいですか？")) return;
+    try {
+      const r = await 処理中(() => api.post<Rec>("/api/soko/idou/register", {}));
+      alert(`入庫登録完了しました。（${r.件数} 件）`);
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  return (
+    <div className="sz">
+      <div className="kk-head">
+        <div className="kk-title">入庫登録(出庫時)</div>
+        <button className="navy" onClick={登録}>登録</button>
+        <button onClick={() => nav(-1)}>閉じる</button>
+      </div>
+      <table className="sz-grid">
+        <thead>
+          <tr><th>選択</th><th>出荷日</th><th>納品日</th><th>出庫元（冷蔵庫）</th><th>入庫先（冷蔵庫）</th><th>運送会社</th><th>コード</th><th>商品名</th><th>規格</th><th>ケース</th><th>商品kg</th><th>製造日</th><th>賞味期限</th><th>入庫後名義</th></tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && <tr><td colSpan={14} className="c none">未登録データ(出庫)はありません。</td></tr>}
+          {rows.map((r) => (
+            <tr key={r.出庫ID} className={r.抽出区分 ? "sel" : ""}>
+              <td className="c"><input type="checkbox" checked={!!r.抽出区分} onChange={(e) => 選ぶ(r, e.target.checked)} /></td>
+              <td>{短い日(r.出荷日)}</td>
+              <td>{短い日(r.納品日)}</td>
+              <td>{r.倉庫名}</td>
+              <td>{r.届け先}</td>
+              <td>{r.運送会社名}</td>
+              <td className="r">{r.商品コード}</td>
+              <td className="name">{r.商品名}</td>
+              <td>{r.規格}</td>
+              <td className="r">{num(r.ケース)}</td>
+              <td className="r">{num(r.商品kg)}</td>
+              <td>{短い日(r.製造日)}</td>
+              <td>{短い日(r.賞味期限)}</td>
+              <td>{r.入庫後名義}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

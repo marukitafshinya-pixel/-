@@ -324,6 +324,27 @@ export async function 日時更新(c: PoolClient) {
   await c.query(`UPDATE ${倉庫のUSER} SET "日時更新日" = $1::date`, [今日]);
 }
 
+/**
+ * 入庫登録(出庫時)（NyukoIn）。倉庫管理の出庫のうち、届け先が入庫できる冷蔵庫で締めのときに入庫フラグが付いたもの（冷蔵庫から冷蔵庫への移動）で、
+ * 選んだ（抽出区分）まだ入庫していないものを、届け先の冷蔵庫の在庫にする。入庫日・保管料負担日＝納品日。
+ */
+async function 移動を入庫する(c: PoolClient) {
+  const rows = (await c.query(`SELECT * FROM ${倉庫の出荷} WHERE "入庫フラグ" = true AND "完了フラグ" = false AND "抽出区分" = true ORDER BY "輸送ID", "商品コード", "製造日" FOR UPDATE`)).rows as Rec[];
+  for (const r of rows) {
+    const 倉庫名 = (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [r.届け先コード])).rows[0]?.短縮名 ?? null;
+    const 在庫ID = await 次の番号(c, 倉庫の在庫, "在庫ID");
+    await 行を足す(c, 倉庫の在庫, {
+      ...在庫の初期値,
+      在庫ID, 入庫日: r.納品日, 保管料負担日: r.納品日, 倉庫ID: r.届け先コード, 倉庫名, 商品コード: r.商品コード, グループ商品コード: await グループ商品コード(c, r.商品コード),
+      商品名: r.商品名, 規格: r.規格, 入数: r.入数, 製造日: r.製造日, 賞味期限: r.賞味期限, 製造ケース: r.ケース, 製造kg: r.商品kg, 在庫ケース: r.ケース, 在庫kg: r.商品kg,
+      入庫元数: r.ケース, 入庫後名義ID: r.入庫後名義ID, 出庫ID: r.出庫ID, 買取単価コード: r.買取単価コード, 期: 保管の期(r.納品日), サービス区分: r.サービス区分, インポートアドレス: "",
+      登録時間: 日本の今().日時, // 表の既定値（Access の実データでも入っている）
+    });
+    await c.query(`UPDATE ${倉庫の出荷} SET "完了フラグ" = true WHERE "出庫ID" = $1`, [r.出庫ID]);
+  }
+  return rows.length;
+}
+
 export function sokoRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
@@ -356,6 +377,30 @@ export function sokoRoutes(app: FastifyInstance) {
       if (u?.d && u.d >= 日本の今().日付) return { した: false };
       await 日時更新(c);
       return { した: true };
+    }),
+  );
+
+  // 入庫登録(出庫時)（FM_入庫未登録一覧）：冷蔵庫から冷蔵庫へ移した出庫で、まだ入庫していないもの
+  app.get("/api/soko/idou", async () =>
+    q(
+      `SELECT s."出庫ID", s."出荷日"::date::text AS "出荷日", s."納品日"::date::text AS "納品日", s."倉庫ID", s."倉庫名", s."届け先コード", s."届け先",
+              s."商品コード", s."商品名", s."規格", s."入数", s."ケース", s."商品kg", s."製造日"::date::text AS "製造日", s."賞味期限"::date::text AS "賞味期限",
+              s."入庫後名義ID", (SELECT "短縮名" FROM ${得意先マスタ} m WHERE m."短縮コード" = s."入庫後名義ID" LIMIT 1) AS "入庫後名義", s."抽出区分", p."運送会社名"
+       FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+       WHERE s."入庫フラグ" = true AND s."完了フラグ" = false ORDER BY s."輸送ID", s."商品コード", s."製造日"`,
+    ),
+  );
+  app.post<{ Body: { 出庫ID: number; 選ぶ: boolean } }>("/api/soko/idou/select", async (req) => {
+    await q(`UPDATE ${倉庫の出荷} SET "抽出区分" = $2 WHERE "出庫ID" = $1 AND "入庫フラグ" = true AND "完了フラグ" = false`, [n(req.body.出庫ID), req.body.選ぶ === true]);
+    return { ok: true };
+  });
+  app.post("/api/soko/idou/register", async (req, reply) =>
+    一連で(async (c) => {
+      const 選んだ = n((await c.query(`SELECT COUNT(*) AS v FROM ${倉庫の出荷} WHERE "抽出区分" = true AND "完了フラグ" = false`)).rows[0].v);
+      if (!選んだ) return reply.code(400).send({ error: "登録するレコードが選択されていません。" });
+      const 件数 = await 移動を入庫する(c);
+      await c.query(`UPDATE ${倉庫の出荷} SET "抽出区分" = false WHERE "抽出区分" = true`);
+      return { 件数 };
     }),
   );
 
