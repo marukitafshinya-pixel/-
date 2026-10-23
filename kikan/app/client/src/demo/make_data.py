@@ -410,6 +410,15 @@ for i, (code, cs, soko) in enumerate([(55, 40, 343), (97, 30, 826)]):
     ins("soko.TD_入庫", 出庫ID=8801 + i, 出荷日=day(0), 納品日=day(2), 倉庫ID=11, 倉庫名="丸北　北海道", 商品コード=code, グループ商品コード=code, 商品名=name, 規格=kikaku,
         入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(-2), 賞味期限=day(728), 届け先コード=soko, 届け先=倉庫名[soko], 入庫前名義ID=11, 入庫後名義ID=11,
         入庫フラグ=True, 完了フラグ=False, 抽出区分=False, タグ="①", インポートアドレス="WorkStation")
+# 名義変更（まだ登録していないもの）。譲渡人負担日は今日を含む半月の末日
+半月末 = "(CASE WHEN extract(day FROM demo_day(0)) <= 15 THEN date_trunc('month', demo_day(0))::date + 14 ELSE (date_trunc('month', demo_day(0)) + interval '1 month')::date - 1 END)"
+for i, (zid, cs) in enumerate([(8504, 15), (8505, 10)]):
+    soko, code, dd = [(s, c, x) for z, s, c, x, *_ in 倉庫ロット if z == zid][0]
+    name, kikaku, irisu = 商品名[code]
+    ins("soko.TD_在庫変更", 変更No=8901 + i, 在庫No=zid, 変更日=day(0), 取引元ID=629, 取引元=名前.get(629), 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu,
+        ケース=cs, 商品kg=cs * irisu, 製造日=day(dd - 10), 賞味期限=day(dd + 710), 変更前名義ID=11, 変更後名義ID=150, 変更区分=0, 備考="見本の名義変更",
+        買取単価コード=0, 買取chk=False, 保管庫ID=soko, 保管庫名=倉庫名[soko], 変更Check=False, 入庫No=f"D{zid:08d}-00", 変更前在庫数=0, 移動先ID=10, 移動先名="名義変更",
+        抽出区分=False, 譲渡人負担日=Raw(半月末), 譲受人負担日=Raw(f"({半月末} + 1)"), 確認chk=False)
 
 # ---------------- プログラムの決めごと（server/schema.sql）の取引先名を、見本の名前にする ----------------
 out.append('DELETE FROM app."受注検索_受注元ボタン";')

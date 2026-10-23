@@ -68,7 +68,7 @@ export const 在庫の初期値: Rec = {
 };
 
 /** 番号を振る（今の最大＋1。同時に振らないよう鍵をかける） */
-async function 次の番号(c: PoolClient, 表: string, 列: string) {
+export async function 次の番号(c: PoolClient, 表: string, 列: string) {
   await c.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`${表}.${列}`]);
   return n((await c.query(`SELECT COALESCE(MAX("${列}"), 0) + 1 AS m FROM ${表}`)).rows[0].m);
 }
