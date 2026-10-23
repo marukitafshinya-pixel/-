@@ -47,7 +47,7 @@ export function WebElixxi() {
         <input type="file" accept=".csv" multiple onChange={(e) => { 取り込む(e.target.files); e.target.value = ""; }} />
         <div className="small">
           いま取り込んであるもの：{状況 ? `${num(状況.行数)} 行${状況.行数 ? `（入庫予定日 ${年月日(状況.最初)}〜${年月日(状況.最後)}）` : ""}` : ""}
-          　自社側は、丸北北海道の名義で、届け先がニチレイ、納品日が今日以降の分を見ます（受付番号は、elixxi で入庫を登録したあとに写した番号。入れる画面は「elixxi 入庫依頼・出庫依頼」といっしょに作ります）。
+          　自社側は、丸北北海道の名義で、届け先がニチレイ、納品日が今日以降の分を見ます（受付番号は、elixxi で入庫を登録したあとに写した番号。「elixxi 入庫依頼」の画面で入れます）。
         </div>
       </div>
       <div className="sko-pad"><b>elixxi にあって自社に無い受付番号</b>（{d?.elixxi不一致.length ?? 0} 件）</div>
