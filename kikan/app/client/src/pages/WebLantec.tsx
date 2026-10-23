@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload, 処理中 } from "../api";
 import { Field, parseDate, today } from "../formParts";
+import { 入力用の文字 } from "./webHojoScript";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -18,6 +19,7 @@ const 月日曜 = (v: string | null | undefined) => {
  * ランテック輸送手配（Access の F_ランテック輸送手配・F_ランテックチェックリスト）。
  * 上：出荷計画日の便の一覧（送り状番号を見る・直す）。ランテックの発注一覧から出した「発注一覧明細CSV」を取り込むと、
  * Access と同じ決まりで便に送り状番号を書き、下のチェックリストに取り込んだ明細と「Access側に一致するデータ無し」を出す。
+ * 便を選ぶと、ランテックの新規発注に入れる中身（C_ランテック出力Ver2）を出す。［ランテック入力用にコピー］→ ランテックの画面でブックマークを押して入れる。
  */
 export function WebLantec() {
   const nav = useNavigate();
@@ -25,11 +27,26 @@ export function WebLantec() {
   const [便, set便] = useState<Rec[]>([]);
   const [明細, set明細] = useState<Rec[]>([]);
   const [結果, set結果] = useState<Rec | null>(null);
+  const [選択, set選択] = useState<number | null>(null);
+  const [中身, set中身] = useState<Rec | null | undefined>(undefined);
   const 便を読む = (d = 日付) => api.get<Rec[]>(`/api/web/lantec/bins?日付=${d}`).then(set便).catch(エラー);
   const 明細を読む = () => api.get<Rec[]>("/api/web/lantec/check").then(set明細).catch(エラー);
   useEffect(() => {
+    set選択(null);
+    set中身(undefined);
     便を読む(日付);
   }, [日付]);
+  useEffect(() => {
+    if (選択 === null) return;
+    api.get<Rec>(`/api/web/lantec/detail?輸送ID=${選択}`).then((r) => set中身(r.中身)).catch(エラー);
+  }, [選択]);
+  function 入力用() {
+    if (!中身) return;
+    navigator.clipboard.writeText(入力用の文字("ランテック", 中身)).then(
+      () => alert("コピーしました。ランテックの「新規発注」の画面で「基幹 入力」のブックマークを押してください。"),
+      エラー,
+    );
+  }
   useEffect(() => {
     明細を読む();
   }, []);
@@ -90,15 +107,49 @@ export function WebLantec() {
           <tbody>
             {便.length === 0 && <tr><td colSpan={10} className="c">この日の便はありません</td></tr>}
             {便.map((b) => (
-              <tr key={b.輸送ID} className={b.運送会社ID === 24 ? "" : "done"}>
+              <tr key={b.輸送ID} className={b.輸送ID === 選択 ? "sel" : b.運送会社ID === 24 ? "" : "done"} onClick={() => set選択(b.輸送ID)}>
                 <td className="r">{b.輸送ID}</td><td>{b.出庫場所}</td><td className="r">{b.出庫No}</td><td>{b.運送会社名}</td><td>{b.車番}</td>
                 <td className="name">{b.倉庫}</td><td className="name">{b.届け先}</td><td>{月日曜(b.納品日)}</td><td className="r">{num(b.ケース)}</td>
-                <td><Field value={b.web輸送送り状No ?? ""} onCommit={(v) => 番号を直す(b, v)} /></td>
+                <td onClick={(e) => e.stopPropagation()}><Field value={b.web輸送送り状No ?? ""} onCommit={(v) => 番号を直す(b, v)} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {選択 !== null && 中身 !== undefined && (
+        <>
+          <div className="sko-pad">
+            <b>ランテックの新規発注に入れる中身</b>　輸送ID {選択}
+            {中身 && (
+              <span className="no-print">　<button onClick={() => window.print()}>印刷</button> <button className="blue" onClick={入力用}>ランテック入力用にコピー</button> <button onClick={() => nav("/web/hojo")}>使い方</button></span>
+            )}
+          </div>
+          {!中身 ? (
+            <div className="sko-pad small">この便には出庫の明細がありません。</div>
+          ) : (
+            <>
+              <table className="sz-grid sko-grid" style={{ margin: "0 8px 8px" }}>
+                <tbody>
+                  <tr><th>発送元コード</th><td>{中身.発送元コード}</td><th>出荷日</th><td>{中身.出荷日}</td></tr>
+                  <tr><th>お届け先コード</th><td>{中身.お届け先コード}（{中身.お届け先}）</td><th>お届け希望日</th><td>{中身.お届け希望日}</td></tr>
+                  <tr><th>備考1</th><td>{中身.備考1}</td><th>備考2</th><td>{中身.備考2}</td></tr>
+                </tbody>
+              </table>
+              <div className="sko-pad">{中身.件数} 件・合計 {num(中身.ケース計)} ケース</div>
+              <div className="sko-gridwrap">
+                <table className="sz-grid sko-grid">
+                  <thead><tr><th>No</th><th>商品CD</th><th>商品名</th><th>ケース</th></tr></thead>
+                  <tbody>
+                    {中身.明細.map((x: Rec, i: number) => (
+                      <tr key={i}><td className="r">{i + 1}</td><td className="r">{x.商品CD}</td><td className="name">{x.商品名}</td><td className="r">{num(x.ケース)}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </>
+      )}
       <div className="sko-pad">
         <b>ランテックの送り状番号を取り込む</b>　ランテックの発注一覧で全件を選んで［CSV ダウンロード］したファイル（発注一覧明細CSV_日付.csv）を選んでください。
         <input type="file" accept=".csv" onChange={(e) => { 取り込む(e.target.files?.[0]); e.target.value = ""; }} />

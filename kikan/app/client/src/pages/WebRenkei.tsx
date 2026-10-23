@@ -18,8 +18,8 @@ export function WebMenu() {
     { label: "elixxi 入庫予定の照合", to: "/web/elixxi-yotei", 説明: "elixxi の入庫依頼一覧を取り込んで、自社で入れた受付番号と照らす" },
     { label: "elixxi 入庫依頼", to: "/web/elixxi-nyuko", 説明: "elixxi に入れる入庫依頼の中身を見る・印刷する。elixxi の画面に入れる。登録後の受付番号を入れる" },
     { label: "elixxi 出庫依頼", to: "/web/elixxi-shukko", 説明: "elixxi に入れる出庫依頼の中身を見る・印刷する。elixxi の画面に入れる。運行指令No・車号を入れる" },
-    { label: "elixxi 入力の補助（使い方）", to: "/web/hojo", 説明: "elixxi の画面で押すと入庫・出庫依頼の欄が埋まるボタン（ブックマーク）の登録と使い方。登録は人が押す" },
-    { label: "ランテック輸送手配・送り状照合", to: "/web/lantec-okurijo", 説明: "便の送り状番号を見る・直す。ランテックの発注一覧明細 CSV を取り込んで便に送り状番号を書く（発注の自動入力はこれから作ります）" },
+    { label: "入力の補助（使い方）", to: "/web/hojo", 説明: "elixxi・ランテックの画面で押すと入庫・出庫依頼・新規発注の欄が埋まるボタン（ブックマーク）の登録と使い方。登録は人が押す" },
+    { label: "ランテック輸送手配・送り状照合", to: "/web/lantec-okurijo", 説明: "便の送り状番号を見る・直す。新規発注に入れる中身を見て、ランテックの画面に入れる。発注一覧明細 CSV を取り込んで便に送り状番号を書く" },
     { label: "MerQurius 納入日程", to: "/web/merqurius", 説明: "納入日程 CSV を取り込んで照合し、登録用 CSV を作る" },
     { label: "販盛 在庫移動・仕入", 説明: "やり方を決めてから作ります" },
   ];

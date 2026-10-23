@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { Field, parseDate, today } from "../formParts";
-import { 入力用の文字 } from "./elixxiHojo";
+import { 入力用の文字 } from "./webHojoScript";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -53,7 +53,7 @@ export function WebElixxiShukko() {
   function 入力用() {
     if (!中身) return;
     navigator.clipboard.writeText(入力用の文字("出庫", 中身)).then(
-      () => alert("コピーしました。elixxi の「出庫依頼登録」の画面で「elixxi 入力」のブックマークを押してください。"),
+      () => alert("コピーしました。elixxi の「出庫依頼登録」の画面で「基幹 入力」のブックマークを押してください。"),
       エラー,
     );
   }
