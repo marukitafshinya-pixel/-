@@ -109,6 +109,8 @@ function App() {
       <Route path="/keikaku/day" element={<KeikakuDay />} />
       <Route path="/ws/zaikochu" element={<WsZaikoChu />} />
       <Route path="/ws/shukkachu" element={<WsShukkaChu />} />
+      <Route path="/soko/zaikochu" element={<WsZaikoChu 系="soko" />} />
+      <Route path="/soko/shukkachu" element={<WsShukkaChu 系="soko" />} />
       <Route path="/ws/yusochu" element={<WsYusoChu />} />
       <Route path="/master" element={<MasterMenu />} />
       <Route path="/master/shohin" element={<ShohinList />} />

@@ -11,17 +11,18 @@ const 短い日 = (v: string | null) => (v ? `${v.slice(2, 4)}/${v.slice(5, 7)}/
  * 在庫表抽出印刷（Access の FM_在庫表）。メニューの「在庫抽出帳票」から開く。
  * 下の一覧で保管庫・名義・分類・商品を選んで在庫を絞る。在庫表示で輸送中（入庫日が明日以降）を含むか分ける。
  */
-export default function WsZaikoChu() {
+export default function WsZaikoChu(props: { 系?: "ws" | "soko" }) {
+  const 系 = props.系 ?? "ws";
   const nav = useNavigate();
   const [条件, set条件] = useState<Record<string, string>>({ nyuko: "0" });
   const [rows, setRows] = useState<Rec[]>([]);
   const [opts, setOpts] = useState<{ 保管庫: Opt[]; 名義: Opt[]; 分類: Opt[]; 商品: Opt[] }>({ 保管庫: [], 名義: [], 分類: [], 商品: [] });
 
   useEffect(() => {
-    api.get<Rec[]>("/api/ws/zaikochu", 条件).then(setRows, エラー);
+    api.get<Rec[]>(`/api/${系}/zaikochu`, 条件).then(setRows, エラー);
   }, [条件]);
   useEffect(() => {
-    api.get<typeof opts>("/api/ws/zaikochu/opts", { soko: 条件.soko ?? "", meigi: 条件.meigi ?? "" }).then(setOpts, エラー);
+    api.get<typeof opts>(`/api/${系}/zaikochu/opts`, { soko: 条件.soko ?? "", meigi: 条件.meigi ?? "" }).then(setOpts, エラー);
   }, [条件.soko, 条件.meigi]);
 
   // Access と同じく、分類と商品は同じ条件のところに入る（あとで選んだ方が効く）
@@ -35,7 +36,7 @@ export default function WsZaikoChu() {
   async function Excel() {
     try {
       await 処理中(async () => {
-        const res = await fetch("/api/ws/zaikochu/excel?" + new URLSearchParams(条件).toString(), { credentials: "same-origin" });
+        const res = await fetch(`/api/${系}/zaikochu/excel?` + new URLSearchParams(条件).toString(), { credentials: "same-origin" });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Excel に出力できませんでした");
         const name = decodeURIComponent((res.headers.get("Content-Disposition") ?? "").split("''")[1] ?? "在庫表.xlsx");
         const a = document.createElement("a");

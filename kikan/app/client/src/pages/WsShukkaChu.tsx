@@ -50,7 +50,8 @@ const 見出しの名前: Record<number, string> = { 1: "出荷月", 2: "製造�
  * 条件で出荷を絞り、ヘッダー（大きい見出し）・フッダー（小計の見出し）と並び順を選んで、印刷（簡易・標準）や Excel に出す。
  * 条件は名前（レポート表題）を付けて記録でき、右の一覧から読み込める。
  */
-export default function WsShukkaChu() {
+export default function WsShukkaChu(props: { 系?: "ws" | "soko" }) {
+  const 系 = props.系 ?? "ws";
   const nav = useNavigate();
   const [c, setC] = useState<Rec>({ 分類等号: "=" });
   const [名前, set名前] = useState<Rec>({});
@@ -67,14 +68,14 @@ export default function WsShukkaChu() {
   const [探す, set探す] = useState<{ 条件: string; kind: "tokui" | "shohin" | "unso" } | null>(null);
   const [情報, set情報] = useState("");
 
-  const 保存一覧 = () => api.get<Rec[]>("/api/ws/shukkachu/saved").then(setSaved, エラー);
+  const 保存一覧 = () => api.get<Rec[]>(`/api/${系}/shukkachu/saved`).then(setSaved, エラー);
   useEffect(() => {
     保存一覧();
   }, []);
 
   async function 名前を出す(条件: string, kind: string, code: unknown) {
     if (code == null || code === "") return set名前((x) => ({ ...x, [条件]: "" }));
-    const r = await api.get<{ name: string }>("/api/ws/shukkachu/name", { kind, code: String(code) }).catch(() => ({ name: "" }));
+    const r = await api.get<{ name: string }>(`/api/${系}/shukkachu/name`, { kind, code: String(code) }).catch(() => ({ name: "" }));
     set名前((x) => ({ ...x, [条件]: r.name }));
   }
   function 入れる(条件: string, kind: string, v: string) {
@@ -102,7 +103,7 @@ export default function WsShukkaChu() {
 
   async function 抽出() {
     try {
-      const r = await api.post<Rec[]>("/api/ws/shukkachu", 送る());
+      const r = await api.post<Rec[]>(`/api/${系}/shukkachu`, 送る());
       setRows(r);
       return r;
     } catch (e) {
@@ -118,7 +119,7 @@ export default function WsShukkaChu() {
       if (!confirm("この条件をExcelに出力しますか？")) return;
       try {
         await 処理中(async () => {
-          const res = await fetch("/api/ws/shukkachu/excel", {
+          const res = await fetch(`/api/${系}/shukkachu/excel`, {
             method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...送る(), 表題 }),
           });
           if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Excel に出力できませんでした");
@@ -146,7 +147,7 @@ export default function WsShukkaChu() {
   async function 記録() {
     if (!confirm("この条件を保存しますか？")) return;
     try {
-      await api.post("/api/ws/shukkachu/saved", { ...c, 表題, 宛名, タイプ, ヘッダー, フッダー, 並び: 並び(), 番号 });
+      await api.post(`/api/${系}/shukkachu/saved`, { ...c, 表題, 宛名, タイプ, ヘッダー, フッダー, 並び: 並び(), 番号 });
       await 保存一覧();
       alert("保存終了");
     } catch (e) {
@@ -156,7 +157,7 @@ export default function WsShukkaChu() {
   async function 削除(r: Rec) {
     if (!confirm(`${r.表題 ?? ""}の条件を削除しますがよろしいですか？`)) return;
     try {
-      await api.post("/api/ws/shukkachu/saved/delete", { ID: r.ID });
+      await api.post(`/api/${系}/shukkachu/saved/delete`, { ID: r.ID });
       await 保存一覧();
     } catch (e) {
       エラー(e);
@@ -221,7 +222,7 @@ export default function WsShukkaChu() {
                 <tr><th className="hf">ﾍｯﾀﾞｰ</th><th className="hf">ﾌｯﾀﾞｰ</th><th /><th /><th /><th /><th /></tr>
               </thead>
               <tbody>
-                {行.map((r) => (
+                {行.filter((r) => 系 === "ws" || r.条件 !== "取引元").map((r) => (
                   <tr key={r.名} onMouseEnter={() => set情報(`${r.名}：ヘッダー・フッダーで見出し、左の□を押した順に並べます`)}>
                     <td className="hf"><input type="radio" checked={ヘッダー === r.見出し} onChange={() => ヘッダーを選ぶ(r.見出し)} /></td>
                     <td className="hf"><input type="radio" checked={フッダー === r.見出し} onChange={() => setフッダー(r.見出し)} /></td>
