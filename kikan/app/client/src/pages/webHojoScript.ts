@@ -7,7 +7,7 @@
 export const 目印 = "KIKAN-WEB:";
 
 /** クリップボードに入れる文字（種類は 入庫 / 出庫〈elixxi〉・ランテック） */
-export const 入力用の文字 = (種類: "入庫" | "出庫" | "ランテック", 中身: Record<string, any>) => 目印 + JSON.stringify({ ...中身, 種類 });
+export const 入力用の文字 = (種類: "入庫" | "出庫" | "入庫訂正" | "ランテック", 中身: Record<string, any>) => 目印 + JSON.stringify({ ...中身, 種類 });
 
 const 本体 = `(async () => {
   const KEY = "kikan-elixxi";
@@ -41,7 +41,13 @@ const 本体 = `(async () => {
     if (s && Date.now() - s.時刻 < 600000) d = s;
   } catch (e) {}
   const 明細の欄 = (x) => (x.種類 === "入庫" ? "shohinCD" : "nyukoNo");
-  if (d && (d.種類 === "ランテック" || !欄(明細の欄(d)))) d = null;
+  if (d && d.種類 !== "入庫訂正" && (d.種類 === "ランテック" || !欄(明細の欄(d)))) d = null;
+  // 入庫訂正の途中の状態は 30 分まで。新しく始めたいときは、ここで捨てられる
+  const 検索の画面 = () => 欄("cndJoken2") && !document.getElementsByName("sho_maisai_1").length && !欄("nyukoYoteiKosu");
+  if (d && d.種類 === "入庫訂正" && (Date.now() - d.時刻 > 1800000 || (検索の画面() && !confirm("受付番号 " + d.受付番号 + " の訂正の続きをします。\\n\\n［キャンセル］を押すと、続きはやめて、新しくコピーした中身で始めます。")))) {
+    sessionStorage.removeItem(KEY);
+    d = null;
+  }
   if (!d) {
     let t = "";
     try { t = await navigator.clipboard.readText(); } catch (e) {}
@@ -49,6 +55,77 @@ const 本体 = `(async () => {
     if (!t.startsWith("${目印}")) { if (t) alert("基幹システムの「…入力用にコピー」の中身ではありません。"); return; }
     d = JSON.parse(t.slice(${目印.length}));
     d.段 = "見出し";
+  }
+  if (d.種類 === "入庫訂正") {
+    // C_elixxi入庫訂正登録：受付番号を変えないために、今の行は残したまま品名を「削除」に書き換え、新しい明細を続きに足して登録し、
+    // そのあと一覧で「削除」の行だけを取り消す（Access は一覧の上から n 行を取り消していたので、品名で選ぶように直した）。
+    // 押すたびに、開いている画面を見て次の段を行う。［登録］と［依頼取消］は人が押す
+    const 置く = () => { d.時刻 = Date.now(); sessionStorage.setItem(KEY, JSON.stringify(d)); };
+    try {
+      const 編集中 = 欄("nyukoYoteiKosu") && 欄("hinmei");
+      const 一覧 = document.getElementsByName("sho_maisai_1");
+      if (d.段 !== "取消" && 編集中) {
+        // 依頼修正の画面：今の行の品名を「削除」に（入庫予定個数が空の行まで）→ 続きに新しい明細
+        let k = 0;
+        while (欄("nyukoYoteiKosu", k) && String(欄("nyukoYoteiKosu", k).value || "").trim() !== "" && String(欄("nyukoYoteiKosu", k).value).trim() !== "0") {
+          入れる("hinmei", "削除", k);
+          k++;
+        }
+        if (k === 0) throw new Error("今の行が見つかりません。受付番号 " + d.受付番号 + " の依頼修正の画面か確かめてください。");
+        let 個 = 0;
+        for (let i = 0; i < d.明細.length; i++) {
+          const x = d.明細[i];
+          入れる("shohinCD", x.商品CD, k + i);
+          入れる("hinmei", x.品名, k + i);
+          入れる("mark", x.マーク, k + i);
+          入れる("nyukoYoteiKosu", x.入庫予定個数, k + i);
+          入れる("seizoDT", x.製造日, k + i);
+          入れる("shomikigenDT", x.賞味期限, k + i);
+          個 += Number(x.入庫予定個数 || 0);
+          await 待つ(1000);
+        }
+        d.段 = "取消";
+        d.削除数 = k;
+        置く();
+        alert("今の " + k + " 行の品名を「削除」にし、新しい明細 " + d.明細.length + " 件（合計 " + 個 + " 個）を足しました。\\n\\n画面を確認して［登録］を押してください。\\n\\nそのあと一覧に戻り、もう一度このボタンを押すと、「削除」の行にチェックを付けます。");
+        return;
+      }
+      if (d.段 === "取消" && 一覧.length) {
+        // 一覧：品名が「削除」の行だけにチェック（並び順では選ばない）
+        const 削除の行 = [...一覧].filter((c) => { const tr = c.closest("tr"); return tr && /(^|\\s)削除(\\s|$)/.test(tr.innerText || tr.textContent || ""); });
+        if (削除の行.length !== d.削除数) throw new Error("「削除」の行が " + 削除の行.length + " 行ありました（" + d.削除数 + " 行のはず）。チェックは付けていません。画面を見て、手で取り消してください。");
+        for (const c of 一覧) if (c.checked) c.click();
+        for (const c of 削除の行) c.click();
+        sessionStorage.removeItem(KEY);
+        alert("「削除」の " + 削除の行.length + " 行にチェックを付けました。\\n\\nほかの行にチェックが付いていないか確かめて、［依頼取消］を押してください。");
+        return;
+      }
+      if (d.段 === "修正" && 一覧.length) {
+        // 受付番号で抽出した一覧：1 件目にチェックして［依頼修正］
+        一覧[0].click();
+        置く();
+        押す("iraishusei");
+        return;
+      }
+      if (欄("cndJoken2") && 欄("sel_kyoten")) {
+        // 入庫依頼一覧の検索：寄託者・拠点・条件「受付番号」で抽出
+        if (d.寄託者 && 欄("sel_ninushiGroup")) { 選ぶ("sel_ninushiGroup", d.寄託者); await 待つ(3000); }
+        選ぶ("sel_kyoten", d.拠点コード);
+        await 待つ(3000);
+        選ぶ("cndJoken2", "3");
+        入れる("cndJokenValue2", d.受付番号);
+        d.段 = "修正";
+        置く();
+        押す("chushutsu");
+        await 待つ(2000);
+        if (document.getElementsByName("sho_maisai_1").length) { document.getElementsByName("sho_maisai_1")[0].click(); 置く(); 押す("iraishusei"); }
+        return;
+      }
+      throw new Error("elixxi の「入庫依頼一覧」の画面を開いてから押してください。");
+    } catch (e) {
+      alert("入力を止めました。\\n\\n" + e.message);
+    }
+    return;
   }
   if (d.種類 === "ランテック") {
     // C_ランテック出力Ver2：Angular の画面。Access と同じ欄・同じ場所（XPath）に入れ、Enter を送り、入ったかを読み返す

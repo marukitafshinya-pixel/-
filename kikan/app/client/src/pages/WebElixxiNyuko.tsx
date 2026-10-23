@@ -53,6 +53,15 @@ export function WebElixxiNyuko() {
     const 行 = [["商品CD", "品名", "マーク", "入庫予定個数", "製造日", "賞味期限"], ...m.明細.map((x: Rec) => [x.商品CD, x.品名, x.マーク, x.入庫予定個数, x.製造日, x.賞味期限])];
     navigator.clipboard.writeText(行.map((r) => r.join("\t")).join("\n")).then(() => alert("明細をコピーしました。"), エラー);
   }
+  // 訂正（受付番号を変えずに明細を入れ直す）：入庫依頼一覧の画面でブックマークを押す
+  function 訂正用() {
+    const r = 一覧.find((x) => x.ID === 選択);
+    if (!詳細?.中身 || !r?.入庫受付番号) return;
+    navigator.clipboard.writeText(入力用の文字("入庫訂正", { ...詳細.中身, 受付番号: r.入庫受付番号 })).then(
+      () => alert("コピーしました。elixxi の「入庫依頼一覧」の画面で「基幹 入力」のブックマークを押してください。\n\n受付番号で探して依頼修正を開き、今の行を「削除」にして新しい明細を足します（［登録］は人が押します）。登録したら一覧に戻って、もう一度ブックマークを押すと「削除」の行にチェックを付けます（［依頼取消］は人が押します）。"),
+      エラー,
+    );
+  }
   function 入力用() {
     if (!詳細?.中身) return;
     navigator.clipboard.writeText(入力用の文字("入庫", 詳細.中身)).then(
@@ -94,7 +103,7 @@ export function WebElixxiNyuko() {
           <div className="sko-pad">
             <b>elixxi の入庫依頼登録に入れる中身</b>　{選んだ行.届け先}・{年月日(選んだ行.納品日)} 着・{選んだ行.入庫後名義名}
             {選んだ行.入庫受付番号 ? `・受付番号 ${選んだ行.入庫受付番号}（登録し直すときは elixxi で訂正）` : "・まだ受付番号はありません"}
-            <span className="no-print">　<button onClick={() => window.print()}>印刷</button> <button onClick={コピー} disabled={!m}>明細をコピー</button> <button className="blue" onClick={入力用} disabled={!m}>elixxi 入力用にコピー</button> <button onClick={() => nav("/web/hojo")}>使い方</button></span>
+            <span className="no-print">　<button onClick={() => window.print()}>印刷</button> <button onClick={コピー} disabled={!m}>明細をコピー</button> <button className="blue" onClick={入力用} disabled={!m}>elixxi 入力用にコピー</button>{選んだ行.入庫受付番号 && <> <button className="blue" onClick={訂正用} disabled={!m}>訂正用にコピー</button></>} <button onClick={() => nav("/web/hojo")}>使い方</button></span>
           </div>
           {!m ? (
             <div className="sko-pad small">
