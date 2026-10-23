@@ -45,6 +45,8 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
   { 分類: "マスタ", items: [{ label: "倉庫賃率・入庫設定", 説明: "倉庫への入庫条件を設定します。" }] },
 ];
 const 月日 = (d: string) => `${d.slice(5, 7)}月${d.slice(8, 10)}日`;
+/** 起動時の確かめ（締め・日時更新・入庫待ちの知らせ）は、Access と同じく開いたとき 1 回だけ */
+let 起動済み = false;
 
 /**
  * 倉庫管理のメニュー（Access の FM_メインメニュー）。開いたとき、Access の起動時と同じく
@@ -57,6 +59,11 @@ export function SokoMenu() {
   const [情報, set情報] = useState("");
   const 様子 = () => api.get<Rec>("/api/soko/status").then(setSt);
   useEffect(() => {
+    if (起動済み) {
+      様子().catch(エラー);
+      return;
+    }
+    起動済み = true;
     (async () => {
       let s = await api.get<Rec>("/api/soko/status");
       if (s.締めていない日数 >= 2) {

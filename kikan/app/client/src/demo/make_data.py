@@ -96,6 +96,9 @@ for tb in [
     "ws_fe.TM_得意先区分", "ws_fe.TM_混載区分", "ws_fe.TM_訂正科目マスタ", "ws_fe.TM_車両区分", "ws_fe.TM_輸送区分", "ws_fe.TM_運賃分類マスタ",
     "ws_fe.TM_運賃輸送区分", "ws_fe.TM_配達区分",
     "ws_fe.TD_商品分類", "ws_fe.TM_原料マスタ", "keikaku.TM_商品検査区分作成",
+    # 倉庫管理の選択肢
+    "soko_fe.TM_冷凍区分", "soko_fe.TM_輸送区分", "soko_fe.TM_配達区分", "soko_fe.TM_車両区分", "soko_fe.TM_運賃分類マスタ", "soko_fe.TM_運賃輸送区分",
+    "soko_fe.TD_商品分類", "soko_fe.TM_地区コード",
     # マスタ管理の選択肢
     "master_fe.TM_商品区分", "master_fe.TM_テープマスタ", "master_fe.TM_ハイ積みマスタ", "master_fe.TM_産地マスタ",
     "master_fe.TM_得意先区分", "master_fe.TM_web出力判別区分", "master_fe.TM_地区コード", "master_fe.TM_配達区分", "master.TM_運賃扱いマスタ",
@@ -107,7 +110,13 @@ for i, (bunrui, hinban, name, shiki) in enumerate([(10, "A-1", "見本段ボー�
     ins("master_fe.TM_仕入マスタ", ID=i, 取引先コード=1, 仕入コード=str(i), 品番=hinban, 商品名=name, 分類ID=bunrui, 識別条件=shiki, 資材コード=str(i))
 
 # 取引先名の入る一覧表は、作り物にする
-for sc in ["juchu_fe", "ws_fe"]:
+for sc in ["juchu_fe", "ws_fe", "soko_fe"]:
+    if sc == "soko_fe":
+        for i, (mid, name, msg, n1) in enumerate([(1, "扱い別", "丸北の扱い区分を選択して下さい。", 0), (2, "特定ユーザー", "ユーザーを選択して下さい。", 11),
+                                                   (3, "その他ユーザー", "ユーザーを選択して下さい。", 21), (4, "年間ID", "ユーザーの発注Noを入力してください。", 31),
+                                                   (5, "受注ID", "受注IDを入力してください。", 41)], 1):
+            ins(f"{sc}.TM_受注検索方法", ID=i, 検索方法ID=mid, 選択方法=name, コメント=msg, 順番No1=n1, 順番No2=n1 + 1, 順番No3=n1 + 2, 順番No4=n1 + 3)
+        continue
     for i, (bunrui, kid, name) in enumerate([("見本食品", 4, "ミックス"), ("見本農協", 1, "ソース"), ("見本農協", 2, "ドラム")], 1):
         ins(f"{sc}.TM_取り扱い区分マスタ", ID=i, 分類=bunrui, 取扱い区分ID=kid, 区分名=name)
     for i, (mid, name, msg, n1) in enumerate([(1, "見本食品専用", "受注先を選択して下さい。", 0), (2, "特定ユーザー", "ユーザーを選択して下さい。", 11),
@@ -115,6 +124,7 @@ for sc in ["juchu_fe", "ws_fe"]:
                                                (5, "受注ID", "受注IDを入力してください。", 41)], 1):
         ins(f"{sc}.TM_受注検索方法", ID=i, 検索方法ID=mid, 選択方法=name, コメント=msg, 順番No1=n1, 順番No2=n1 + 1, 順番No3=n1 + 2, 順番No4=n1 + 3)
 for i, (k, name) in enumerate([(1, "丸北　北海道"), (629, "大阪丸北"), (9990, "その他(請求なし)"), (9991, "資材(請求なし)"), (9992, "ｻﾝﾌﾟﾙ(請求なし)")]):
+    ins("soko_fe.TM_運賃振分区分マスタ", **{list(types("soko_fe.TM_運賃振分区分マスタ"))[0]: k, list(types("soko_fe.TM_運賃振分区分マスタ"))[1]: name})
     ins("ws_fe.TM_運賃振分区分マスタ", **{list(types("ws_fe.TM_運賃振分区分マスタ"))[0]: k, list(types("ws_fe.TM_運賃振分区分マスタ"))[1]: name})
 for k, name in [(1, "選果場"), (2, "冷蔵倉庫"), (3, "食品メーカー")]:
     ins("ws_fe.TM_グループマスタ", グループID=k, グループ名=name)
@@ -218,7 +228,7 @@ ins("juchu_fe.TM_受注特定項目", ID=1, 商品コード=55, 商品名=商品
 ]
 for jid, moto, saki, todoke, code, cs, nd, zan in 受注:
     name, kikaku, irisu = 商品名[code]
-    for sc in ["juchu", "ws"]:
+    for sc in ["juchu", "ws", "soko"]:
         ins(f"{sc}.TD_受注", 受注ID=jid, 受注番号=f"D{jid:07d}", 受注元ID=moto, 受注元名=名前[moto], 受注日=day(-3), 商品コード=code, 商品名=name,
             規格=kikaku, 入数=irisu, ケース=cs, 残ケース=zan, 商品kg=cs * irisu, 残kg=zan * irisu, 納品日=day(nd), 受注先ID=saki,
             受注先名=名前[saki], 届け先コード=todoke, 届け先=名前[todoke], 倉庫ID=11, 倉庫名="丸北　北海道", 入力日=day(-3),
@@ -361,6 +371,45 @@ for i, (code, cs) in enumerate([(633, 5)]):
     name, kikaku, irisu = 商品名[code]
     ins("genryo.TD_出荷", 出庫ID=8201 + i, 出荷日=day(0), 届け先コード=343, 届け先="見本冷蔵　船橋", 倉庫ID=164, 倉庫名="見本冷蔵　札幌",
         商品コード=code, 商品名=name, ケース=cs, 商品kg=cs * irisu, 在庫ID=9100 + i)
+
+# ---------------- 倉庫管理System（外の冷蔵庫。作り物） ----------------
+ins("soko.TD_USER", ID=1, 使用者コード=1, 使用者名="見本", 前回更新日=day(-1), 日時更新日=day(0), 税率設定=0.1, チェック期間=11, 集計終了日=day(-1),
+    保管賃集計日=day(-1), 初期起動=True, 出荷登録中chk=False, オフラインモード=False)
+for i, (soko, name, hokan, nyu, mkg, mryo) in enumerate([(343, "見本冷蔵　船橋", 2.0, 4.4, None, None), (826, "見本冷蔵　高松", 2.2, 4.4, 181, 400),
+                                                         (164, "見本冷蔵　札幌", 2.0, 4.4, None, None)], 1):
+    ins("soko.TD_倉庫詳細設定", ID=i, 短縮コード=soko, 倉庫名=name, 商品コード=0, 名義コード=11, 名義名="丸北　北海道", 保管料=hokan, 入出庫料=nyu,
+        最低保管kg=mkg, 最低保管料=mryo, 小数点区分=1, 丸め計算=2, 終了日="9999-12-31", 契約入庫日開始="2020-01-01", 契約入庫日終了="9999-12-31", 計算単位=0)
+for i, (soko, name) in enumerate([(343, "見本冷蔵　船橋"), (826, "見本冷蔵　高松")], 1):
+    ins("soko_fe.TM_受注先マスタ", ID=i, 取引先ID=[360, 350][i - 1], 取引先名=名前[[360, 350][i - 1]], 本社受注=False, 仕入区分=False)
+# 在庫（ロット）
+倉庫ロット = [
+    # 在庫ID, 冷蔵庫, 商品, 入庫日, 入庫元数, 在庫ケース, タグ
+    (8501, 343, 55, -40, 80, 50, "①"), (8502, 343, 55, -12, 60, 60, "②"), (8503, 343, 91, -20, 100, 100, "①"), (8504, 343, 48, -8, 45, 45, "①"),
+    (8505, 826, 55, -25, 40, 40, "①"), (8506, 826, 48, -15, 90, 70, "①"), (8507, 164, 91, -5, 50, 50, "①"),
+]
+倉庫名 = {343: "見本冷蔵　船橋", 826: "見本冷蔵　高松", 164: "見本冷蔵　札幌"}
+for zid, soko, code, d, moto, cs, tag in 倉庫ロット:
+    name, kikaku, irisu = 商品名[code]
+    ins("soko.TD_在庫", 在庫ID=zid, 作成日付=day(0), 倉庫ID=soko, 倉庫名=倉庫名[soko], 入庫後名義ID=11, 商品コード=code, グループ商品コード=code, 分類ID=1, 商品名=name,
+        規格=kikaku, 入数=irisu, 入庫日=day(d), 保管料負担日=day(d), 期=1, 製造日=day(d - 10), 賞味期限=day(d + 710), 入庫元数=moto, 繰越ケース=cs, 在庫ケース=cs,
+        繰越kg=cs * irisu, 在庫kg=cs * irisu, タグ=tag, 入庫No=f"D{zid:08d}-00", 認識ID=f"{soko}{code}{zid}", 製造工場ID=11, 製造工場名="丸北　北海道", 運賃振分区分=1)
+# 便と明細（出庫）
+for yid, d, soko, no, unso in [(8601, 0, 343, 1, 5), (8602, 0, 826, 1, 6), (8603, 1, 343, 2, 4)]:
+    ins("soko.TD_輸送計画", 輸送ID=yid, 出荷計画日=day(d), 出庫場所ID=soko, 出庫場所=倉庫名[soko], 出庫No=no, 運送会社ID=unso, 運送会社名=運送名[unso], 集荷日=day(d),
+        冷凍区分ID=2, 輸送区分ID=1, 運賃区分ID=1, セット温度=-25, 配達区分ID=1, 車両区分ID=2)
+for sid, yid, d, zid, cs, todoke, chk in [(8701, 8601, 0, 8501, 20, 812, False), (8702, 8601, 0, 8503, 30, 824, False), (8703, 8602, 0, 8506, 20, 949, False),
+                                          (8704, 8603, 1, 8502, 10, 812, False), (8705, 0, -3, 8501, 30, 824, True), (8706, 0, -3, 8506, 20, 949, True)]:
+    soko, code, dd = [(s, c, x) for z, s, c, x, *_ in 倉庫ロット if z == zid][0]
+    name, kikaku, irisu = 商品名[code]
+    ins("soko.TD_出荷", 出庫ID=sid, 輸送ID=yid, 出荷日=day(d), 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(dd - 10),
+        賞味期限=day(dd + 710), 入庫日=day(dd), 納品日=day(d + 1), 倉庫ID=soko, 倉庫名=倉庫名[soko], 届け先コード=todoke, 届け先=名前[todoke], 入庫前名義ID=11,
+        入庫後名義ID=todoke, 在庫ID=zid, 認識ID=str(zid), 通知="確認OK!", chk=chk, 更新日=day(d) if chk else None, タグ="①", 入力日付=day(d - 1))
+# 入庫待ち（WorkStation から取り込んだもの）
+for i, (code, cs, soko) in enumerate([(55, 40, 343), (97, 30, 826)]):
+    name, kikaku, irisu = 商品名[code]
+    ins("soko.TD_入庫", 出庫ID=8801 + i, 出荷日=day(0), 納品日=day(2), 倉庫ID=11, 倉庫名="丸北　北海道", 商品コード=code, グループ商品コード=code, 商品名=name, 規格=kikaku,
+        入数=irisu, ケース=cs, 商品kg=cs * irisu, 製造日=day(-2), 賞味期限=day(728), 届け先コード=soko, 届け先=倉庫名[soko], 入庫前名義ID=11, 入庫後名義ID=11,
+        入庫フラグ=True, 完了フラグ=False, 抽出区分=False, タグ="①", インポートアドレス="WorkStation")
 
 # ---------------- プログラムの決めごと（server/schema.sql）の取引先名を、見本の名前にする ----------------
 out.append('DELETE FROM app."受注検索_受注元ボタン";')
