@@ -10,6 +10,7 @@ const 足す = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") +
 const 曜 = (d: string) => "日月火水木金土"[new Date(d + "T00:00:00").getDay()];
 const 和の日 = (d: string) => `${d.slice(0, 4)}年${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日(${曜(d)})`;
 const 日付に = (v: string) => (v ? v.replace(/\//g, "-") : "");
+const n = (v: unknown) => Number(v ?? 0) || 0;
 const 時刻 = (v: string | null | undefined) => (v ? (v.includes(" ") ? v.split(" ")[1].slice(0, 5) : v) : "");
 
 /**
@@ -30,6 +31,9 @@ export function SokoShukko() {
   const [在庫選択, set在庫選択] = useState<Rec | null>(null);
   const [履歴, set履歴] = useState<Rec[] | null>(null);
   const [不足, set不足] = useState<Rec[] | null>(null);
+  const [検索商品, set検索商品] = useState<string>("");
+  const [検索倉庫, set検索倉庫] = useState<string>("");
+  const [希望, set希望] = useState<{ mode: "zaiko" | "soko"; rows: Rec[]; 選べる: boolean; 商品: number; 倉庫: number } | null>(null);
 
   useEffect(() => {
     api.get<Record<string, { id: number; name: string }[]>>("/api/soko/shukko/choices").then(setCh).catch(エラー);
@@ -113,6 +117,48 @@ export function SokoShukko() {
     }
     読む();
   }
+  /** ［検索］（その冷蔵庫の在庫）・［倉庫表示］（全部の冷蔵庫の在庫）：C_架空製造日別出荷データ表示Ver2 */
+  async function 在庫を見る(mode: "zaiko" | "soko") {
+    if (!p) return;
+    const 商品 = Number(検索商品) || 0;
+    const 倉庫 = mode === "soko" ? Number(検索倉庫) || 0 : Number(検索倉庫) || n(p.出庫場所ID);
+    try {
+      const rows = await 処理中(() => api.get<Rec[]>("/api/soko/kibou", { shohin: String(商品), soko: String(倉庫), mode }));
+      const kg = rows.reduce((a, r) => a + Number(r.在庫kg ?? 0), 0);
+      if (!confirm(`合計${rows.length}件\n重量 ${num(kg)} kgまでを表示します`)) return;
+      // 検索で出庫場所と違う冷蔵庫を選んだときは見るだけ（読み込めない）
+      set希望({ mode, rows: rows.map((r) => ({ ...r, 抽出区分: false })), 選べる: mode === "soko" || 倉庫 === n(p.出庫場所ID), 商品, 倉庫 });
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  async function 希望を読み込む() {
+    if (!希望 || !id) return;
+    const 選んだ = 希望.rows.filter((r) => r.抽出区分).map((r) => String(r.認識ID));
+    set希望(null);
+    if (!選んだ.length) return;
+    try {
+      const r = await api.post<Rec>("/api/soko/kibou/add", { 輸送ID: id, shohin: 希望.商品, soko: 希望.倉庫, mode: 希望.mode, 選んだ });
+      alert(`${r.件数} 件を明細に入れました。`);
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  async function 出荷止め(r: Rec, 止め: boolean, 備考: string | null) {
+    try {
+      await api.post("/api/soko/kibou/tome", { 在庫ID: Number(r.認識ID), 出荷止め区分: 止め, 管理備考: 備考 });
+      set希望((h) => h && { ...h, rows: h.rows.map((x) => (x.認識ID === r.認識ID ? { ...x, 出荷止め区分: 止め, 管理備考: 備考, 抽出区分: 止め ? false : x.抽出区分 } : x)) });
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  function 抽出(r: Rec) {
+    if (r.出荷止め区分) return alert("出荷止めが設定されている為、抽出できません。");
+    if (!r.抽出区分 && 希望?.mode === "soko" && r.入庫日 && date < r.入庫日 && !confirm("包装日が出荷日より先ですがよろしいですか？")) return;
+    set希望((h) => h && { ...h, rows: h.rows.map((x) => (x.認識ID === r.認識ID ? { ...x, 抽出区分: !x.抽出区分 } : x)) });
+  }
+
   async function 在庫不足() {
     try {
       const r = await 処理中(() => api.post<Rec[]>("/api/soko/shukko/fusoku", {}));
@@ -282,8 +328,10 @@ export function SokoShukko() {
                   <button onClick={在庫不足} title="まだ登録していない出庫を在庫と比べ、在庫不足のものを出します">在庫不足チェック</button>
                   <button disabled title="準備中">受注表示</button>
                   <button disabled title="準備中">受注読込</button>
-                  <button disabled title="準備中">検索</button>
-                  <button disabled title="準備中">倉庫表示</button>
+                  <label className="sko-f"><span>商品</span><Field value={検索商品} kind="num" className="sko-code" kyotsu="shohin" onCommit={set検索商品} /></label>
+                  <label className="sko-f"><span>倉庫</span><Field value={検索倉庫} kind="num" className="sko-code" kyotsu="tokui" onCommit={set検索倉庫} /></label>
+                  <button onClick={() => 在庫を見る("zaiko")} title="出庫場所（または倉庫）の在庫を見て、選んだものを明細に入れます">検索</button>
+                  <button onClick={() => 在庫を見る("soko")} title="商品の在庫を冷蔵庫ごとに見ます">倉庫表示</button>
                   <button disabled title="準備中">出庫依頼書</button>
                   <button disabled title="準備中">輸送依頼書</button>
                   <button disabled title="準備中">送品案内書</button>
@@ -347,6 +395,39 @@ export function SokoShukko() {
                 {履歴.length === 0 && <tr><td colSpan={9} className="c">前回の出荷はありません</td></tr>}
                 {履歴.map((h) => (
                   <tr key={h.出庫ID}><td>{h.出荷日}</td><td>{h.運送会社名}</td><td className="r">{h.商品コード}</td><td>{h.商品名}</td><td>{h.製造日}</td><td className="b">{h.賞味期限}</td><td>{h.届け先}</td><td>{h.納品日}</td><td className="red">{h.変更通知}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {希望 && (
+        <div className="modal">
+          <div className="sko-dlg">
+            <div className="sko-dlg-h">
+              {希望.mode === "soko" ? "希望倉庫表示" : "希望在庫表示"}
+              <span>
+                {希望.選べる && <button className="blue" onClick={希望を読み込む}>OK（選んだものを明細に入れる）</button>}
+                <button onClick={() => set希望(null)}>キャンセル</button>
+              </span>
+            </div>
+            {!希望.選べる && <div className="red sko-pad">出庫画面と違う倉庫のため、見るだけで読み込めません。</div>}
+            <table className="ws-grid">
+              <thead>
+                <tr>{希望.選べる && <th>抽出</th>}<th>倉庫</th><th>入庫日</th><th>コード</th><th>商品名</th><th>製造日</th><th>賞味期限</th><th>区分</th><th>入庫No</th><th>元数</th><th>C/S</th><th>Kg</th><th>名義</th><th>出荷止め</th><th>管理備考</th><th>備考</th></tr>
+              </thead>
+              <tbody>
+                {希望.rows.length === 0 && <tr><td colSpan={16} className="c">在庫はありません</td></tr>}
+                {希望.rows.map((r) => (
+                  <tr key={r.認識ID} className={r.抽出区分 ? "sel" : ""}>
+                    {希望.選べる && <td className="c"><input type="checkbox" checked={!!r.抽出区分} onChange={() => 抽出(r)} /></td>}
+                    <td>{r.倉庫名}</td><td>{r.入庫日}</td><td className="r">{r.商品コード}</td><td className="b">{r.商品名}</td><td>{r.製造日}</td>
+                    <td>{r.賞味期限}{r.賞味期限通知 && <div className="red small">{r.賞味期限通知}</div>}</td><td className="c">{r.タグ}</td><td>{r.入庫No}</td>
+                    <td className="r">{num(r.入庫元数)}</td><td className={"r" + (r.在庫ケース < 0 ? " red" : "")}>{num(r.在庫ケース)}</td><td className="r">{num(r.在庫kg)}</td><td>{r.入庫名義}</td>
+                    <td className="c"><input type="checkbox" checked={!!r.出荷止め区分} onChange={(e) => 出荷止め(r, e.target.checked, r.管理備考 ?? null)} /></td>
+                    <td><Field value={r.管理備考} className="w12" onCommit={(v) => 出荷止め(r, !!r.出荷止め区分, v || null)} /></td>
+                    <td className="small pre">{r.備考在庫}{r.通知 && <div className="red">{r.通知}</div>}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>

@@ -1860,3 +1860,6 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .sko .w3 { width: 36px; } .sko .w4 { width: 50px; } .sko .w5 { width: 56px; } .sko .w8 { width: 90px; } .sko .w10 { width: 110px; } .sko .w12 { width: 140px; } .sko .w20 { width: 220px; } .sko .w30 { width: 300px; }
 .sko-dlg { background: #fff; border: 2px solid #1f3a68; max-width: 95vw; max-height: 80vh; overflow: auto; padding: 0 0 8px; }
 .sko-dlg-h { display: flex; justify-content: space-between; align-items: center; background: #1f3a68; color: #fff; font-weight: bold; padding: 4px 8px; }
+.sko-dlg-h span { display: flex; gap: 6px; }
+.sko-pad { padding: 4px 8px; }
+.sko-dlg td.pre { white-space: pre-line; }

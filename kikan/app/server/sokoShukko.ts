@@ -572,6 +572,69 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
     );
   });
 
+  // ---------------- 希望在庫表示・希望倉庫表示（［検索］［倉庫表示］：C_架空製造日別出荷データ表示Ver2） ----------------
+  // 検索＝その冷蔵庫の在庫の見込み（賞味期限の順）。倉庫表示＝商品の全部の冷蔵庫の見込みから、地区コード 1 の冷蔵庫と、コードが 1 で始まる冷蔵庫を除いたもの（製造日の順。Access と同じ）
+  app.get<{ Querystring: { shohin?: string; soko?: string; mode?: string } }>("/api/soko/kibou", async (req) =>
+    一連で(async (c) => {
+      let rows = await 倉庫の在庫見込み(c, n(req.query.shohin), n(req.query.soko));
+      const 名 = new Map(
+        (await c.query(`SELECT "短縮コード", "短縮名", "地区コード" FROM ${得意先マスタ} WHERE "短縮コード" = ANY($1::int[])`, [[...new Set(rows.flatMap((r) => [n(r.入庫後名義ID), n(r.倉庫ID)]))]])).rows.map((r: Rec) => [n(r.短縮コード), r]),
+      );
+      rows = rows.map((r) => ({ ...r, 入庫名義: 名.get(n(r.入庫後名義ID))?.短縮名 ?? null }));
+      const 順 = (x: unknown) => (x == null ? "" : String(x));
+      if (req.query.mode === "soko") {
+        rows = rows.filter((r) => n(名.get(n(r.倉庫ID))?.地区コード) !== 1 && !String(n(r.倉庫ID)).startsWith("1"));
+        rows.sort((x, y) => 順(x.製造日).localeCompare(順(y.製造日)) || 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.タグ).localeCompare(順(y.タグ)) || 順(x.入庫日).localeCompare(順(y.入庫日)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || n(x.商品コード) - n(y.商品コード));
+      } else {
+        rows.sort((x, y) => 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.タグ).localeCompare(順(y.タグ)) || 順(x.入庫日).localeCompare(順(y.入庫日)) || 順(x.製造日).localeCompare(順(y.製造日)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || n(x.商品コード) - n(y.商品コード));
+      }
+      return rows;
+    }),
+  );
+  // 出荷止めを付ける・外す（一覧の 出荷止め区分・管理備考 を直したとき。在庫の行に書く）
+  app.post<{ Body: { 在庫ID: number; 出荷止め区分: boolean; 管理備考: string | null } }>("/api/soko/kibou/tome", async (req) => {
+    await q(`UPDATE ${倉庫の在庫} SET "出荷止め区分" = $2, "管理備考" = $3 WHERE "在庫ID" = $1`, [n(req.body.在庫ID), req.body.出荷止め区分 === true, req.body.管理備考 ?? null]);
+    return { ok: true };
+  });
+  // 選んだ在庫を、この便の明細にする（ケースは在庫ケースそのまま。届け先は空）
+  app.post<{ Body: { 輸送ID: number; shohin?: number; soko?: number; mode?: string; 選んだ: string[] } }>("/api/soko/kibou/add", async (req, reply) =>
+    一連で(async (c) => {
+      const p = (await c.query(`SELECT * FROM ${倉庫の便} WHERE "輸送ID" = $1`, [n(req.body.輸送ID)])).rows[0];
+      if (!p) return reply.code(404).send({ error: "この便はありません" });
+      const 全部 = await 倉庫の在庫見込み(c, n(req.body.shohin), n(req.body.soko));
+      const 集荷日 = 日付(p.集荷日);
+      let 件数 = 0;
+      for (const id of req.body.選んだ ?? []) {
+        const z = 全部.find((r) => r.認識ID === String(id));
+        if (!z) continue;
+        if (z.出荷止め区分) return reply.code(400).send({ error: "出荷止めが設定されている為、抽出できません。" });
+        let 手配元ID = n(z.倉庫ID);
+        let 手配帳合ID = n(z.倉庫ID);
+        let 入庫前名義ID = z.入庫後名義ID;
+        if ([105, 137, 191].includes(n(z.倉庫ID))) 入庫前名義ID = 629;
+        if (n(z.倉庫ID) === 191) {
+          手配元ID = 150;
+          手配帳合ID = 173;
+          if (n((await c.query(`SELECT "分類ID" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(z.商品コード)])).rows[0]?.分類ID) > 3) 手配帳合ID = 174;
+        }
+        const 引取り = `${集荷日 ? ` ${集荷日.slice(5, 7)}/${集荷日.slice(8, 10)}` : ""}${z.倉庫名 ?? ""} 引取り`;
+        await c.query(`SELECT pg_advisory_xact_lock(hashtext('soko.TD_出荷.出庫ID'))`);
+        const 出庫ID = n((await c.query(`SELECT COALESCE(MAX("出庫ID"), 0) + 1 AS v FROM ${倉庫の出荷}`)).rows[0].v);
+        await 行を入れる(c, 倉庫の出荷, {
+          ...(await 既定値(c, "TD_出荷", "出庫ID")),
+          出庫ID, 輸送ID: p.輸送ID, 出荷日: 日付(p.出荷計画日), 商品コード: z.商品コード, 商品名: z.商品名, 規格: z.規格, 入数: z.入数, ケース: z.在庫ケース, 商品kg: z.在庫kg,
+          製造日: z.製造日, 入庫前名義ID, 入庫No: z.入庫No, 賞味期限: z.賞味期限 ?? (await 賞味期限計算(c, z.製造日, z.商品コード)), 入庫ID: z.入庫ID, 倉庫ID: z.倉庫ID, 倉庫名: z.倉庫名,
+          届け先コード: null, 届け先: null, 十二地区: null, 手配元ID, 手配帳合ID, 手配元: await 短縮名(c, 手配元ID), 手配帳合: await 短縮名(c, 手配帳合ID), タグ: z.タグ,
+          産地コード: z.産地コード, 製造工場ID: z.製造工場ID, 製造工場名: z.製造工場名, 認識ID: z.認識ID, 入庫日: z.入庫日, 在庫ID: z.架空実物 ? 0 : n(z.認識ID),
+          商品区分: z.商品区分, 商品状態隠語: z.商品状態隠語, 社内連絡: z.管理備考 ? `${z.管理備考}\r\n${引取り}` : 引取り, 通知: z.架空実物 ? "架空" : "確認OK!",
+          登録時間: 日本の今().日時, 入力日付: 日本の今().日付,
+        });
+        件数++;
+      }
+      return { 件数 };
+    }),
+  );
+
   // 明細を消す（Form_Delete）。登録済みは消せない。受注があれば残ケースを出し直す
   app.post<{ Body: { 出庫ID: number } }>("/api/soko/shukko/meisai/delete", async (req, reply) =>
     一連で(async (c) => {
