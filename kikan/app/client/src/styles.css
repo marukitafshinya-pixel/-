@@ -1824,3 +1824,5 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .kk-in.w-num { width: 70px; }
 .kk-in.w-date { width: 100px; }
 .kk-in.w-name { width: 160px; }
+.menu-grid button:disabled { color: #999; background: #f6f6f6; border-style: solid; }
+.soko-info { margin: 0 16px 16px; min-height: 1.4em; color: #444; font-size: 13px; }
