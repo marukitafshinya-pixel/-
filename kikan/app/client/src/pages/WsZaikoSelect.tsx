@@ -10,7 +10,9 @@ type Rec = Record<string, any>;
  * 3. 在庫選択・架空なら「在庫選択」で行を選び、その在庫を明細に読み込む
  * キャンセルしたときは、商品コードを元のままにする。
  */
-export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number; 倉庫ID: number; onDone: (変えた: boolean) => void }) {
+export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number; 倉庫ID: number; onDone: (変えた: boolean) => void; 基?: string }) {
+  // 倉庫管理は "/api/soko/zaiko"（同じ形で返す）
+  const 基 = props.基 ?? "/api/ws/zaiko";
   const [step, setStep] = useState<"check" | "ask" | "list">("check");
   const [商品名, set商品名] = useState("");
   const [plan, setPlan] = useState(false);
@@ -18,7 +20,7 @@ export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number;
 
   async function 入れる(認識ID: string | null, p = plan) {
     try {
-      await api.post("/api/ws/zaiko/set", { 出庫ID: props.出庫ID, 商品コード: props.商品コード, 認識ID, plan: p });
+      await api.post(`${基}/set`, { 出庫ID: props.出庫ID, 商品コード: props.商品コード, 認識ID, plan: p });
       props.onDone(true);
     } catch (e) {
       alert(e instanceof ApiError ? e.message : String(e));
@@ -27,7 +29,7 @@ export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number;
   }
 
   useEffect(() => {
-    api.get<{ ある: boolean; 商品名: string | null }>("/api/ws/zaiko/aru", { shohin: String(props.商品コード), soko: String(props.倉庫ID ?? 0) }).then((r) => {
+    api.get<{ ある: boolean; 商品名: string | null }>(`${基}/aru`, { shohin: String(props.商品コード), soko: String(props.倉庫ID ?? 0) }).then((r) => {
       set商品名(r.商品名 ?? "");
       if (r.ある) setStep("ask");
       else 入れる(null);
@@ -37,7 +39,7 @@ export function ZaikoSentaku(props: { 出庫ID: number; 商品コード: number;
 
   async function 一覧(p: boolean) {
     setPlan(p);
-    setRows(await api.get<Rec[]>("/api/ws/zaiko/list", { shohin: String(props.商品コード), soko: String(props.倉庫ID ?? 0), plan: p ? "1" : "" }));
+    setRows(await api.get<Rec[]>(`${基}/list`, { shohin: String(props.商品コード), soko: String(props.倉庫ID ?? 0), plan: p ? "1" : "" }));
     setStep("list");
   }
 

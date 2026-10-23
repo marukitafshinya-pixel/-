@@ -3,7 +3,9 @@ import type { PoolClient } from "pg";
 import { q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で, 特別項目 } from "./ws.js";
-import { 倉庫の便, 倉庫の出荷, 倉庫の名変, 締める } from "./soko.js";
+import { 倉庫の便, 倉庫の出荷, 倉庫の名変, 倉庫の在庫, 締める } from "./soko.js";
+import { 期限通知 } from "./wsZaiko.js";
+import { 賞味期限計算 } from "./ws.js";
 
 // 倉庫管理System の出庫入力（Access の FS_配車選択 → FM_出荷明細票・FS_出荷明細）。
 // 便（TD_輸送計画）は出庫場所（冷蔵庫）と出庫No を持ち、明細（TD_出荷）は便の輸送ID と出荷日（＝便の出荷計画日）でつながる。
@@ -131,6 +133,117 @@ async function 残ケース処理(c: PoolClient, 受注ID: number, 削除ケー�
   const 出荷 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の出荷} WHERE "受注ID" = $1`, [受注ID])).rows[0].v);
   const 名変 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の名変} WHERE "受注ID" = $1`, [受注ID])).rows[0].v);
   await c.query(`UPDATE ${倉庫の受注} SET "残ケース" = "ケース" - $2, "手配DataChk" = true WHERE "受注ID" = $1`, [受注ID, 出荷 - 削除ケース + 名変]);
+}
+
+/**
+ * 在庫の見込み（Access の 倉庫管理の CC_KakuZaikoSum。作業用の表 TD_架空在庫ver2 に入れるかわりに、その場で計算して返す）。
+ * 在庫kg が 0 でないロット（商品はグループ商品コードで、倉庫を指定すればその倉庫）を繰越にし、まだ登録していない出庫（日付は見ない）を認識ID で引く。
+ * 在庫から選ぶときも「架空」から選ぶときも、Access は同じ結果になる（架空入庫を足す引数を渡していないため）。
+ */
+export async function 倉庫の在庫見込み(c: PoolClient, 商品コード: number, 倉庫ID: number): Promise<Rec[]> {
+  const 今日 = 日本の今().日付;
+  const g = n((await c.query(`SELECT "グループ商品コード" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品コード])).rows[0]?.グループ商品コード);
+  const w: string[] = [];
+  const a: unknown[] = [];
+  if (商品コード) {
+    a.push(g || 商品コード);
+    w.push(`${g ? `x."グループ商品コード"` : `x."商品コード"`} = $${a.length}`);
+  }
+  if (倉庫ID) {
+    a.push(倉庫ID);
+    w.push(`x."倉庫ID" = $${a.length}`);
+  }
+  const 条件 = w.length ? w.join(" AND ") + " AND " : "";
+  const lots = (
+    await c.query(
+      `SELECT x.*, x."入庫日"::date::text AS "入庫日", x."製造日"::date::text AS "製造日", x."賞味期限"::date::text AS "賞味期限" FROM ${倉庫の在庫} x
+       WHERE ${条件} x."在庫kg" <> 0`,
+      a,
+    )
+  ).rows as Rec[];
+  const 行 = new Map<string, Rec>();
+  for (const z of lots) {
+    行.set(String(z.在庫ID), {
+      入庫日: z.入庫日, 倉庫ID: z.倉庫ID, 倉庫名: z.倉庫名, 商品コード: z.商品コード, 分類ID: z.分類ID, 商品名: z.商品名, 規格: z.規格, 入数: z.入数,
+      入庫後名義ID: z.入庫後名義ID, 製造日: z.製造日, 賞味期限: z.賞味期限, 繰越ケース: n(z.在庫ケース), 繰越kg: n(z.在庫kg), 製造ケース: 0, 製造kg: 0, 出庫ケース: 0, 出荷kg: 0,
+      期: z.期, タグ: z.タグ, 備考在庫: z.入庫日 && z.入庫日 > 今日 ? `[${z.倉庫名 ?? ""}] 行き 輸送中\r\n` : "", 入庫No: z.入庫No, 入庫元数: z.入庫元数, 架空実物: false,
+      出荷止め区分: z.出荷止め区分, 管理備考: z.管理備考, 出庫ID: z.出庫ID, 認識ID: String(z.在庫ID), 入庫ID: z.入庫ID, 在庫ケース: n(z.在庫ケース), 在庫kg: n(z.在庫kg),
+      商品区分: z.商品区分, 商品状態隠語: z.商品状態隠語, グループ商品コード: z.グループ商品コード, 産地コード: z.産地コード, 製造工場ID: z.製造工場ID, 製造工場名: z.製造工場名,
+      手配元ID: z.運賃振分区分, 最終出庫日: null, 通知: null,
+    });
+  }
+  // まだ登録していない出庫（Q_出荷レコード：グループ商品コードは商品マスタの値）を出荷日の順に
+  const 出庫 = (
+    await c.query(
+      `SELECT x."認識ID", x."ケース", x."商品kg", x."出荷日"::date::text AS "出荷日"
+       FROM (SELECT s.*, m."グループ商品コード" FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード") x
+       WHERE ${条件} x."chk" = false ORDER BY x."出荷日", x."出庫ID"`,
+      a,
+    )
+  ).rows as Rec[];
+  for (const s of 出庫) {
+    const r = 行.get(String(s.認識ID ?? ""));
+    if (!r) continue;
+    r.出庫ケース += n(s.ケース);
+    r.出荷kg += n(s.商品kg);
+    r.最終出庫日 = s.出荷日;
+    r.備考在庫 += s.出荷日 ? `${Number(s.出荷日.slice(5, 7))}月${Number(s.出荷日.slice(8, 10))}日 ${n(s.ケース)} 出\r\n` : "";
+  }
+  for (const r of 行.values()) {
+    if (r.在庫ケース === 0) continue;
+    r.在庫ケース = r.繰越ケース + r.製造ケース - r.出庫ケース;
+    r.在庫kg = r.繰越kg + r.製造kg - r.出荷kg;
+    if (r.賞味期限 == null) r.賞味期限 = await 賞味期限計算(c, r.製造日, r.商品コード);
+    const 残日数設定 = n((await c.query(`SELECT "USER賞味残日数" AS v FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(r.商品コード)])).rows[0]?.v);
+    if (r.賞味期限 != null) {
+      r.賞味期限通知 = 期限通知(r.賞味期限);
+      if (残日数設定) {
+        const 残 = Math.round((Date.parse(r.賞味期限) - Date.parse(今日)) / 86400000) - 残日数設定;
+        if (残 <= 120) {
+          r.User賞味通知区分 = 残 >= 61 ? 3 : 残 >= 31 ? 2 : 残 >= 1 ? 1 : 0;
+          if (残 <= 90) r.通知 = `ﾕｰｻﾞｰ賞味   ${残}日`;
+        } else r.User賞味通知区分 = 99;
+      }
+    }
+    if (n(r.入庫後名義ID) === 0) r.入庫後名義ID = 629;
+  }
+  const 順 = (x: unknown) => (x == null ? "" : String(x));
+  return [...行.values()].sort(
+    (x, y) =>
+      Number(x.架空実物) - Number(y.架空実物) || 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.タグ).localeCompare(順(y.タグ)) ||
+      順(x.入庫日).localeCompare(順(y.入庫日)) || 順(x.製造日).localeCompare(順(y.製造日)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || n(x.入庫元数) - n(y.入庫元数),
+  );
+}
+
+/**
+ * 出荷チェック（Access の C_出荷チェック）。まだ登録していない出庫を在庫（在庫ケースが 0 でないロット）と比べ、
+ * 商品コード・商品名・倉庫・製造日・賞味期限が違えば 計画変更chk と 変更通知（最後に見つかった違い）。
+ * ケース ＞ 入庫元数 − そのロットの全部の出庫（登録済みも、自分も含む）なら 通知「在庫不足」、ほかは「確認OK!」。
+ * Access は書き損じで毎回 出荷日＝便の出荷計画日 にする。Web 版も同じにするが、便がない（出荷計画日が空の）ときは出荷日を消さない。
+ */
+async function 出荷チェック(c: PoolClient, 出庫ID?: number) {
+  const rows = (
+    await c.query(
+      `SELECT s.*, p."出荷計画日"::date::text AS "計画日" FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+       WHERE s."chk" = false ${出庫ID ? `AND s."出庫ID" = $1` : ""}`,
+      出庫ID ? [出庫ID] : [],
+    )
+  ).rows as Rec[];
+  const 違う = (a: unknown, b: unknown) => a != null && b != null && String(a).slice(0, 19) !== String(b).slice(0, 19);
+  for (const r of rows) {
+    const z = (await c.query(`SELECT * FROM ${倉庫の在庫} WHERE "在庫ID" = $1 AND "在庫ケース" <> 0 LIMIT 1`, [n(r.在庫ID)])).rows[0];
+    if (!z) continue;
+    const v: Rec = {};
+    if (r.計画日) v.出荷日 = r.計画日;
+    if (違う(z.商品コード, r.商品コード)) Object.assign(v, { 計画変更chk: true, 変更通知: "商品コード 相違" });
+    if (違う(z.商品名, r.商品名)) Object.assign(v, { 計画変更chk: true, 変更通知: "商品名 相違" });
+    if (違う(z.倉庫ID, r.倉庫ID)) Object.assign(v, { 計画変更chk: true, 変更通知: "倉庫名 相違" });
+    const 出庫計 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の出荷} WHERE "在庫ID" = $1`, [n(r.在庫ID)])).rows[0].v);
+    v.通知 = n(r.ケース) > n(z.入庫元数) - 出庫計 ? "在庫不足" : "確認OK!";
+    if (違う(z.製造日, r.製造日)) Object.assign(v, { 計画変更chk: true, 変更通知: "製造日 相違" });
+    if (違う(z.賞味期限, r.賞味期限)) Object.assign(v, { 計画変更chk: true, 変更通知: "賞味期限 相違" });
+    await 直す(c, 倉庫の出荷, "出庫ID", r.出庫ID, v);
+  }
 }
 
 const 便の列 = `p.*, p."出荷計画日"::date::text AS "出荷計画日", p."集荷日"::date::text AS "集荷日", p."引取日"::date::text AS "引取日"`;
@@ -308,10 +421,8 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
         v.社内連絡 = `${集荷日 ? ` ${集荷日.slice(5, 7)}/${集荷日.slice(8, 10)}` : ""}${v.倉庫名 ?? ""} 引取り`;
       }
       if (項目 === "商品コード") {
+        // CC_コード表示 のあと、商品コードを保存してから在庫を選ぶ（画面が /api/soko/zaiko/… を呼ぶ）
         await コード表示();
-        // 在庫から選ばないときと同じ（在庫の選択は［在庫選択］で）：商品名・規格・入数を入れ、ロットの項目を空にする
-        const m = (await c.query(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(値)])).rows[0];
-        Object.assign(v, { 商品名: m?.商品名 ?? null, 規格: m?.規格 ?? null, 入数: m?.入数 ?? null, 在庫ID: 0, 認識ID: "0", 入庫日: null, 製造日: null, 賞味期限: null, 通知: "", 入庫ID: 0, 計画変更chk: false });
       }
       if (項目 === "届け先コード") {
         await コード表示();
@@ -332,9 +443,133 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
         if (n(r.受注ID)) await 残ケース処理(c, n(r.受注ID));
         await コード表示();
         await 直す(c, 倉庫の出荷, "出庫ID", r.出庫ID, { 出荷日: v.出荷日, 登録時間: v.登録時間, 備考: v.備考 });
+        await 出荷チェック(c, r.出庫ID);
       }
       return { ok: true };
     });
+  });
+
+  // ---------------- 在庫選択（明細の商品コードを入れたとき：CC_在庫商品日付参照 → FSD_在庫読込選択 → FSD_架空在庫選択 → 在庫データ読込） ----------------
+  // その冷蔵庫にこの商品の在庫の行があるか（Access は在庫kg のある行を数える。在庫 0 の行も数える）
+  app.get<{ Querystring: { shohin: string; soko: string } }>("/api/soko/zaiko/aru", async (req) => {
+    const r = (
+      await q(
+        `SELECT (SELECT COUNT("在庫kg") FROM ${倉庫の在庫} WHERE "商品コード" = $1 AND "倉庫ID" = $2)::int AS n, (SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1) AS "商品名"`,
+        [n(req.query.shohin), n(req.query.soko)],
+      )
+    )[0];
+    return { ある: n(r.n) > 0, 商品名: r.商品名 ?? null };
+  });
+  // 選べる在庫（その冷蔵庫の分）
+  app.get<{ Querystring: { shohin: string; soko: string } }>("/api/soko/zaiko/list", async (req) =>
+    一連で(async (c) => (await 倉庫の在庫見込み(c, n(req.query.shohin), n(req.query.soko))).filter((r) => n(r.倉庫ID) === n(req.query.soko))),
+  );
+  // 選んだ在庫を明細に読み込む（在庫データ読込）。認識ID がなければ（在庫がない・強制）マスタの名前・規格・入数を入れ、ロットの項目を空にする
+  app.post<{ Body: { 出庫ID: number; 商品コード: number; 認識ID?: string | null } }>("/api/soko/zaiko/set", async (req, reply) =>
+    一連で(async (c) => {
+      const cur = (await c.query(`SELECT * FROM ${倉庫の出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [n(req.body.出庫ID)])).rows[0];
+      if (!cur) return reply.code(404).send({ error: "この明細はありません" });
+      if (cur.chk === true) return reply.code(400).send({ error: "登録済みのデータを訂正する場合、訂正ボタンをクリックしてください。" });
+      const 商品コード = n(cur.商品コード);
+      let v: Rec;
+      if (!req.body.認識ID) {
+        const m = (await c.query(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品コード])).rows[0];
+        v = { 商品名: m?.商品名 ?? null, 規格: m?.規格 ?? null, 入数: m?.入数 ?? null, 在庫ID: 0, 認識ID: "0", 入庫日: null, 製造日: null, 賞味期限: null, 通知: "", 入庫ID: 0, 計画変更chk: false };
+      } else {
+        const z = (await 倉庫の在庫見込み(c, 商品コード, n(cur.倉庫ID))).find((r) => r.認識ID === String(req.body.認識ID));
+        if (!z) return reply.code(400).send({ error: "選んだ在庫が見つかりません。もう一度選んでください。" });
+        v = {
+          認識ID: z.認識ID, 在庫ID: z.架空実物 ? 0 : n(z.認識ID), 通知: z.架空実物 ? "架空" : "確認OK!", 商品名: z.商品名, 入庫No: z.入庫No, 入庫日: z.入庫日, 製造日: z.製造日,
+          賞味期限: z.賞味期限, 規格: z.規格, 入数: z.入数, 入庫ID: z.入庫ID, 社内連絡: `${z.管理備考 ?? ""}\r\n${cur.社内連絡 ?? ""}`, タグ: z.タグ, 産地コード: z.産地コード,
+          製造工場ID: z.製造工場ID, 製造工場名: z.製造工場名, 入庫前名義ID: [105, 137, 191].includes(n(cur.倉庫ID)) ? 629 : z.入庫後名義ID, 計画変更chk: false,
+        };
+      }
+      await 直す(c, 倉庫の出荷, "出庫ID", cur.出庫ID, v);
+      return { ok: true };
+    }),
+  );
+
+  // ---------------- 在庫不足（cmd_受注選択：全部の未登録の出庫で出荷チェックをして、在庫不足を一覧にする。FSD_在庫不足表示） ----------------
+  app.post("/api/soko/shukko/fusoku", async () =>
+    一連で(async (c) => {
+      await 出荷チェック(c);
+      return (
+        await c.query(
+          `SELECT s."出庫ID", s."輸送ID", s."出荷日"::date::text AS "出荷日", p."出荷計画日"::date::text AS "出荷計画日", s."倉庫名", s."商品コード", s."商品名", s."ケース",
+                  s."届け先", s."製造日"::date::text AS "製造日", s."賞味期限"::date::text AS "賞味期限", s."在庫ID",
+                  (SELECT "入庫元数" FROM ${倉庫の在庫} z WHERE z."在庫ID" = s."在庫ID" LIMIT 1)
+                    - (SELECT SUM(x."ケース") FROM ${倉庫の出荷} x LEFT JOIN ${倉庫の便} y ON y."輸送ID" = x."輸送ID"
+                       WHERE x."在庫ID" = s."在庫ID" AND (x."出荷日", x."輸送ID", x."出庫ID") <= (s."出荷日", s."輸送ID", s."出庫ID")) AS "残数"
+           FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+           WHERE s."通知" = '在庫不足' AND s."chk" = false ORDER BY p."出荷計画日", s."商品コード", s."出庫ID"`,
+        )
+      ).rows;
+    }),
+  );
+
+  // ---------------- ロット逆転の確認（出庫確認の印を付けたとき：C_届け先賞味期限ロット逆転防止） ----------------
+  // 比べる材料：届け先・グループ商品コードが同じ出庫のうち、納品日がこの行より前の最も新しい賞味期限（前回）と、後の最も新しい賞味期限（次回以降）
+  app.get<{ Params: { id: string } }>("/api/soko/shukko/lot/:id", async (req, reply) => {
+    const r = (
+      await q(
+        `SELECT s."出庫ID", s."届け先コード", s."届け先", s."商品コード", s."商品名", s."賞味期限"::date::text AS "賞味期限", s."納品日"::date::text AS "納品日",
+                COALESCE(m."グループ商品コード", 0) AS "G"
+         FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード" WHERE s."出庫ID" = $1`,
+        [n(req.params.id)],
+      )
+    )[0];
+    if (!r) return reply.code(404).send({ error: "この明細はありません" });
+    const 範囲 = async (op: "<" | ">") =>
+      r.納品日
+        ? (
+            await q(
+              `SELECT MAX(s."賞味期限")::date::text AS v FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+               WHERE s."届け先コード" = $1 AND m."グループ商品コード" = $2 AND s."納品日" ${op} $3::date`,
+              [n(r.届け先コード), n(r.G), r.納品日],
+            )
+          )[0].v
+        : null;
+    return { ...r, 特別: n(r.届け先コード) === 3194 && n(r.商品コード) === 285, 前回: await 範囲("<"), 次回: await 範囲(">") };
+  });
+  // 確認の結果を書く。理由を入れたら社内連絡に、先の納品の逆転を知らせるならその行に印、最後に この行の 計画変更chk・変更通知
+  app.post<{ Body: { 出庫ID: number; 逆転: boolean; 理由?: string; 先に印?: boolean } }>("/api/soko/shukko/lot/result", async (req, reply) =>
+    一連で(async (c) => {
+      const r = (
+        await c.query(
+          `SELECT s.*, s."賞味期限"::date::text AS k, s."納品日"::date::text AS d, COALESCE(m."グループ商品コード", 0) AS g
+           FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード" WHERE s."出庫ID" = $1 FOR UPDATE OF s`,
+          [n(req.body.出庫ID)],
+        )
+      ).rows[0];
+      if (!r) return reply.code(404).send({ error: "この明細はありません" });
+      if (req.body.理由) await 直す(c, 倉庫の出荷, "出庫ID", r.出庫ID, { 社内連絡: req.body.理由 });
+      if (req.body.先に印 && r.k && r.d)
+        await c.query(
+          `UPDATE ${倉庫の出荷} s SET "変更通知" = 'ロット逆転!', "計画変更chk" = true FROM ${商品マスタ} m
+           WHERE m."商品コード" = s."商品コード" AND m."グループ商品コード" = $1 AND s."賞味期限" < $2::date AND s."届け先コード" = $3 AND s."納品日" > $4::date`,
+          [n(r.g), r.k, n(r.届け先コード), r.d],
+        );
+      await 直す(c, 倉庫の出荷, "出庫ID", r.出庫ID, req.body.逆転 ? { 計画変更chk: true, 変更通知: "ロット逆転" } : { 計画変更chk: false, 変更通知: "" });
+      return { ok: true };
+    }),
+  );
+  // 前回出荷ロット履歴（FSD_前回出荷ロット履歴：この 1 年の出荷のうち、届け先・グループ商品コードが同じで、納品日が指定の日より前のもの）
+  app.get<{ Querystring: { 出庫ID: string; 前: string } }>("/api/soko/shukko/lot-history", async (req) => {
+    const r = (
+      await q(
+        `SELECT s."届け先コード", COALESCE(m."グループ商品コード", 0) AS g FROM ${倉庫の出荷} s LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード" WHERE s."出庫ID" = $1`,
+        [n(req.query.出庫ID)],
+      )
+    )[0];
+    if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(req.query.前 ?? "")) return [];
+    return q(
+      `SELECT s."出荷日"::date::text AS "出荷日", s."輸送ID", s."出庫ID", p."運送会社名", s."商品コード", s."商品名", s."製造日"::date::text AS "製造日", s."届け先コード", s."届け先",
+              s."変更通知", s."納品日"::date::text AS "納品日", s."賞味期限"::date::text AS "賞味期限"
+       FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID" LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+       WHERE s."出荷日" > $1::date AND m."グループ商品コード" = $2 AND s."届け先コード" = $3 AND s."納品日" < $4::date
+       ORDER BY s."出荷日", s."納品日", s."賞味期限"`,
+      [new Date(Date.parse(日本の今().日付) - 365 * 86400000).toISOString().slice(0, 10), n(r.g), n(r.届け先コード), req.query.前],
+    );
   });
 
   // 明細を消す（Form_Delete）。登録済みは消せない。受注があれば残ケースを出し直す

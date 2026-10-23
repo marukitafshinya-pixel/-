@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
 import { Field, today } from "../formParts";
+import { ZaikoSentaku } from "./WsZaikoSelect";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -26,6 +27,9 @@ export function SokoShukko() {
   const [data, setData] = useState<{ 便: Rec; rows: Rec[]; 通知: number } | null>(null);
   const [ch, setCh] = useState<Record<string, { id: number; name: string }[]>>({});
   const [追加, set追加] = useState<number | "">("");
+  const [在庫選択, set在庫選択] = useState<Rec | null>(null);
+  const [履歴, set履歴] = useState<Rec[] | null>(null);
+  const [不足, set不足] = useState<Rec[] | null>(null);
 
   useEffect(() => {
     api.get<Record<string, { id: number; name: string }[]>>("/api/soko/shukko/choices").then(setCh).catch(エラー);
@@ -59,11 +63,67 @@ export function SokoShukko() {
   async function 明細を直す(r: Rec, 項目: string, 値: unknown) {
     try {
       await api.post("/api/soko/shukko/meisai/save", { 出庫ID: r.出庫ID, 項目, 値 });
+      // 商品コードを入れたら、その出荷元（冷蔵庫）の在庫から選ぶ（Access の CC_在庫商品日付参照）
+      if (項目 === "商品コード" && 値 != null) set在庫選択({ 出庫ID: r.出庫ID, 商品コード: 値, 倉庫ID: r.倉庫ID ?? 0 });
     } catch (e) {
       エラー(e);
     }
     読む();
   }
+  /** 出庫確認の印（出庫確認_AfterUpdate）：印を保存してから、ロット逆転を確かめる（C_届け先賞味期限ロット逆転防止） */
+  async function 出庫確認(r: Rec, on: boolean) {
+    try {
+      await api.post("/api/soko/shukko/meisai/save", { 出庫ID: r.出庫ID, 項目: "出庫確認", 値: on });
+      const L = await api.get<Rec>(`/api/soko/shukko/lot/${r.出庫ID}`);
+      if (L.特別) alert(`${L.届け先 ?? ""}\n${L.商品名 ?? ""}\n以上の条件は、運賃を登録後、品管に報告してください`);
+      let 逆転 = false;
+      let 理由: string | undefined;
+      let 先に印 = false;
+      const 履歴を出す = async (前: string) => set履歴(await api.get<Rec[]>("/api/soko/shukko/lot-history", { 出庫ID: String(r.出庫ID), 前 }));
+      if (L.賞味期限 && !L.納品日) {
+        alert("納品日が入力されてないので比較できません、前回ロットを表示します");
+        await 履歴を出す(足す(today(), 10));
+      } else if (L.賞味期限 && L.前回) {
+        if (L.賞味期限 < L.前回) {
+          const s = (d: string) => d.replace(/-/g, "/");
+          if (
+            confirm(`ロット逆転！！！！\n選択された賞味期限は前回より古いものです！\n\n前回賞味期限 ${s(L.前回)}\n\n今回賞味期限 ${s(L.賞味期限)}\nロットが逆転しますがよろしいですか！？`) &&
+            confirm("ロットが逆転しますが、本当によろしいですね？！")
+          ) {
+            理由 = prompt("ロット逆転許可の理由を登録してください") ?? "";
+            if (!理由) {
+              alert("ロット逆転許可の理由が入力されていません\n訂正して下さい");
+              逆転 = true;
+            }
+          } else 逆転 = true;
+        } else if (L.次回 && L.次回 < L.賞味期限) {
+          if (confirm("先の納品日にロット逆転が発生しますが、よろしいですか？")) {
+            先に印 = true;
+            alert(`${L.納品日.replace(/-/g, "/")} 以降の納品にロット逆転が発生していますので確認お願いします。`);
+          }
+        }
+      }
+      await api.post("/api/soko/shukko/lot/result", { 出庫ID: r.出庫ID, 逆転, 理由: 理由 || undefined, 先に印 });
+      if (逆転) {
+        alert("ロットを訂正してください");
+        if (L.納品日) await 履歴を出す(L.納品日);
+      }
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+  async function 在庫不足() {
+    try {
+      const r = await 処理中(() => api.post<Rec[]>("/api/soko/shukko/fusoku", {}));
+      if (!r.length) alert("在庫不足のレコードはありません");
+      else set不足(r);
+    } catch (e) {
+      エラー(e);
+    }
+    読む();
+  }
+
   async function 便を足す() {
     if (!追加) return alert("出庫場所を選んでください");
     try {
@@ -219,6 +279,7 @@ export function SokoShukko() {
                   <button className="navy" onClick={完了} title="この便の出庫だけを在庫に登録します（バッチ更新）">完了</button>
                   <button className="red" onClick={便を消す} title="この便と明細を消します（パスワードが要ります）">削除</button>
                   <span className="sko-sp" />
+                  <button onClick={在庫不足} title="まだ登録していない出庫を在庫と比べ、在庫不足のものを出します">在庫不足チェック</button>
                   <button disabled title="準備中">受注表示</button>
                   <button disabled title="準備中">受注読込</button>
                   <button disabled title="準備中">検索</button>
@@ -256,7 +317,7 @@ export function SokoShukko() {
                           <td><Field value={r.届け先コード} kind="num" className="sko-code" kyotsu="tokui" readOnly={ro} onCommit={(v) => 明細を直す(r, "届け先コード", v.trim() === "" ? null : Number(v))} /><div className="small">{r.届け先}</div></td>
                           <td className="r">{r.入庫後名義ID || ""}</td>
                           <td><Field value={r.備考} className="w12" readOnly={ro} onCommit={(v) => 明細を直す(r, "備考", v)} /></td>
-                          <td className="c"><input type="checkbox" checked={!!r.出庫確認} onChange={(e) => 明細を直す(r, "出庫確認", e.target.checked)} /></td>
+                          <td className="c"><input type="checkbox" checked={!!r.出庫確認} onChange={(e) => 出庫確認(r, e.target.checked)} /></td>
                           <td className="c"><input type="checkbox" checked={!!r.出庫済み} onChange={(e) => 明細を直す(r, "出庫済み", e.target.checked)} /></td>
                           <td className="c">{ro ? "済" : ""}</td>
                           <td>{!ro && <button className="small" onClick={() => 明細を消す(r)}>削除</button>}</td>
@@ -276,6 +337,53 @@ export function SokoShukko() {
           )}
         </div>
       </div>
+      {履歴 && (
+        <div className="modal" onClick={() => set履歴(null)}>
+          <div className="sko-dlg" onClick={(e) => e.stopPropagation()}>
+            <div className="sko-dlg-h">前回出荷ロット履歴<button onClick={() => set履歴(null)}>閉じる</button></div>
+            <table className="ws-grid">
+              <thead><tr><th>出荷日</th><th>運送会社</th><th>コード</th><th>商品名</th><th>製造日</th><th>賞味期限</th><th>届け先</th><th>納品日</th><th>変更通知</th></tr></thead>
+              <tbody>
+                {履歴.length === 0 && <tr><td colSpan={9} className="c">前回の出荷はありません</td></tr>}
+                {履歴.map((h) => (
+                  <tr key={h.出庫ID}><td>{h.出荷日}</td><td>{h.運送会社名}</td><td className="r">{h.商品コード}</td><td>{h.商品名}</td><td>{h.製造日}</td><td className="b">{h.賞味期限}</td><td>{h.届け先}</td><td>{h.納品日}</td><td className="red">{h.変更通知}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {不足 && (
+        <div className="modal" onClick={() => set不足(null)}>
+          <div className="sko-dlg" onClick={(e) => e.stopPropagation()}>
+            <div className="sko-dlg-h">在庫不足表示<button onClick={() => set不足(null)}>閉じる</button></div>
+            <table className="ws-grid">
+              <thead><tr><th>出荷日</th><th>出荷元</th><th>コード</th><th>商品名</th><th>C/S</th><th>残数</th><th>製造日</th><th>賞味期限</th><th>届け先</th><th /></tr></thead>
+              <tbody>
+                {不足.map((h) => (
+                  <tr key={h.出庫ID}>
+                    <td>{h.出荷計画日 ?? h.出荷日}</td><td>{h.倉庫名}</td><td className="r">{h.商品コード}</td><td>{h.商品名}</td><td className="r">{num(h.ケース)}</td>
+                    <td className="r red">{num(h.残数)}</td><td>{h.製造日}</td><td>{h.賞味期限}</td><td>{h.届け先}</td>
+                    <td><button className="small" onClick={() => { set不足(null); if (h.出荷計画日) { setDate(h.出荷計画日); setId(h.輸送ID); } }}>移る</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {在庫選択 && (
+        <ZaikoSentaku
+          基="/api/soko/zaiko"
+          出庫ID={在庫選択.出庫ID}
+          商品コード={Number(在庫選択.商品コード)}
+          倉庫ID={Number(在庫選択.倉庫ID)}
+          onDone={() => {
+            set在庫選択(null);
+            読む();
+          }}
+        />
+      )}
     </div>
   );
 }
