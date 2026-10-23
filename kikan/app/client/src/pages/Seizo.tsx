@@ -109,6 +109,7 @@ export function SeizoMenu() {
           {タブ === "kensaku" && (
             <div className="sz-tab-grid one">
               <button onClick={() => nav("/seizo/kensaku")}>取引先商品製造一覧</button>
+              <button onClick={() => nav("/seizo/jikan")}>包装時間の集計</button>
             </div>
           )}
         </div>
@@ -245,11 +246,11 @@ export function SeizoHoso() {
             <tr>
               <th>ﾁｪｯｸ</th><th>製造日</th><th>区分</th><th>隠語</th><th>コード</th><th>商品名</th><th>区<br />分</th><th>規格</th><th>入数</th>
               <th className="sz-3h">袋総枚数<br />箱詰枚数<br />半端枚数</th><th>ケース</th><th>商品kg</th><th className="or">未包装<br />枚数</th>
-              <th>コード</th><th>原料</th><th>原料kg</th><th>備考</th><th>検査区分</th><th>特定産地</th><th />
+              <th>コード</th><th>原料</th><th>原料kg</th><th>備考</th><th>検査区分</th><th>特定産地</th><th title="包装の開始・終了の時刻（8:15 のように）。包装時間の集計に使います">開始<br />時刻</th><th>終了<br />時刻</th><th />
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={20} className="c none">この入庫日の入庫はありません</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={22} className="c none">この入庫日の入庫はありません</td></tr>}
             {rows.map((r) => (
               <tr key={r.入庫ID} className={r.chk ? "done" : ""}>
                 <td className="c">
@@ -275,6 +276,8 @@ export function SeizoHoso() {
                 <欄 {...P} r={r} k="備考" w={10} />
                 <欄 {...P} r={r} k="検査区分" w={6} />
                 <td><選ぶ {...P} r={r} k="産地コード" opts={opts.産地} num w={80} /></td>
+                <欄 {...P} r={r} k="作業開始時間" w={4} />
+                <欄 {...P} r={r} k="作業終了時間" w={4} />
                 <td className="c small">{r.chk ? "登録済み" : r.ユーザーchk ? "未登録" : ""}</td>
               </tr>
             ))}
@@ -284,7 +287,7 @@ export function SeizoHoso() {
               <td colSpan={10} className="r sz-sum-lbl">合計</td>
               <td className="r">{num(計("ケース"))}</td>
               <td className="r">{num(計("商品kg"))}</td>
-              <td colSpan={8} />
+              <td colSpan={10} />
             </tr>
           </tfoot>
         </table>
@@ -750,6 +753,87 @@ export function SeizoKensaku() {
             <tfoot>
               <tr>{列.map((k, i) => <td key={k} className="r">{数.has(k) ? num(rows.reduce((a, r) => a + Number(r[k] ?? 0), 0)) : i === 0 ? `${rows.length} 件` : ""}</td>)}</tr>
             </tfoot>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 包装時間の集計（Web 版で足したもの）。包装日誌登録に入れた包装の開始・終了の時刻から、商品ごとに
+ * 回数・平均の開始と終了・平均の作業時間・1 ケースあたりの時間を出す。包装場の包装時間登録（過去の分）も足せる。
+ */
+export function SeizoJikan() {
+  const nav = useNavigate();
+  const 年前 = new Date(Date.parse(today() + "T00:00:00Z") - 365 * 86400000).toISOString().slice(0, 10);
+  const [c, setC] = useState<Record<string, string>>({ from: 年前, to: today(), soko: "0", kako: "" });
+  const [opts, setOpts] = useState<{ 工場: Opt[] }>({ 工場: [] });
+  const [rows, setRows] = useState<Rec[] | null>(null);
+  const [開く, set開く] = useState<number | null>(null);
+  useEffect(() => {
+    api.get<{ 工場: Opt[] }>("/api/seizo/kensaku/opts").then(setOpts, エラー);
+  }, []);
+  async function 表示() {
+    set開く(null);
+    setRows(await api.get<Rec[]>("/api/seizo/jikan", c).catch((e) => (エラー(e), null)));
+  }
+  const 字 = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+  return (
+    <div className="sz">
+      <div className="sz-head">
+        <div className="sz-title">包装時間の集計</div>
+        <span className="sz-btns">
+          <button className="navy" onClick={表示}>表示</button>
+          <button onClick={() => Excelを受け取る("/api/seizo/jikan?" + new URLSearchParams({ ...c, excel: "1" }).toString(), "包装時間の集計.xlsx").catch(エラー)}>出力</button>
+          <button onClick={() => nav(-1)}>閉じる</button>
+        </span>
+      </div>
+      <div className="sz-cond">
+        <label className="sz-k">
+          <span className="lbl">工場</span>
+          <select value={c.soko} onChange={(e) => setC((x) => ({ ...x, soko: e.target.value }))}>
+            <option value="0">（すべて）</option>
+            {opts.工場.map((o) => <option key={o.id} value={o.id}>{o.id}　{o.name}</option>)}
+          </select>
+        </label>
+        <label className="sz-k">
+          <span className="lbl">包装日</span>
+          <Field kind="date" value={c.from} className="sz-d" onCommit={(v) => setC((x) => ({ ...x, from: 日付に(v) }))} />
+          <span>～</span>
+          <Field kind="date" value={c.to} className="sz-d" onCommit={(v) => setC((x) => ({ ...x, to: 日付に(v) }))} />
+        </label>
+        <label className="sz-k">
+          <input type="checkbox" checked={c.kako === "1"} onChange={(e) => setC((x) => ({ ...x, kako: e.target.checked ? "1" : "" }))} />
+          <span>包装場の包装時間登録（過去の分）も入れる</span>
+        </label>
+      </div>
+      <div className="sz-note">
+        包装日誌登録の「開始時刻」「終了時刻」に入れた分を集めます。作業時間は 終了−開始（時刻の無い過去の分は実働時間分）。1ケースあたりは、作業時間の合計 ÷ ケースの合計です。行を押すと 1 回ごとの明細を出します。
+      </div>
+      {rows && (
+        <div className="sz-list">
+          <table className="sz-grid">
+            <thead>
+              <tr><th>コード</th><th>商品名</th><th>回数</th><th>最初の日</th><th>最後の日</th><th>平均の開始</th><th>平均の終了</th><th>平均の作業時間（分）</th><th>平均のケース</th><th>1ケースあたり（秒）</th></tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && <tr><td colSpan={10} className="c none">この期間に時刻の入った包装はありません</td></tr>}
+              {rows.flatMap((r) => [
+                <tr key={r.商品コード} className={開く === r.商品コード ? "sel" : ""} onClick={() => set開く(開く === r.商品コード ? null : r.商品コード)}>
+                  <td className="r">{r.商品コード}</td><td className="name">{r.商品名}</td><td className="r">{r.回数}</td><td>{短い日(r.最初)}</td><td>{短い日(r.最後)}</td>
+                  <td className="c">{r.平均開始}</td><td className="c">{r.平均終了}</td><td className="r">{字(r.平均作業分)}</td><td className="r">{num(r.平均ケース)}</td><td className="r">{字(r.ケースあたり秒)}</td>
+                </tr>,
+                ...(開く === r.商品コード
+                  ? r.明細.map((x: Rec, i: number) => (
+                      <tr key={r.商品コード + "-" + i}>
+                        <td /><td className="small">{x.元}・{x.倉庫名}</td><td /><td>{短い日(x.日)}</td><td /><td className="c">{x.開始}</td><td className="c">{x.終了}</td>
+                        <td className="r">{字(x.作業分)}</td><td className="r">{num(x.ケース)}</td><td />
+                      </tr>
+                    ))
+                  : []),
+              ])}
+            </tbody>
           </table>
         </div>
       )}

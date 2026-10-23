@@ -41,7 +41,7 @@ import { WebElixxiShukko } from "./pages/WebElixxiShukko";
 import { WebHojo } from "./pages/WebHojo";
 import { WebHanmoriIdou, WebHanmoriShiire } from "./pages/WebHanmori";
 import WsOsaka from "./pages/WsOsaka";
-import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
+import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako, SeizoJikan } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
 import { TehaiCalendar } from "./pages/Tehai";
 import { SokoMenu, SokoNyuko, SokoIdou, SokoNyukoKakunin, SokoShukkoKakunin } from "./pages/Soko";
@@ -135,6 +135,7 @@ function App() {
       <Route path="/seizo/yotei" element={<SeizoYotei />} />
       <Route path="/seizo/kensaku" element={<SeizoKensaku />} />
       <Route path="/seizo/tako" element={<SeizoTako />} />
+      <Route path="/seizo/jikan" element={<SeizoJikan />} />
       <Route path="/keikaku/henko" element={<KeikakuHenko />} />
       <Route path="/keikaku/log" element={<KeikakuLog />} />
       <Route path="/keikaku/calendar" element={<KeikakuCalendar />} />

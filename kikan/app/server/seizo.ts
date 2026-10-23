@@ -139,7 +139,22 @@ async function 最終区分を合わせる(c: PoolClient, 商品コード: numbe
 }
 
 /** 一覧の項目（日付は日付だけにする） */
-const 一覧の項目 = `i.*, i."入庫日"::date::text AS "入庫日", i."製造日"::date::text AS "製造日", i."賞味期限"::date::text AS "賞味期限"`;
+const 一覧の項目 = `i.*, i."入庫日"::date::text AS "入庫日", i."製造日"::date::text AS "製造日", i."賞味期限"::date::text AS "賞味期限",
+  to_char(i."作業開始時間", 'HH24:MI') AS "作業開始時間", to_char(i."作業終了時間", 'HH24:MI') AS "作業終了時間"`;
+/** 「8:15」「815」「08:15」などを Access の時刻（1899/12/30 の時刻）に。空なら null。読めなければ undefined */
+function 時刻にする(v: unknown): string | null | undefined {
+  const s = String(v ?? "").trim().replace(/[：]/g, ":").replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+  if (s === "") return null;
+  const m = s.match(/^(\d{1,2}):?(\d{2})$/);
+  if (!m || +m[1] > 23 || +m[2] > 59) return undefined;
+  return `1899-12-30 ${m[1].padStart(2, "0")}:${m[2]}:00`;
+}
+/** 時刻（timestamp）→ 0 時からの分 */
+const 分 = (v: unknown) => {
+  const m = String(v ?? "").match(/(\d{2}):(\d{2})/);
+  return m ? +m[1] * 60 + +m[2] : null;
+};
+const 時分 = (x: number | null) => (x === null ? "" : `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, "0")}`);
 
 export function seizoRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
@@ -161,6 +176,68 @@ export function seizoRoutes(app: FastifyInstance) {
     ),
   );
 
+  // 包装時間の集計（Web 版で足したもの）：包装日誌に入れた開始・終了の時刻から、商品ごとの平均を出す。
+  // 過去の分として、包装場の包装時間登録（housou_fe.TM_包装時間：製造日・包装個数・開始・終了・実働時間分）も足せる
+  app.get<{ Querystring: { from: string; to: string; soko?: string; kako?: string; excel?: string } }>("/api/seizo/jikan", async (req, reply) => {
+    const { from, to } = req.query;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(to ?? "")) return reply.code(400).send({ error: "期間が正しくありません" });
+    const 工場 = n(req.query.soko);
+    const 行: Rec[] = (
+      await q(
+        `SELECT '包装日誌' AS "元", i."入庫日"::date::text AS "日", i."倉庫名", i."商品コード", i."商品名", i."ケース"::float8 AS "ケース",
+                to_char(i."作業開始時間", 'HH24:MI') AS "開始", to_char(i."作業終了時間", 'HH24:MI') AS "終了", NULL::float8 AS "実働分"
+         FROM ${入庫} i
+         WHERE i."入庫日" BETWEEN $1::date AND $2::date AND ($3::int = 0 OR i."倉庫ID" = $3::int)
+           AND (i."作業開始時間" IS NOT NULL OR i."作業終了時間" IS NOT NULL)`,
+        [from, to, 工場],
+      )
+    ).concat(
+      req.query.kako === "1" && (工場 === 0 || 工場 === 11)
+        ? await q(
+            `SELECT '包装時間登録' AS "元", "製造日"::date::text AS "日", '丸北' AS "倉庫名", "商品コード", "品名" AS "商品名", "包装個数"::float8 AS "ケース",
+                    to_char("開始時間", 'HH24:MI') AS "開始", to_char("終了時間", 'HH24:MI') AS "終了", "実働時間分"::float8 AS "実働分"
+             FROM ${t("housou_fe", "TM_包装時間")} WHERE "製造日" BETWEEN $1::date AND $2::date AND ("開始時間" IS NOT NULL OR "実働時間分" > 0)`,
+            [from, to],
+          )
+        : [],
+    );
+    // 1 回ごとの作業時間：終了−開始（日をまたぐ・逆のものは使わない）。時刻が無ければ包装時間登録の実働時間分
+    for (const r of 行) {
+      const s = 分(r.開始), e = 分(r.終了);
+      r.作業分 = s !== null && e !== null && e > s ? e - s : r.実働分 && n(r.実働分) > 0 ? n(r.実働分) : null;
+    }
+    const g = new Map<number, Rec[]>();
+    for (const r of 行) g.set(n(r.商品コード), [...(g.get(n(r.商品コード)) ?? []), r]);
+    const 平均 = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+    const 結果 = [...g.entries()].map(([商品コード, rs]) => {
+      rs.sort((a, b) => (a.日 < b.日 ? -1 : 1));
+      const 開始 = rs.map((r) => 分(r.開始)).filter((x): x is number => x !== null);
+      const 終了 = rs.map((r) => 分(r.終了)).filter((x): x is number => x !== null);
+      const 時間あり = rs.filter((r) => r.作業分 !== null);
+      const 作業 = 平均(時間あり.map((r) => r.作業分));
+      const ケースあり = 時間あり.filter((r) => n(r.ケース) > 0);
+      const 秒 = ケースあり.length ? (ケースあり.reduce((a, r) => a + r.作業分 * 60, 0) / ケースあり.reduce((a, r) => a + n(r.ケース), 0)) : null;
+      return {
+        商品コード, 商品名: rs[rs.length - 1].商品名, 回数: rs.length, 最初: rs[0].日, 最後: rs[rs.length - 1].日,
+        平均開始: 時分(平均(開始)), 平均終了: 時分(平均(終了)), 平均作業分: 作業 === null ? null : Math.round(作業 * 10) / 10,
+        平均ケース: Math.round((平均(rs.map((r) => n(r.ケース))) ?? 0) * 10) / 10, ケースあたり秒: 秒 === null ? null : Math.round(秒 * 10) / 10,
+        明細: rs.map(({ 元, 日, 倉庫名, ケース, 開始, 終了, 作業分 }) => ({ 元, 日, 倉庫名, ケース, 開始, 終了, 作業分 })),
+      };
+    }).sort((a, b) => a.商品コード - b.商品コード);
+    if (req.query.excel !== "1") return 結果;
+    const 列 = [
+      { key: "商品コード", width: 10 }, { key: "商品名", width: 28 }, { key: "回数", width: 8 }, { key: "最初", 見出し: "最初の日", width: 12 }, { key: "最後", 見出し: "最後の日", width: 12 },
+      { key: "平均開始", 見出し: "平均の開始", width: 11 }, { key: "平均終了", 見出し: "平均の終了", width: 11 }, { key: "平均作業分", 見出し: "平均の作業時間（分）", width: 16 },
+      { key: "平均ケース", 見出し: "平均のケース", width: 12 }, { key: "ケースあたり秒", 見出し: "1ケースあたり（秒）", width: 16 },
+    ];
+    const 名前 = `包装時間の集計（${from}～${to}）`;
+    const buf = await 一覧のExcel("包装時間の集計", 列, 結果);
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(名前 + ".xlsx")}`);
+    return reply.send(buf);
+  });
+
   // 他工場 計量日誌登録（FM_計量数登録）：製造日と工場で絞った入庫
   app.get<{ Querystring: { date: string; soko: string } }>("/api/seizo/tako", async (req) =>
     q(
@@ -177,13 +254,19 @@ export function seizoRoutes(app: FastifyInstance) {
       const 直せる = [
         "商品コード", "ケース", "タグ", "計量元数", "開始No", "終了No", "商品kg", "製造日", "箱詰枚数", "数量確定フラグ", "原料コード", "産地コード", "商品状態隠語",
         "商品区分", "段ボールID", "備考", "管理備考", "規格", "入数", "賞味期限", "検査区分", "検体区分", "作業場", "カードカラーコード", "倉庫ID", "入庫日", "出荷止め",
-        "印刷時非表示", "検査予定日", "製造表記", "未包装kg", "未包装枚数", "原料kg", "出来高入力chk",
+        "印刷時非表示", "検査予定日", "製造表記", "未包装kg", "未包装枚数", "原料kg", "出来高入力chk", "作業開始時間", "作業終了時間",
       ];
       if (!直せる.includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
       return 一連で(async (c) => {
         const r = await 入庫の行(c, n(req.body.入庫ID));
         if (!r) return reply.code(404).send({ error: "この行はありません" });
-        const 値 = req.body.値 === "" ? null : req.body.値;
+        let 値 = req.body.値 === "" ? null : req.body.値;
+        if (項目 === "作業開始時間" || 項目 === "作業終了時間") {
+          // 包装の開始・終了の時刻（Web 版で足した欄。Access では使われていなかった列に入れる）
+          const t = 時刻にする(値);
+          if (t === undefined) return reply.code(400).send({ error: "時刻は 8:15 のように入れてください" });
+          値 = t;
+        }
         const v: Rec = { [項目]: 値 };
         const 知らせ: string[] = [];
         const 新 = { ...r, ...v };
