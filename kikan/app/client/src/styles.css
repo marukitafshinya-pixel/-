@@ -1904,3 +1904,15 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hs-pageno { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 12px; }
 @media print { @page { size: A4 landscape; margin: 6mm; } .hs-page { page-break-after: always; border: none; } }
 .hs-grid tr.hs-subtotal td { border-left: none; border-right: none; border-bottom: none; border-top: 2px solid #000; }
+
+/* パレット在庫集計（予定在庫・パレット表示の［印刷］。Access の R_在庫表(パレット表示) の見本に合わせる） */
+.pz-print { font-family: "MS Gothic", "Noto Sans JP", sans-serif; color: #000; width: 182mm; min-height: 270mm; position: relative; padding-top: 2mm; }
+.pz-title { text-align: center; font-size: 14px; margin: 2mm 0 8mm; }
+.pz-soko { font-size: 17px; font-weight: bold; margin: 0 0 2mm 2mm; }
+.pz-block { position: relative; padding: 2mm 0 10mm; }
+.pz-when { position: absolute; left: 4mm; top: 6mm; font-size: 11px; }
+.pz-t { border-collapse: collapse; font-size: 16px; }
+.pz-t th { font-size: 10px; font-weight: normal; padding: 0 4px; }
+.pz-t td { border: 1px solid #000; text-align: right; width: 26mm; padding: 0 3px; }
+.pz-max { margin: 0 0 4mm 48mm; } .pz-now { margin-left: 20mm; }
+.pz-print hr { border: none; border-top: 1px solid #000; margin: 6mm 0; }

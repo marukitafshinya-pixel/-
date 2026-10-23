@@ -448,9 +448,56 @@ export function SokoYotei() {
     }
   }
   const 計 = (f: string) => (rows ?? []).reduce((a, r) => a + Number(r[f] ?? 0), 0);
+  const [印刷, set印刷] = useState<Rec | null>(null);
+  async function 印刷する() {
+    if (!soko) return alert("冷蔵庫を選んでください。");
+    try {
+      const p = await 処理中(() => api.get<Rec>("/api/soko/yotei/pallet", { soko: String(soko) }));
+      const list = await api.get<Rec[]>("/api/ws/sashidashi").catch(() => []);
+      const t = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
+      set印刷({ ...p, 差出人: list.find((x) => x.区分 === "丸北北海道") ?? {}, 日時: `${t.slice(0, 10).replace(/-/g, "/")} ${Number(t.slice(11, 13))}${t.slice(13, 19)}` });
+      setTimeout(() => window.print(), 150);
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  const 過剰 = (残: number, 許容: number) => (残 - 許容 >= 0 ? `+${num(残 - 許容)}` : num(残 - 許容));
+  const 枠 = (題: string | null, 左: string, x: Rec) => (
+    <div className="pz-block">
+      {題 && <div className="pz-when">{題}</div>}
+      <table className="pz-t pz-max">
+        <thead><tr><th>最大許容枚数</th><th>過剰枚数</th></tr></thead>
+        <tbody>
+          <tr><td>{num(印刷!.許容)}</td><td>{過剰(x.残, 印刷!.許容)}</td></tr>
+          <tr><td>{num(印刷!.許容 + 50)}</td><td>{過剰(x.残, 印刷!.許容 + 50)}</td></tr>
+        </tbody>
+      </table>
+      <table className="pz-t pz-now">
+        <thead><tr><th>{左}</th><th>空き予定枚数</th><th>残予定枚数</th></tr></thead>
+        <tbody><tr><td>{num(x.現在 ?? x.入庫)}</td><td>{num(x.空き)}</td><td>{num(x.残)}</td></tr></tbody>
+      </table>
+    </div>
+  );
   return (
     <div className="sz sko">
-      <div className="kk-head">
+      {印刷 && (
+        <div className="print-only pz-print">
+          <div className="zd-time">{印刷.日時}</div>
+          <div className="pz-title">パレット在庫集計</div>
+          <div className="pz-soko">倉庫 {印刷.倉庫名}</div>
+          {枠(null, "現在枚数", 印刷.今)}
+          <hr />
+          {枠("1週間後", "入庫枚数", 印刷.週後)}
+          <hr />
+          {枠("1か月後", "入庫枚数", 印刷.月後)}
+          <div className="zd-from">
+            <div className="zd-co">{印刷.差出人.社名} {印刷.差出人.店舗}</div>
+            <div>{印刷.差出人.住所}</div>
+            <div>TEL:{印刷.差出人.TEL}　　FAX:{印刷.差出人.FAX}</div>
+          </div>
+        </div>
+      )}
+      <div className="kk-head no-print">
         <div className="kk-title">予定在庫・パレット表示</div>
         <span>冷蔵庫</span>
         <select value={soko} onChange={(e) => { setSoko(Number(e.target.value)); setRows(null); }}>
@@ -460,11 +507,11 @@ export function SokoYotei() {
         <span>集計日</span>
         <日の欄 value={日} set={set日} />
         <button className="blue" onClick={集計}>集計</button>
-        <button disabled title="印刷の見本をいただいてから作ります">印刷</button>
+        <button className="navy" onClick={印刷する}>印刷</button>
         <button disabled title="印刷の見本をいただいてから作ります">在庫表印刷</button>
         <button onClick={() => nav(-1)}>閉じる</button>
       </div>
-      <div className="sko-gridwrap">
+      <div className="sko-gridwrap no-print">
         {rows === null ? (
           <p className="sko-pad">冷蔵庫と集計日を選んで［集計］を押してください。</p>
         ) : (

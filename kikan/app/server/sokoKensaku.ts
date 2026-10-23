@@ -141,6 +141,44 @@ export function sokoKensakuRoutes(app: FastifyInstance) {
     }
   });
 
+  // パレット在庫集計（予定在庫・パレット表示の［印刷］。R_在庫表(パレット表示)）。今日・1 週間後・1 か月後のパレット枚数
+  app.get<{ Querystring: { soko: string } }>("/api/soko/yotei/pallet", async (req) => {
+    const soko = n(req.query.soko);
+    const 今日 = 日本の今().日付;
+    const 足す = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") + k * 86400000).toISOString().slice(0, 10);
+    const 週 = 足す(今日, 7), 月 = 足す(今日, 30);
+    const 積載 = new Map<string, number>();
+    for (const m of await q(`SELECT "倉庫ID", "商品コード", "パレット積載数" FROM ${t("soko_fe", "TM_ニチレイパレット積載マスタ")} ORDER BY "ID"`)) {
+      const k = `${m.倉庫ID}-${m.商品コード}`;
+      if (!積載.has(k)) 積載.set(k, n(m.パレット積載数));
+    }
+    const 枚数 = (商品: unknown, 個数: number) => 小数点計算(個数 / (積載.get(`${soko}-${商品}`) || 30), 2);
+    const 合計 = (rows: Rec[], k = "ケース") => rows.reduce((a, r) => a + 枚数(r.商品コード, n(r[k])), 0);
+    const k = (await q(`SELECT "得意先名", "パレット積載許容数" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [soko]))[0] ?? {};
+    // 今の在庫（ロットごとに枚数を出して足す）
+    const 現在 = 合計(await q(`SELECT "商品コード", "在庫ケース" FROM ${倉庫の在庫} WHERE "倉庫ID" = $1 AND "在庫ケース" <> 0`, [soko]), "在庫ケース");
+    // 出庫で空く枚数（まだ登録していない出庫の 1 件ごとの枚数。C_出荷空きパレット枚数）
+    const 出庫 = await q(`SELECT "商品コード", "ケース", "出荷日"::date::text AS d FROM ${倉庫の出荷} WHERE "chk" = false AND "倉庫ID" = $1 AND "出荷日" <= $2::date`, [soko, 月]);
+    const 空き = (from: string | null, to: string) => 合計(出庫.filter((r) => (from === null || r.d > from) && r.d <= to));
+    // WorkStation から来る入庫予定（出荷日が今日〜1 か月後。CC_仮入庫入力）を納品日で
+    const 入庫 = await q(
+      `SELECT "商品コード", "ケース", "納品日"::date::text AS d FROM ${WSの出荷} WHERE "出荷区分" = false AND "届け先コード" = $1 AND "出荷日" BETWEEN $2::date AND $3::date`,
+      [soko, 今日, 月],
+    );
+    const 入 = (from: string, to: string) => 合計(入庫.filter((r) => r.d > from && r.d <= to));
+    const 今日の空き = 空き(null, 今日);
+    const 残今日 = 現在 - 今日の空き;
+    const 入1 = 入(今日, 週), 空1 = 空き(今日, 週);
+    const 入2 = 入(今日, 月), 空2 = 空き(今日, 月);
+    return {
+      倉庫名: k.得意先名 ?? "", 許容: n(k.パレット積載許容数), 今日, 週, 月,
+      今: { 現在, 空き: 今日の空き, 残: 残今日 },
+      週後: { 入庫: 入1, 空き: 空1, 残: 残今日 + 入1 - 空1 },
+      // いただいた見本（高松東 10/23）の数と合う形：1 か月後の残予定＝今の枚数＋入庫（1 か月）−（空き予定〈1 か月〉−空き予定〈1 週間〉）
+      月後: { 入庫: 入2, 空き: 空2, 残: 現在 + 入2 - (空2 - 空1) },
+    };
+  });
+
   // 出庫リスト表示（F_出庫リスト表示。ニチレイ用）：倉庫・出荷日の範囲の出庫
   app.get<{ Querystring: { soko: string; from: string; to: string } }>("/api/soko/shukko-list", async (req, reply) => {
     if (!日付か(req.query.from) || !日付か(req.query.to)) return reply.code(400).send({ error: "出荷日を入れてください" });
