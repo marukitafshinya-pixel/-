@@ -55,6 +55,14 @@ psql "$PGURL" -v ON_ERROR_STOP=1 -f unify_masters.sql
 - 「ロボットプログラムNo」は製造計画（なければ WorkStation）の値を入れる。
 - 取り込みをやり直したあとにもう一度流す。もとの写しは `old_master` スキーマに取っておく。
 
+## パソコンごとにあった表を空にする（reset_per_pc.sql）
+
+Access で各パソコンの画面側ファイルにあり、人ごとに中身が違っていた表（保存した出荷抽出・輸送抽出の条件、パレット配置図、出荷停止の確認の印）は、Web 版では全員が同じものを使う。本番に移すときは空から始める（2026/10/23 利用者）。取り込みのあとに流す。
+
+```
+psql "$PGURL" -v ON_ERROR_STOP=1 -f reset_per_pc.sql
+```
+
 ## Excel で保存した CSV からの取り込み（excel_csv_to_pg）
 
 Access の表を Excel に貼り付けて CSV にしたもの（型の情報がないもの）は、同じ形の表の型を借りて入れる。
