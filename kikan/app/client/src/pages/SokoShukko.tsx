@@ -30,6 +30,7 @@ export function SokoShukko() {
   const [追加, set追加] = useState<number | "">("");
   const [在庫選択, set在庫選択] = useState<Rec | null>(null);
   const [履歴, set履歴] = useState<Rec[] | null>(null);
+  const [訂正, set訂正] = useState<Rec | null>(null);
   const [不足, set不足] = useState<Rec[] | null>(null);
   const [検索商品, set検索商品] = useState<string>("");
   const [検索倉庫, set検索倉庫] = useState<string>("");
@@ -368,7 +369,7 @@ export function SokoShukko() {
                           <td className="c"><input type="checkbox" checked={!!r.出庫確認} onChange={(e) => 出庫確認(r, e.target.checked)} /></td>
                           <td className="c"><input type="checkbox" checked={!!r.出庫済み} onChange={(e) => 明細を直す(r, "出庫済み", e.target.checked)} /></td>
                           <td className="c">{ro ? "済" : ""}</td>
-                          <td>{!ro && <button className="small" onClick={() => 明細を消す(r)}>削除</button>}</td>
+                          <td>{ro ? <button className="small" onClick={() => set訂正({ 出庫ID: r.出庫ID, 倉庫ID: r.倉庫ID, 商品コード: r.商品コード, 届け先コード: r.届け先コード, 納品日: r.納品日, ケース: r.ケース, 請求先コード: r.請求先コード, 商品名: r.商品名 })} title="登録済みの明細を直します（パスワードが要ります。在庫には反映されません）">訂正</button> : <button className="small" onClick={() => 明細を消す(r)}>削除</button>}</td>
                         </tr>
                       );
                     })}
@@ -431,6 +432,36 @@ export function SokoShukko() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {訂正 && (
+        <div className="modal">
+          <div className="sko-dlg">
+            <div className="sko-dlg-h">訂正入力（{訂正.商品名}）</div>
+            <div className="sko-pad">登録済みのデータです。直しても在庫には反映されません。</div>
+            <div className="sko-row sko-pad">
+              {([["倉庫ID", "出荷元", "tokui"], ["商品コード", "商品", "shohin"], ["届け先コード", "届け先", "tokui"], ["請求先コード", "請求先", "tokui"]] as const).map(([k, l, ky]) => (
+                <label key={k} className="sko-f"><span>{l}</span><Field value={訂正[k]} kind="num" className="sko-code" kyotsu={ky} onCommit={(v) => set訂正({ ...訂正, [k]: v.trim() === "" ? null : Number(v) })} /></label>
+              ))}
+              <label className="sko-f"><span>納品日</span><Field kind="date" value={訂正.納品日} className="w10" onCommit={(v) => set訂正({ ...訂正, 納品日: 日付に(v) || null })} /></label>
+              <label className="sko-f"><span>ケース</span><Field value={訂正.ケース} kind="num" className="w4" onCommit={(v) => set訂正({ ...訂正, ケース: v.trim() === "" ? null : Number(v) })} /></label>
+            </div>
+            <div className="sko-row sko-pad">
+              <button className="navy" onClick={async () => {
+                const pass = prompt("パスワードを入力してください。");
+                if (pass === null) return;
+                try {
+                  const { 出庫ID, 商品名: _, ...値 } = 訂正;
+                  await api.post("/api/soko/shukko/teisei", { 出庫ID, 合言葉: pass, 値 });
+                  set訂正(null);
+                } catch (e) {
+                  エラー(e);
+                }
+                読む();
+              }}>登録</button>
+              <button onClick={() => set訂正(null)}>閉じる（直さない）</button>
+            </div>
           </div>
         </div>
       )}

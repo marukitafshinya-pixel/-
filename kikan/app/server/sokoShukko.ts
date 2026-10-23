@@ -684,6 +684,72 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
     }),
   );
 
+  // ---------------- 訂正入力（Access の FSD_訂正入力(出荷)。登録済みの明細を直す。在庫には反映しない） ----------------
+  // 合言葉（JUCHU_EDIT_PASSWORD）が要る。出荷元・商品・届け先・納品日・ケース・請求先を直し、［登録］で訂正履歴に「○○ 変更！」を残す
+  app.post<{ Body: { 出庫ID: number; 合言葉: string; 値: Rec } }>("/api/soko/shukko/teisei", async (req, reply) => {
+    const pass = process.env.JUCHU_EDIT_PASSWORD;
+    if (!pass) return reply.code(400).send({ error: "訂正の合言葉がサーバーに設定されていないため、訂正できません。" });
+    if (req.body.合言葉 !== pass) return reply.code(403).send({ error: "パスワードが違います!" });
+    return 一連で(async (c) => {
+      const r = (await c.query(`SELECT * FROM ${倉庫の出荷} WHERE "出庫ID" = $1 FOR UPDATE`, [n(req.body.出庫ID)])).rows[0];
+      if (!r) return reply.code(404).send({ error: "この明細はありません" });
+      const 値 = req.body.値 ?? {};
+      const v: Rec = {};
+      const 変えた: string[] = [];
+      const 違う = (k: string) => k in 値 && String(値[k] ?? "") !== String(k.endsWith("日") ? 日付(r[k]) ?? "" : r[k] ?? "");
+      if (違う("倉庫ID")) {
+        v.倉庫ID = 値.倉庫ID == null || 値.倉庫ID === "" ? null : n(値.倉庫ID);
+        v.倉庫名 = await 短縮名(c, v.倉庫ID);
+        変えた.push("出荷地");
+      }
+      if (違う("商品コード")) {
+        // Access は在庫から選び直せるが、Web 版は商品マスタの名前・規格・入数を入れてロットの項目を空にする（在庫を選ばないときと同じ）
+        const code = n(値.商品コード);
+        const m = (await c.query(`SELECT "商品名", "規格", "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [code])).rows[0];
+        Object.assign(v, { 商品コード: code, 商品名: m?.商品名 ?? null, 規格: m?.規格 ?? null, 入数: m?.入数 ?? null, 在庫ID: 0, 認識ID: "0", 入庫日: null, 製造日: null, 賞味期限: null, 通知: "", 入庫ID: 0, 計画変更chk: false });
+        変えた.push("品名");
+      }
+      if (違う("届け先コード")) {
+        v.届け先コード = 値.届け先コード == null || 値.届け先コード === "" ? null : n(値.届け先コード);
+        v.届け先 = await 短縮名(c, v.届け先コード);
+        const 受付 = (await c.query(`SELECT "受付時間" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(v.届け先コード)])).rows[0]?.受付時間 ?? "";
+        v.備考 = `${受付 ?? ""}${r.備考 ?? ""}`;
+        変えた.push("届け先");
+      }
+      if (違う("納品日")) {
+        v.納品日 = 値.納品日 || null;
+        変えた.push("納品日");
+      }
+      if (違う("ケース")) {
+        let 入数 = v.入数 ?? r.入数;
+        if (入数 == null) 入数 = (await c.query(`SELECT "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(v.商品コード ?? r.商品コード)])).rows[0]?.入数 ?? null;
+        v.入数 = 入数;
+        v.ケース = 値.ケース == null || 値.ケース === "" ? null : Math.trunc(Number(値.ケース));
+        v.商品kg = 入数 == null || v.ケース == null ? null : Number(入数) * v.ケース;
+        変えた.push("数量");
+      }
+      if (違う("請求先コード")) {
+        v.請求先コード = 値.請求先コード == null || 値.請求先コード === "" ? null : n(値.請求先コード);
+        v.請求先 = await 短縮名(c, v.請求先コード);
+      }
+      await 直す(c, 倉庫の出荷, "出庫ID", r.出庫ID, v);
+      const x = { ...r, ...v };
+      const 今 = 日本の今();
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('soko_fe.TD_訂正履歴.ID'))`);
+      const id = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS v FROM ${t("soko_fe", "TD_訂正履歴")}`)).rows[0].v);
+      await c.query(
+        `INSERT INTO ${t("soko_fe", "TD_訂正履歴")} ("ID", "出庫ID", "訂正日", "倉庫ID", "倉庫名", "届け先コード", "届け先", "商品コード", "商品名", "ケース", "商品kg",
+           "入庫前名義", "入庫後名義", "備考", "製造日", "賞味期限", "納品日", "在庫ID", "保管料", "入出庫料", "訂正日時", "入庫前名義ID", "入庫後名義ID")
+         VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11, 0, 0, $12, $13, $14, $15, 0, 0, 0, $16, $17, $18)`,
+        [
+          id, x.出庫ID, 今.日付, x.倉庫ID, x.倉庫名, x.届け先コード, x.届け先, x.商品コード, x.商品名, x.ケース, x.商品kg == null ? null : Math.round(Number(x.商品kg)),
+          `${変えた.map((s) => s + " ").join("")}変更！`, 日付(x.製造日), 日付(x.賞味期限), 日付(x.納品日), 今.日時, x.入庫前名義ID, x.入庫後名義ID,
+        ],
+      );
+      return { ok: true };
+    });
+  });
+
   // 明細を消す（Form_Delete）。登録済みは消せない。受注があれば残ケースを出し直す
   app.post<{ Body: { 出庫ID: number } }>("/api/soko/shukko/meisai/delete", async (req, reply) =>
     一連で(async (c) => {
