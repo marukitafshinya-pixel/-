@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { PoolClient } from "pg";
-import { q, t, 日本の今 } from "./db.js";
+import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で, 特別項目 } from "./ws.js";
 import { 倉庫の便, 倉庫の出荷, 倉庫の名変, 倉庫の在庫, 締める } from "./soko.js";
@@ -632,6 +632,55 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
         件数++;
       }
       return { 件数 };
+    }),
+  );
+
+  // ---------------- 受注読込（Access の 倉庫管理の FSD_受注選択） ----------------
+  // 出荷日・届け先の地区・割付前／割付後で出庫の行を出し、印（抽出区分）を付けた行をこの便に入れる。閉じたときは全部の行の印を消す（Access と同じ）
+  const 受注選択の条件 = (p: { date: string; chiku?: string | number; ato?: string | boolean }, args: unknown[], 全ての地区: string) => {
+    args.push(p.date);
+    let where = `s."出荷日" = $${args.length}::date`;
+    const chiku = n(p.chiku);
+    if (chiku) {
+      args.push(chiku);
+      where += ` AND m."地区コード" = $${args.length}`;
+    } else where += 全ての地区;
+    where += p.ato === true || p.ato === "1" ? ` AND s."輸送ID" <> 0` : ` AND s."輸送ID" = 0`;
+    return where;
+  };
+  const 地区つき = `${倉庫の出荷} s LEFT JOIN LATERAL (SELECT "地区コード" FROM ${得意先マスタ} WHERE "短縮コード" = s."届け先コード" LIMIT 1) m ON true`;
+  app.get<{ Querystring: { date: string; chiku?: string; ato?: string } }>("/api/soko/yomikomi", async (req) => {
+    const args: unknown[] = [];
+    const where = 受注選択の条件(req.query, args, "");
+    return q(
+      `SELECT s."出庫ID", s."抽出区分", s."輸送ID", s."製造日"::date::text AS "製造日", s."ケース", s."倉庫名", s."商品kg", p."運送会社名", s."商品名", s."納品日"::date::text AS "納品日", s."届け先", m."地区コード"
+       FROM ${地区つき} LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+       WHERE ${where} ORDER BY s."輸送ID", s."届け先コード", s."倉庫ID", s."商品コード", s."出庫ID"`,
+      args,
+    );
+  });
+  app.post<{ Body: { 出庫ID: number; 抽出区分: boolean } }>("/api/soko/yomikomi/check", async (req) => {
+    await q(`UPDATE ${倉庫の出荷} SET "抽出区分" = $2 WHERE "出庫ID" = $1`, [n(req.body.出庫ID), !!req.body.抽出区分]);
+    return { ok: true };
+  });
+  app.post<{ Body: { date: string; chiku?: number; ato?: boolean; 抽出区分: boolean } }>("/api/soko/yomikomi/all", async (req) => {
+    const args: unknown[] = [];
+    const where = 受注選択の条件(req.body, args, ` AND m."地区コード" <> 0`);
+    args.push(!!req.body.抽出区分);
+    const r = await pool.query(`UPDATE ${倉庫の出荷} SET "抽出区分" = $${args.length} WHERE "出庫ID" IN (SELECT s."出庫ID" FROM ${地区つき} WHERE ${where})`, args);
+    return { 件数: r.rowCount };
+  });
+  app.post("/api/soko/yomikomi/close", async () => {
+    await q(`UPDATE ${倉庫の出荷} SET "抽出区分" = false WHERE "抽出区分" = true`);
+    return { ok: true };
+  });
+  app.post<{ Body: { 輸送ID: number } }>("/api/soko/yomikomi/read", async (req) =>
+    一連で(async (c) => {
+      const 輸送ID = n(req.body.輸送ID);
+      const p = (await c.query(`SELECT "出荷計画日"::date::text AS d FROM ${倉庫の便} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
+      const r = await c.query(`UPDATE ${倉庫の出荷} SET "輸送ID" = $1, "出荷日" = $2::date WHERE "抽出区分" = true`, [輸送ID, p?.d ?? 日本の今().日付]);
+      await c.query(`UPDATE ${倉庫の出荷} SET "抽出区分" = false WHERE "抽出区分" = true`);
+      return { 件数: r.rowCount };
     }),
   );
 

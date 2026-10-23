@@ -117,6 +117,7 @@ function App() {
       <Route path="/soko/idou" element={<SokoIdou />} />
       <Route path="/soko/shukko" element={<SokoShukko />} />
       <Route path="/soko/juchu" element={<SokoJuchu />} />
+      <Route path="/soko/yomikomi" element={<WsYomikomi 系="soko" />} />
       <Route path="/soko/zaikochu" element={<WsZaikoChu 系="soko" />} />
       <Route path="/soko/shukkachu" element={<WsShukkaChu 系="soko" />} />
       <Route path="/ws/yusochu" element={<WsYusoChu />} />

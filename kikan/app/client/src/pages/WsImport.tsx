@@ -173,7 +173,9 @@ const 地区 = ["全て", "北海道", "東北", "関東", "東海", "北陸", "
 const 月日 = (s: string | null | undefined) => (s ? `${Number(s.slice(5, 7))}月${s.slice(8, 10)}` : "");
 
 /** 受注読込（Access の FSD_受注選択）。出荷の行に印を付けて、この便に入れる */
-export function WsYomikomi() {
+export function WsYomikomi(props: { 系?: "ws" | "soko" }) {
+  // 倉庫管理（Access の 倉庫管理の FSD_受注選択）も同じ画面。表は倉庫管理のもの
+  const 系 = props.系 ?? "ws";
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const id = Number(sp.get("id"));
@@ -186,35 +188,36 @@ export function WsYomikomi() {
   useEffect(() => {
     // 開いたときは、その便の出荷日（便がなければ今日）
     api
-      .get<any>(`/api/ws/plan/${id}`)
+      .get<any>(系 === "ws" ? `/api/ws/plan/${id}` : `/api/soko/shukko/bin/${id}`)
       .then((r) => {
-        setDate(String(r.plan.出荷計画日).slice(0, 10));
-        setPlanDate(String(r.plan.出荷計画日).slice(0, 10));
+        const d = String((系 === "ws" ? r.plan : r.便).出荷計画日).slice(0, 10);
+        setDate(d);
+        setPlanDate(d);
       })
       .catch(() => setDate(new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10)));
   }, [id]);
   const 出す = () => {
-    if (date) api.get<Rec[]>("/api/ws/yomikomi", { date, chiku: String(chiku), ato: ato ? "1" : "" }).then(setRows);
+    if (date) api.get<Rec[]>(`/api/${系}/yomikomi`, { date, chiku: String(chiku), ato: ato ? "1" : "" }).then(setRows);
   };
   useEffect(出す, [date, chiku, ato]);
 
   async function 閉じる() {
-    await api.post("/api/ws/yomikomi/close", {});
+    await api.post(`/api/${系}/yomikomi/close`, {});
     nav(-1);
   }
   async function 全て(on: boolean) {
-    await api.post("/api/ws/yomikomi/all", { date, chiku, ato, 抽出区分: on });
+    await api.post(`/api/${系}/yomikomi/all`, { date, chiku, ato, 抽出区分: on });
     出す();
   }
   async function 印(r: Rec, on: boolean) {
     setRows(rows.map((x) => (x.出庫ID === r.出庫ID ? { ...x, 抽出区分: on } : x)));
-    await api.post("/api/ws/yomikomi/check", { 出庫ID: r.出庫ID, 抽出区分: on });
+    await api.post(`/api/${系}/yomikomi/check`, { 出庫ID: r.出庫ID, 抽出区分: on });
   }
   async function 読込() {
     try {
-      const r = await api.post<{ 件数: number }>("/api/ws/yomikomi/read", { 輸送ID: id });
+      const r = await api.post<{ 件数: number }>(`/api/${系}/yomikomi/read`, { 輸送ID: id });
       alert(`${r.件数} 件を読み込みました。`);
-      nav(`/ws?date=${planDate}&id=${id}`);
+      nav(系 === "ws" ? `/ws?date=${planDate}&id=${id}` : `/soko/shukko?date=${planDate}&id=${id}`);
     } catch (e) {
       alert(e instanceof ApiError ? e.message : String(e));
     }
