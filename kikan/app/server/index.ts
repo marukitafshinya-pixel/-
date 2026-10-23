@@ -36,6 +36,7 @@ import { keikakuRoutes } from "./keikaku.js";
 import { seizoRoutes } from "./seizo.js";
 import { housouRoutes } from "./housou.js";
 import { tehaiRoutes } from "./tehai.js";
+import { sokoRoutes } from "./soko.js";
 import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 
@@ -76,6 +77,7 @@ await app.register(async (a) => keikakuRoutes(a));
 await app.register(async (a) => seizoRoutes(a));
 await app.register(async (a) => housouRoutes(a));
 await app.register(async (a) => tehaiRoutes(a));
+await app.register(async (a) => sokoRoutes(a));
 await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 

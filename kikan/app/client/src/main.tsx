@@ -36,6 +36,7 @@ import WsOsaka from "./pages/WsOsaka";
 import { SeizoMenu, SeizoHoso, SeizoDekidaka, SeizoYotei, SeizoKensaku, SeizoTako } from "./pages/Seizo";
 import { HousouJunbi } from "./pages/Housou";
 import { TehaiCalendar } from "./pages/Tehai";
+import { SokoNyuko } from "./pages/Soko";
 import { KeikakuMenu, KeikakuHenko, KeikakuLog, KeikakuCalendar, KeikakuDay } from "./pages/Keikaku";
 import WsZaikoChu from "./pages/WsZaikoChu";
 import WsShukkaChu from "./pages/WsShukkaChu";
@@ -109,6 +110,7 @@ function App() {
       <Route path="/keikaku/day" element={<KeikakuDay />} />
       <Route path="/ws/zaikochu" element={<WsZaikoChu />} />
       <Route path="/ws/shukkachu" element={<WsShukkaChu />} />
+      <Route path="/soko/nyuko" element={<SokoNyuko />} />
       <Route path="/soko/zaikochu" element={<WsZaikoChu 系="soko" />} />
       <Route path="/soko/shukkachu" element={<WsShukkaChu 系="soko" />} />
       <Route path="/ws/yusochu" element={<WsYusoChu />} />

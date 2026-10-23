@@ -27,7 +27,7 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   // 手配出力用カレンダー（Access の 手配出力用カレンダー.accdb）
   { title: "手配出力用カレンダー", items: [{ label: "配送予定カレンダー", to: "/tehai" }] },
   // 倉庫管理System（Access の 倉庫管理System.accdb。外の冷蔵庫の在庫・出庫・名義変更・保管料）
-  { title: "倉庫管理System", items: [{ label: "在庫抽出帳票", to: "/soko/zaikochu" }, { label: "出庫抽出帳票", to: "/soko/shukkachu" }] },
+  { title: "倉庫管理System", items: [{ label: "入庫登録(ｲﾝﾎﾟｰﾄ)", to: "/soko/nyuko" }, { label: "在庫抽出帳票", to: "/soko/zaikochu" }, { label: "出庫抽出帳票", to: "/soko/shukkachu" }] },
   // 製造計画（Access の 製造計画.accdb のメニュー）
   { title: "製造計画", items: [{ label: "生産計画インポート", to: "/keikaku" }, { label: "変更内容確認", to: "/keikaku/henko" }, { label: "製造カレンダー確認", to: "/keikaku/calendar" }, { label: "変更履歴表示", to: "/keikaku/log" }] },
   // マスタ管理（Access の「Accessマスタ管理」）
