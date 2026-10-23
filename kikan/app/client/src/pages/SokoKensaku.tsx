@@ -386,3 +386,41 @@ export function SokoShohinbetsu() {
     </div>
   );
 }
+
+/** 出庫リスト表示（Access の F_出庫リスト表示。ニチレイ用）。倉庫と出荷日の範囲で出庫を見る。［週間表］の印刷（R_ニチレイ専用出庫リスト）は見本をいただいてから */
+export function SokoShukkoList() {
+  const nav = useNavigate();
+  const [倉庫, set倉庫] = useState<選択肢[]>([]);
+  const [soko, setSoko] = useState(0);
+  const [開始, set開始] = useState<string | null>(today());
+  const [終了, set終了] = useState<string | null>(today());
+  const [rows, setRows] = useState<Rec[]>([]);
+  useEffect(() => {
+    api.get<{ 出荷元: 選択肢[] }>("/api/soko/shohinbetsu/choices").then((r) => set倉庫(r.出荷元)).catch(エラー);
+  }, []);
+  useEffect(() => {
+    if (!soko || !開始 || !終了) return setRows([]);
+    api.get<Rec[]>("/api/soko/shukko-list", { soko: String(soko), from: 開始, to: 終了 }).then(setRows).catch(エラー);
+  }, [soko, 開始, 終了]);
+  return (
+    <div className="sz sko">
+      <div className="kk-head">
+        <div className="kk-title">出庫リスト表示</div>
+        <span>出荷日</span>
+        <日の欄 value={開始} set={set開始} />
+        <span>〜</span>
+        <日の欄 value={終了} set={set終了} />
+        <span>倉庫</span>
+        <select value={soko} onChange={(e) => setSoko(Number(e.target.value))}>
+          <option value={0} />
+          {倉庫.map((o) => <option key={o.id} value={o.id}>{o.id} {o.name}</option>)}
+        </select>
+        <button disabled title="印刷の見本をいただいてから作ります">週間表</button>
+        <button onClick={() => nav(-1)}>閉じる</button>
+      </div>
+      <div className="sko-gridwrap">
+        {soko ? <ShukkoTable rows={rows} /> : <p className="sko-pad">倉庫を選んでください。</p>}
+      </div>
+    </div>
+  );
+}

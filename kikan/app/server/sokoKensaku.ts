@@ -114,6 +114,17 @@ export function sokoKensakuRoutes(app: FastifyInstance) {
     );
   });
 
+  // 出庫リスト表示（F_出庫リスト表示。ニチレイ用）：倉庫・出荷日の範囲の出庫
+  app.get<{ Querystring: { soko: string; from: string; to: string } }>("/api/soko/shukko-list", async (req, reply) => {
+    if (!日付か(req.query.from) || !日付か(req.query.to)) return reply.code(400).send({ error: "出荷日を入れてください" });
+    return q(
+      `SELECT s.*, ${日付の列("s.", ["出荷日", "納品日", "製造日", "賞味期限"])}, p."運送会社名", p."出庫No", p."出荷計画日"::date::text AS "出荷計画日"
+       FROM ${倉庫の出荷} s LEFT JOIN ${倉庫の便} p ON p."輸送ID" = s."輸送ID"
+       WHERE s."倉庫ID" = $1 AND s."出荷日" BETWEEN $2::date AND $3::date ORDER BY s."出荷日", p."出庫No", s."輸送ID", s."商品コード", s."出庫ID"`,
+      [n(req.query.soko), req.query.from, req.query.to],
+    );
+  });
+
   // 倉庫情報（FM_倉庫情報）：営業冷蔵庫の得意先の情報と、前後の冷蔵庫
   app.get<{ Params: { code: string } }>("/api/soko/joho/:code", async (req) => {
     const list = await q(`SELECT "短縮コード" AS id, "短縮名" AS name FROM ${得意先マスタ} WHERE "倉庫区分" = true AND "出荷元区分" = false ORDER BY "短縮コード"`);
