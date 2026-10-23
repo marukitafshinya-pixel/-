@@ -30,7 +30,7 @@ const 扱いの名前: Record<number, string> = { 11: "丸北  北海道", 12: "
  * Access の QS_入庫依頼書確認用：便・届け先・名義・納品日ごとの出荷の合計。
  * リンクコード1 は「輸送ID\届け先\名義\納品日の通し番号」。積込完了件数は Access と同じく積込確認の数のマイナス（真が -1 のため）
  */
-async function 出荷のまとめ(c: PoolClient, 今日: string) {
+export async function 出荷のまとめ(c: PoolClient, 今日: string) {
   return (
     await c.query(
       `SELECT p."出荷計画日", s."届け先コード", s."届け先", s."入庫後名義ID", p."運送会社ID", p."運送会社名", p."車番", s."輸送ID", p."冷凍区分ID",
