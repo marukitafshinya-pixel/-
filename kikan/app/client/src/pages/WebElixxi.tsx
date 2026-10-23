@@ -18,8 +18,10 @@ export function WebElixxi() {
   useEffect(() => {
     読む();
   }, []);
-  async function 取り込む(fs: FileList | null) {
-    if (!fs?.length) return;
+  async function 取り込む(list: FileList | null) {
+    // 選んだあと入力欄を空にするので、先に写しておく
+    const fs = Array.from(list ?? []);
+    if (!fs.length) return;
     try {
       let 件数 = 0;
       for (let i = 0; i < fs.length; i++) {
