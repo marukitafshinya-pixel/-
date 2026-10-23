@@ -107,7 +107,7 @@ export function WebLantec() {
             {結果.取込} 行を取り込み、{結果.書込} か所の便に送り状番号を書きました。便に付かなかった送り状：{結果.不一致} 件
           </div>
         )}
-        <div className="small">送り状番号を書くのは、出荷計画日が今日以降のランテックの便だけです（出荷日・納品日・発送元・届け先・ケース数が同じ便を探します）。</div>
+        <div className="small">送り状番号を書くのは、出荷計画日が今日以降のランテックの便だけです（出荷日・納品日・発送元・届け先・商品コード・ケース数が同じ便を探します）。</div>
       </div>
       <div className="sko-pad"><b>Access側に一致するデータ無し</b>（{不一致.length} 行）</div>
       <div className="sko-gridwrap">{明細表(不一致, "ありません")}</div>

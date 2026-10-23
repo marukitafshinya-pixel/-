@@ -7,7 +7,7 @@ import { csvを読む, 文字にする } from "./hanmori.js";
 // WEB連携のランテック輸送手配（Access の F_ランテック輸送手配・F_ランテックチェックリスト、
 // C_ランテック送り状番号取得・C_ランテック送り状紐づけ・C_ランテックアンマッチ表示）。
 // Access はランテックの画面から「発注一覧明細CSV」を自動でダウンロードしたが、Web 版はまず人がそのファイルを選んで取り込む。
-// 取り込んだあとの照合と書き込みは Access と同じ（商品コードは見ない・今日以降の便だけに書く）。
+// 取り込んだあとの照合と書き込みは Access と同じ（今日以降の便だけに書く）。ただし照合に商品コードも加えた（Access は見ていなかった。2026/10 ご依頼）。
 const 詳細 = t("web_fe", "T_ランテック詳細");
 const 輸送計画 = t("soko", "TD_輸送計画");
 const 出庫 = t("soko", "TD_出荷");
@@ -97,10 +97,11 @@ export function webLantecRoutes(app: FastifyInstance) {
 
       const 今日 = 日本の今().日付;
       // C_ランテック送り状紐づけ：送り状×商品ごとのケース合計を、ランテック便（出荷計画日が 10 日前より後）の便×商品ごとのケース合計と
-      // 出荷日・納品日・倉庫ID（発送元CD）・届け先コード（お届け先CD）・ケース数 で突き合わせる（商品コードは見ない。Access のまま）
+      // 出荷日・納品日・倉庫ID（発送元CD）・届け先コード（お届け先CD）・商品コード（商品CD）・ケース数 で突き合わせる
+      // （Access は商品コードを見ず、同じ日・届け先・ケース数の別の商品や別の便に付くことがあった。ご依頼で商品コードも見るようにした）
       const 便 = (
         await c.query(
-          `SELECT k."出荷計画日"::date::text AS "出荷計画日", s."納品日"::date::text AS "納品日", k."輸送ID", s."倉庫ID", s."届け先コード", SUM(s."ケース")::float8 AS "ケースの合計"
+          `SELECT k."出荷計画日"::date::text AS "出荷計画日", s."納品日"::date::text AS "納品日", k."輸送ID", s."倉庫ID", s."届け先コード", s."商品コード", SUM(s."ケース")::float8 AS "ケースの合計"
            FROM ${輸送計画} k LEFT JOIN ${出庫} s ON s."輸送ID" = k."輸送ID"
            WHERE k."運送会社ID" = $1 AND k."出荷計画日" > ($2::date - 10)
            GROUP BY k."出荷計画日", k."運送会社ID", s."納品日", k."輸送ID", s."商品コード", s."商品名", s."倉庫ID", s."倉庫名", s."届け先コード", s."届け先"
@@ -110,7 +111,7 @@ export function webLantecRoutes(app: FastifyInstance) {
       ).rows as Rec[];
       const 送り状 = (
         await c.query(
-          `SELECT "送り状No", "出庫日"::date::text AS "出庫日", "納品日"::date::text AS "納品日", "発送元CD", "お届け先CD", SUM("ケース")::float8 AS "ケースの合計"
+          `SELECT "送り状No", "出庫日"::date::text AS "出庫日", "納品日"::date::text AS "納品日", "発送元CD", "お届け先CD", "商品CD", SUM("ケース")::float8 AS "ケースの合計"
            FROM ${詳細}
            GROUP BY "送り状No", "発送日", "お届希望日", "発送元CD", "発送元", "お届け先CD", "お届け先", "商品CD", "商品名", "出庫日", "納品日"
            ORDER BY "送り状No", "発送日", "お届希望日", "発送元CD", "発送元", "お届け先CD", "お届け先", "商品CD", "商品名", "出庫日", "納品日"`,
@@ -123,9 +124,9 @@ export function webLantecRoutes(app: FastifyInstance) {
       let 書込 = 0;
       for (const r of 送り状) {
         // 値が空の送り状は Access では検索の式が作れず止まる。Web 版では飛ばす
-        if (r.出庫日 === null || r.納品日 === null || r.発送元CD === null || r.お届け先CD === null || r.ケースの合計 === null) continue;
+        if (r.出庫日 === null || r.納品日 === null || r.発送元CD === null || r.お届け先CD === null || r.商品CD === null || r.ケースの合計 === null) continue;
         const 見つけた = 便.find(
-          (b) => b.出荷計画日 === r.出庫日 && b.納品日 === r.納品日 && Number(b.倉庫ID) === Number(r.発送元CD) && Number(b.届け先コード) === Number(r.お届け先CD) && Number(b.ケースの合計) === Number(r.ケースの合計),
+          (b) => b.出荷計画日 === r.出庫日 && b.納品日 === r.納品日 && Number(b.倉庫ID) === Number(r.発送元CD) && Number(b.届け先コード) === Number(r.お届け先CD) && Number(b.商品コード) === Number(r.商品CD) && Number(b.ケースの合計) === Number(r.ケースの合計),
         );
         if (!見つけた || !書ける.has(Number(見つけた.輸送ID))) continue;
         await c.query(`UPDATE ${輸送計画} SET "web輸送送り状No" = $2 WHERE "輸送ID" = $1`, [見つけた.輸送ID, 番号の文字(r.送り状No)]);
