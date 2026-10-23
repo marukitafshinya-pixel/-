@@ -83,7 +83,7 @@ function まとめる(rows: Rec[]): Rec[] {
   const m = new Map<string, Rec>();
   for (const r of rows) {
     const k = [r.倉庫ID, r.倉庫名, r.入庫後名義ID, r.商品コード, r.商品名, r.入数].join("\u0001");
-    const x = m.get(k) ?? { 倉庫ID: r.倉庫ID, 倉庫名: r.倉庫名, 入庫後名義ID: r.入庫後名義ID, 商品コード: r.商品コード, 商品名: r.商品名, 入数: r.入数, 入庫元数: 0, ケース: 0, 商品kg: 0, 在庫残数: 0, 在庫残kg: 0 };
+    const x = m.get(k) ?? { 倉庫ID: r.倉庫ID, 倉庫名: r.倉庫名, 入庫後名義ID: r.入庫後名義ID, 商品コード: r.商品コード, 商品名: r.商品名, 規格: r.規格, 入数: r.入数, 入庫元数: 0, ケース: 0, 商品kg: 0, 在庫残数: 0, 在庫残kg: 0 };
     for (const f of ["入庫元数", "ケース", "商品kg", "在庫残数", "在庫残kg"]) x[f] += n(r[f]);
     m.set(k, x);
   }

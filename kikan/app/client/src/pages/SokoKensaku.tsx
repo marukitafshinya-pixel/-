@@ -306,9 +306,50 @@ export function SokoShohinbetsu() {
     }
   }
   const 計 = (f: string) => rows.reduce((a, r) => a + Number(r[f] ?? 0), 0);
+  const [差出人, set差出人] = useState<Rec>({});
+  const [印刷日時, set印刷日時] = useState("");
+  async function 印刷() {
+    const list = await api.get<Rec[]>("/api/ws/sashidashi").catch(() => []);
+    set差出人(list.find((x) => x.区分 === "丸北北海道") ?? {});
+    const d = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
+    set印刷日時(`${d.slice(0, 10).replace(/-/g, "/")} ${Number(d.slice(11, 13))}${d.slice(13, 19)}`);
+    setTimeout(() => window.print(), 100);
+  }
+  const 冷蔵庫名 = opts.出荷元.find((o) => o.id === soko)?.name ?? "";
+  const 名義名 = opts.名義.find((o) => o.id === meigi)?.name ?? "";
+  const 日付 = (日 ?? "").replace(/-/g, "/");
   return (
     <div className="sz sko">
-      <div className="kk-head">
+      <div className="print-only zd-print">
+        <div className="zd-time">{印刷日時}</div>
+        <div className="zd-title">{名義名} 在庫表</div>
+        <div className="zd-soko">倉庫 {冷蔵庫名}</div>
+        <div className="zd-row">
+          <div className="zd-day">{日付}　　～ {日付}</div>
+          <table className="zd-sum">
+            <thead><tr><th>合計ケース</th><th>合計kg</th></tr></thead>
+            <tbody><tr><td>{num(計("在庫残数"))}</td><td>{num(計("在庫残kg"))}</td></tr></tbody>
+          </table>
+        </div>
+        <table className="zd-grid">
+          <thead><tr><th className="zd-name">商品名</th><th>重量</th><th>元数</th><th>出庫数</th><th>残数</th><th>入庫kg</th><th>出庫kg</th><th>残kg</th></tr></thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td>{r.商品名}</td><td className="c">{r.規格}</td><td className="r">{num(r.入庫元数)}</td><td className="r">{num(r.ケース)}</td><td className="r">{num(r.在庫残数)}</td>
+                <td className="r">{num(Number(r.入庫元数 ?? 0) * Number(r.入数 ?? 0))}</td><td className="r">{num(r.商品kg)}</td><td className="r">{num(r.在庫残kg)}</td>
+              </tr>
+            ))}
+            <tr><td /><td /><td /><td /><td /><td /><td /><td /></tr>
+          </tbody>
+        </table>
+        <div className="zd-from">
+          <div className="zd-co">{差出人.社名} {差出人.店舗}</div>
+          <div>{差出人.住所}</div>
+          <div>TEL:{差出人.TEL}　　FAX:{差出人.FAX}</div>
+        </div>
+      </div>
+      <div className="kk-head no-print">
         <div className="kk-title">商品別在庫</div>
         <span>出荷元</span>
         <select value={soko} onChange={(e) => setSoko(Number(e.target.value))}>
@@ -321,10 +362,11 @@ export function SokoShohinbetsu() {
         </select>
         <span>集計日</span>
         <日の欄 value={日} set={set日} />
+        <button className="navy" onClick={印刷} disabled={!rows.length}>印刷</button>
         <button className="green" onClick={Excel}>Excel</button>
         <button onClick={() => nav(-1)}>閉じる</button>
       </div>
-      <div className="sko-gridwrap">
+      <div className="sko-gridwrap no-print">
         <table className="sz-grid sko-grid">
           <thead><tr><th>冷蔵庫</th><th>コード</th><th>商品名</th><th>入数</th><th>入庫元数</th><th>出庫</th><th>出庫kg</th><th>在庫残数</th><th>在庫残kg</th></tr></thead>
           <tbody>
