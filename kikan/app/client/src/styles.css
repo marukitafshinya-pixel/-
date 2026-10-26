@@ -1953,3 +1953,30 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .zs-t td.r { text-align: right; }
 .zs-sum td { border-top: 2px solid #000; }
 .zs-page-no { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 13px; }
+
+/* 冷蔵貨物寄託者名義変更通知書（R_名義変更通知書_縦）A4 縦 */
+.mt-page { width: 190mm; min-height: 270mm; position: relative; font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 6mm 8mm; box-sizing: border-box; page-break-after: always; }
+.mt-page:last-child { page-break-after: auto; }
+.mt-page div, .mt-page table, .mt-page td, .mt-page th { background: #fff; }
+.mt-top { display: flex; justify-content: space-between; font-size: 12px; min-height: 10mm; }
+.mt-no { white-space: pre-line; }
+.mt-title { text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 2px; margin: 4mm 0 6mm; text-decoration: underline; }
+.mt-to { font-size: 16px; font-weight: bold; margin-bottom: 5mm; }
+.mt-text { font-size: 13px; line-height: 1.8; margin-bottom: 5mm; }
+.mt-who { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 4mm; }
+.mt-who th { width: 16mm; border: 1px solid #000; font-weight: bold; }
+.mt-who td { border: 1px solid #000; padding: 2mm; height: 6mm; }
+.mt-who td.k { width: 12mm; text-align: center; }
+.mt-who .mt-name { font-size: 15px; font-weight: bold; }
+.mt-who td.mt-in { width: 18mm; padding: 0; text-align: center; font-size: 10px; vertical-align: top; }
+.mt-who td.mt-in div:first-child { border-bottom: 1px solid #000; }
+.mt-futan { display: flex; gap: 14mm; font-size: 13px; margin-bottom: 4mm; }
+.mt-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mt-t th { border: 1px solid #000; font-weight: normal; padding: 1px 4px; }
+.mt-t td { border: 1px solid #000; padding: 1px 4px; height: 6mm; }
+.mt-t td.c { text-align: center; }
+.mt-t td.r { text-align: right; }
+.mt-sum td { border-top: 2px solid #000; }
+.mt-biko { font-size: 12px; margin-top: 3mm; min-height: 6mm; white-space: pre-line; }
+.mt-from { position: absolute; bottom: 8mm; right: 8mm; font-size: 13px; text-align: right; line-height: 1.8; }
+@media print { .mt-page { margin: 0; } }

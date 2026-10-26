@@ -25,6 +25,7 @@ export function SokoMeihen() {
   const [抽出倉庫, set抽出倉庫] = useState<number | null>(null);
   const [商品, set商品] = useState<number | null>(null);
   const [検索, set検索] = useState<{ rows: Rec[]; 印: Set<string> } | null>(null);
+  const [通知, set通知] = useState<{ 中身: Rec; 差出人: Rec } | null>(null);
 
   useEffect(() => {
     api.get<Rec[]>("/api/soko/meihen/soko").then(set倉庫一覧).catch(エラー);
@@ -113,8 +114,20 @@ export function SokoMeihen() {
     set選んだ(null);
     読む();
   }
+  // ［名変通知書印刷］（Access の cmd_名変通知書印刷。冷蔵庫を選んだときだけ。福山冷凍〈720〉用の帳票は見本がないため同じ形で出す）
+  async function 通知書() {
+    if (!倉庫) return alert("冷蔵庫が選択されていません");
+    try {
+      const [中身, list] = await Promise.all([api.get<Rec>("/api/soko/meihen/tsuchi", { date: 日, soko: String(倉庫) }), api.get<Rec[]>("/api/ws/sashidashi")]);
+      if (!中身.組.length) return alert("この変更日・冷蔵庫の名義変更はありません。");
+      set通知({ 中身, 差出人: list.find((x) => x.区分 === "丸北北海道") ?? {} });
+    } catch (e) {
+      エラー(e);
+    }
+  }
   const 合計 = rows.reduce((a, r) => [a[0] + Number(r.ケース ?? 0), a[1] + Number(r.商品kg ?? 0)], [0, 0]);
 
+  if (通知) return <MeihenTsuchiPrint 中身={通知.中身} 差出人={通知.差出人} onClose={() => set通知(null)} />;
   return (
     <div className="sz sko">
       <div className="kk-head">
@@ -145,6 +158,7 @@ export function SokoMeihen() {
         <button disabled={!rows.find((x) => x.変更No === 選んだ)?.変更Check} onClick={訂正}>訂正</button>
         <button disabled={!rows.length} onClick={全訂正}>全訂正</button>
         <button disabled={選んだ == null} onClick={削除}>削除</button>
+        <button className="navy" onClick={通知書}>名変通知書印刷</button>
       </div>
       <datalist id="meihen-meigi">
         {名義.map((m) => (
@@ -229,6 +243,85 @@ export function SokoMeihen() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const 年月日 = (d: string) => `${d.slice(0, 4)}年${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日`;
+const 郵便 = (v: unknown) => {
+  const x = String(v ?? "").replace(/[^0-9]/g, "");
+  return x.length === 7 ? `〒${x.slice(0, 3)}-${x.slice(3)}` : v ? `〒${v}` : "";
+};
+
+/**
+ * 冷蔵貨物寄託者名義変更通知書（Access の R_名義変更通知書_縦。いただいた見本の形）。譲渡人×譲受人ごとに 1 枚。
+ * 左上に受注番号（mmdd-ユーザー伝票No-枝番2）、備考欄と No は印刷の前にここで入れる（Access のフォームの 印刷備考・No と同じ）。
+ */
+function MeihenTsuchiPrint(props: { 中身: Rec; 差出人: Rec; onClose: () => void }) {
+  const { 中身: m, 差出人 } = props;
+  const [備考, set備考] = useState("");
+  const [番号, set番号] = useState("");
+  return (
+    <div className="hs-wrap">
+      <div className="no-print hs-bar">
+        <button onClick={() => window.print()}>印刷</button> <button onClick={props.onClose}>閉じる</button>
+        <span>　No </span><input className="w5" value={番号} onChange={(e) => set番号(e.target.value)} />
+        <span>　備考欄 </span><input className="w20" value={備考} onChange={(e) => set備考(e.target.value)} />
+      </div>
+      {m.組.map((rows: Rec[], i: number) => {
+        const 先 = rows[0];
+        const 計 = rows.reduce((a, r) => a + Number(r.ケース ?? 0), 0);
+        return (
+          <div key={i} className="mt-page">
+            <div className="mt-top">
+              <div className="mt-no">{m.受注番号.map((x: string) => <div key={x}>{x}</div>)}</div>
+              <div className="mt-date">{番号 ? `No ${番号}　` : ""}{年月日(m.変更日)}</div>
+            </div>
+            <div className="mt-title">冷蔵貨物寄託者名義変更通知書</div>
+            <div className="mt-to">{m.保管庫 ?? ""}　御中</div>
+            <div className="mt-text">
+              下記の通り当事者間に於いて貨物の譲渡をしましたので {年月日(m.変更日)} より当該を譲渡人の名義に変更して下さる様、冷蔵庫寄託約款に基き連署をもってご通知致します。
+            </div>
+            <table className="mt-who">
+              <tbody>
+                <tr>
+                  <th rowSpan={2}>譲渡人</th><td className="k">住所</td><td>{郵便(先.譲渡人郵便番号)}　{先.譲渡人住所 ?? ""}</td>
+                  <td rowSpan={2} className="mt-in"><div>担当者</div><div /></td>
+                </tr>
+                <tr><td className="k">氏名</td><td className="mt-name">{先.譲渡人名 ?? ""}</td></tr>
+                <tr>
+                  <th rowSpan={2}>譲受人</th><td className="k">住所</td><td>{郵便(先.譲受人郵便番号)}　{先.譲受人住所 ?? ""}</td>
+                  <td rowSpan={2} className="mt-in"><div>担当者</div><div /></td>
+                </tr>
+                <tr><td className="k">氏名</td><td className="mt-name">{先.譲受人名 ?? ""}</td></tr>
+              </tbody>
+            </table>
+            <div className="mt-futan">
+              <span>譲渡人負担日　{年月日(m.譲渡人負担日)} まで</span>
+              <span>譲受人負担日　{年月日(m.譲受人負担日)} より</span>
+            </div>
+            <table className="mt-t">
+              <thead><tr><th>入庫No</th><th>商品ｺｰﾄﾞ</th><th>品名</th><th>規格</th><th>数量</th><th>重量</th><th>備考</th></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.変更No}>
+                    <td className="c">{r.ユーザーコード}</td><td className="r">{r.商品コード}</td><td>{r.商品名}</td><td className="c">{r.規格}</td>
+                    <td className="r">{num(r.ケース)}</td><td className="r">{num(r.商品kg)}</td>
+                    <td>入庫元数{r.入庫元数 ?? ""}個　残 {r.在庫ケース ?? ""}</td>
+                  </tr>
+                ))}
+                {Array.from({ length: Math.max(0, 12 - rows.length) }, (_, k) => <tr key={"e" + k}><td /><td /><td /><td /><td /><td /><td /></tr>)}
+                <tr className="mt-sum"><td colSpan={4} className="c">合計</td><td className="r">{num(計)}</td><td /><td /></tr>
+              </tbody>
+            </table>
+            <div className="mt-biko">{備考}</div>
+            <div className="mt-from">
+              <div>差出人　{差出人.社名 ?? ""} {差出人.店舗 ?? ""}</div>
+              <div>FAX　{差出人.FAX ?? ""}</div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

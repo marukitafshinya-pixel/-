@@ -155,6 +155,44 @@ export function sokoMeihenRoutes(app: FastifyInstance) {
       args,
     );
   });
+  // 名変通知書（Access の R_名義変更通知書_縦）。変更日・保管庫の名変（変更区分 0）を、譲渡人（変更前名義）×譲受人（変更後名義）ごとに 1 枚にする。
+  // 譲渡人負担日はその半月の末日、譲受人負担日はその次の日（帳票の中で計算。名変の行の負担日は使わない＝Access と同じ）。
+  // 左上の番号は「mmdd-ユーザー伝票No-枝番2」を、その日・保管庫の名変の受注ごとに並べる
+  app.get<{ Querystring: { date: string; soko: string } }>("/api/soko/meihen/tsuchi", async (req, reply) => {
+    const 変更日 = req.query.date;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(変更日 ?? "")) return reply.code(400).send({ error: "変更日が正しくありません" });
+    const soko = n(req.query.soko);
+    if (!soko) return reply.code(400).send({ error: "冷蔵庫が選択されていません" });
+    const 名義 = (col: string, k: string) => `(SELECT "${k}" FROM ${得意先マスタ} m WHERE m."短縮コード" = h."${col}" LIMIT 1)`;
+    const rows = await q(
+      `SELECT z."入庫No" AS "ユーザーコード", h."変更No", h."商品コード", h."商品名", h."規格", h."入数", h."ケース", h."商品kg", h."備考",
+              h."変更前名義ID", h."変更後名義ID", z."入庫元数", z."在庫ケース",
+              ${名義("変更前名義ID", "得意先名")} AS "譲渡人名", ${名義("変更前名義ID", "住所")} AS "譲渡人住所", ${名義("変更前名義ID", "郵便番号")} AS "譲渡人郵便番号",
+              ${名義("変更後名義ID", "得意先名")} AS "譲受人名", ${名義("変更後名義ID", "住所")} AS "譲受人住所", ${名義("変更後名義ID", "郵便番号")} AS "譲受人郵便番号"
+       FROM ${倉庫の名変} h LEFT JOIN ${倉庫の在庫} z ON z."在庫ID" = h."在庫No"
+       WHERE h."変更区分" = 0 AND h."変更日" > '2016-07-01' AND h."変更日" = $1::date AND h."保管庫ID" = $2
+       ORDER BY h."変更前名義ID", h."変更後名義ID", h."商品コード", h."変更No"`,
+      [変更日, soko],
+    );
+    const 番号 = await q(
+      `SELECT h."ユーザー伝票No", j."枝番2" FROM ${倉庫の名変} h LEFT JOIN ${倉庫の受注} j ON j."受注ID" = h."受注ID"
+       WHERE h."変更日" = $1::date AND h."保管庫ID" = $2 GROUP BY h."ユーザー伝票No", j."枝番2", j."枝番3" ORDER BY 1, 2`,
+      [変更日, soko],
+    );
+    const 保管庫 = (await q(`SELECT "得意先名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [soko]))[0]?.得意先名 ?? null;
+    const 組 = new Map<string, Rec[]>();
+    for (const r of rows) {
+      const k = `${r.変更前名義ID}|${r.変更後名義ID}`;
+      if (!組.has(k)) 組.set(k, []);
+      組.get(k)!.push(r);
+    }
+    const 譲渡人負担日 = 半月の末日(変更日);
+    return {
+      変更日, 保管庫, 譲渡人負担日, 譲受人負担日: 日を足す(譲渡人負担日, 1),
+      受注番号: 番号.filter((x) => (x.ユーザー伝票No ?? "") !== "").map((x) => `${変更日.slice(5, 7)}${変更日.slice(8, 10)}-${x.ユーザー伝票No}-${x.枝番2 ?? ""}`),
+      組: [...組.values()],
+    };
+  });
   // 変更後名義の選択肢（その保管庫の名変に出てくる名義。2 以上）
   app.get<{ Querystring: { soko: string } }>("/api/soko/meihen/meigi", async (req) =>
     q(
