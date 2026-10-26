@@ -38,11 +38,13 @@ async function ロット逆転(todoke: number, shohin: number, nouhin: string | 
 /**
  * 受注検索（Access の 倉庫管理の F_受注検索）。出庫入力の［受注表示］から開く。
  * 検索方法 → ボタンで扱い先・受注元・受注先・届け先 → 納品日 の順に絞り、受注を選んで、出荷場所（出庫場所）の在庫を割り付けてこの便に出庫の行を作る。
+ * 名義変更の［受注表示］から開いたとき（?meihen=変更日&soko=冷蔵庫。F_受注検索_名変）は、出庫の代わりに変更日の名変を作る。
  */
 export function SokoJuchu() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const 輸送ID = Number(sp.get("id"));
+  const 名変日 = sp.get("meihen"); // 名変の受注検索のときの変更日
   const [bin, setBin] = useState<Rec | null>(null);
   const [methods, setMethods] = useState<ボタン[]>([]);
   const [方法, set方法] = useState(0);
@@ -64,6 +66,7 @@ export function SokoJuchu() {
   useEffect(() => {
     api.post("/api/soko/juchu/open", {}).catch(() => alert("受注データの更新が出来ませでした。"));
     api.get<ボタン[]>("/api/soko/juchu/methods").then(setMethods);
+    if (名変日) setSoko(Number(sp.get("soko")) || null);
     if (輸送ID)
       api.get<Rec>(`/api/soko/shukko/bin/${輸送ID}`).then((r) => {
         setBin(r.便);
@@ -155,10 +158,20 @@ export function SokoJuchu() {
   }
 
   // 1 件の受注を割り付ける（C_受注在庫読込 → My出庫出力）
-  async function 割り付ける(r: Rec) {
-    const z = await api.get<Rec>("/api/soko/juchu/zaiko", { jid: String(r.受注ID), soko: String(soko ?? 0) });
+  async function 割り付ける(r: Rec, sokoID = soko) {
+    const z = await api.get<Rec>("/api/soko/juchu/zaiko", { jid: String(r.受注ID), soko: String(sokoID ?? 0), ...(名変日 ? { mode: "meihen" } : {}) });
     const j = z.受注;
     let 選んだ: Rec[] | undefined;
+    if (名変日) {
+      // 名変は在庫がないと作れない（Access：「在庫がありません、処理を終了します」）
+      if (!z.重量) return void confirm(`${j.商品名} の在庫がありません、処理を終了します`);
+      if (!confirm(`${j.商品名}\n合計${z.rows.length}件\n重量 ${num(z.重量)} kgまでを表示します`)) return;
+      const s = await new Promise<Rec[] | null>((resolve) => set在庫画面({ z, resolve }));
+      set在庫画面(null);
+      if (!s?.length) return;
+      await api.post("/api/soko/juchu/meihen-out", { 変更日: 名変日, 受注ID: j.受注ID, 倉庫ID: sokoID ?? 0, 選んだ: s.map((x) => ({ 認識ID: x.認識ID, ケース: x.実算ケース })) });
+      return;
+    }
     if (!z.重量) {
       if (!confirm(`${j.商品名} の在庫がありません。直接出力しますか?`)) return;
     } else {
@@ -173,10 +186,10 @@ export function SokoJuchu() {
     });
     積込No.current = out.積込No;
   }
-  const 割付の確認 = () => confirm(`出荷日：${斜め(String(bin?.出荷計画日 ?? ""))} ${bin?.運送会社名 ?? ""}に割付ますがよろしいですか?`);
+  const 割付の確認 = () => 名変日 ? confirm(`出荷日： ${斜め(名変日)}に割付ますがよろしいですか?`) : confirm(`出荷日：${斜め(String(bin?.出荷計画日 ?? ""))} ${bin?.運送会社名 ?? ""}に割付ますがよろしいですか?`);
   async function 個別(r: Rec) {
     if (!soko) return alert("出荷場所が選択されていません。");
-    if (割付の確認()) {
+    if (名変日 ? confirm(`名変日：${r.納品日 ? 斜め(r.納品日) : ""} ${斜め(名変日)}に割付ますがよろしいですか?`) : 割付の確認()) {
       try {
         await 割り付ける(r);
       } catch (e) {
@@ -191,7 +204,8 @@ export function SokoJuchu() {
       const list = rows.filter((r) => r.chk).sort((a, b) => String(a.納品日 ?? "").localeCompare(String(b.納品日 ?? "")) || a.受注ID - b.受注ID || a.商品コード - b.商品コード);
       for (const r of list) {
         try {
-          await 割り付ける(r);
+          // 名変の複数選択実行は、Access と同じく冷蔵庫を指定せずに（全部の冷蔵庫の在庫から）割り付ける
+          await 割り付ける(r, 名変日 ? 0 : soko);
         } catch (e) {
           エラー(e);
         }
@@ -201,6 +215,7 @@ export function SokoJuchu() {
   }
   async function 閉じる() {
     await api.post("/api/soko/juchu/close", {}).catch(エラー);
+    if (名変日) return nav(`/soko/meihen?date=${名変日}&soko=${sp.get("soko") ?? ""}`);
     nav(bin ? `/soko/shukko?date=${bin.出荷計画日}&id=${輸送ID}` : "/soko/shukko");
   }
   async function 印(r: Rec, on: boolean) {

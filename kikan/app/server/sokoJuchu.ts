@@ -3,7 +3,8 @@ import type { PoolClient } from "pg";
 import { pool, q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で, 特別項目, 賞味期限計算 } from "./ws.js";
-import { 倉庫の便, 倉庫の出荷, 倉庫の名変 } from "./soko.js";
+import { 倉庫の便, 倉庫の出荷, 倉庫の名変, 行を足す, 次の番号 } from "./soko.js";
+import { 半月の末日 } from "./sokoMeihen.js";
 import { 倉庫の在庫見込み } from "./sokoShukko.js";
 
 // 倉庫管理System の受注検索（Access の 倉庫管理の F_受注検索・FSD_受注分在庫出力・My出庫出力）。
@@ -21,6 +22,7 @@ const ストックマスタ = t("ws", "TM_商品在庫ストックマスタ"); /
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
 const 日付 = (v: unknown) => (v ? String(v).slice(0, 10) : null);
+const 日を足す = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") + k * 86400000).toISOString().slice(0, 10);
 
 async function 短縮名(c: PoolClient | typeof pool, code: unknown, 列 = "短縮名"): Promise<string | null> {
   return (await c.query(`SELECT "${列}" AS v FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(code)])).rows[0]?.v ?? null;
@@ -196,13 +198,17 @@ export function sokoJuchuRoutes(app: FastifyInstance) {
   );
 
   // 受注とその商品・出庫場所の在庫（C_受注在庫読込 → CC_KakuZaikoSum）。残ケース分を賞味期限の古い順に先に割り付けておく（C_受注分在庫読込。商品区分 5 は落とさない）
-  app.get<{ Querystring: { jid: string; soko: string } }>("/api/soko/juchu/zaiko", async (req, reply) =>
+  // mode=meihen は名変の受注検索（F_受注検索_名変 の C_受注分在庫読込）：割り付ける順が 製造日・賞味期限・タグ・入庫No・入庫日
+  app.get<{ Querystring: { jid: string; soko: string; mode?: string } }>("/api/soko/juchu/zaiko", async (req, reply) =>
     一連で(async (c) => {
       const j = (await c.query(`SELECT *, "納品日"::date::text AS "納品日" FROM ${倉庫の受注} WHERE "受注ID" = $1`, [n(req.query.jid)])).rows[0];
       if (!j) return reply.code(404).send({ error: "この受注はありません" });
       const rows: Rec[] = (await 倉庫の在庫見込み(c, n(j.商品コード), n(req.query.soko))).map((r) => ({ ...r, 抽出区分: false, 実算ケース: 0, 実算kg: 0 }));
       const 順 = (x: unknown) => (x == null ? "" : String(x));
-      const 割付順 = [...rows].sort((x, y) => 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.入庫日).localeCompare(順(y.入庫日)) || 順(x.タグ).localeCompare(順(y.タグ)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || 順(x.製造日).localeCompare(順(y.製造日)));
+      const 割付順 = [...rows].sort((x, y) =>
+        req.query.mode === "meihen"
+          ? 順(x.製造日).localeCompare(順(y.製造日)) || 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.タグ).localeCompare(順(y.タグ)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || 順(x.入庫日).localeCompare(順(y.入庫日))
+          : 順(x.賞味期限).localeCompare(順(y.賞味期限)) || 順(x.入庫日).localeCompare(順(y.入庫日)) || 順(x.タグ).localeCompare(順(y.タグ)) || 順(x.入庫No).localeCompare(順(y.入庫No)) || 順(x.製造日).localeCompare(順(y.製造日)));
       let 残 = n(j.残ケース);
       for (const r of 割付順) {
         if (残 === 0) break;
@@ -336,6 +342,39 @@ export function sokoJuchuRoutes(app: FastifyInstance) {
       await c.query(`UPDATE ${倉庫の受注} SET "手配DataChk" = true WHERE "受注ID" = $1`, [j.受注ID]);
       await 残ケースを出し直す(c, [j.受注ID]);
       return { 件数: 行たち.length, 積込No };
+    });
+  });
+
+  // 名変の行を作る（Access の F_受注検索_名変 の My出庫出力）。選んだ在庫ごとに、変更日の名変（TD_在庫変更）を 1 行ずつ作る。
+  // 変更後名義・買取などは入れない（Access と同じ。名義変更の画面で入れる）。譲渡人負担日は変更日の半月の末日、譲受人負担日はその翌日
+  app.post<{ Body: { 変更日: string; 受注ID: number; 倉庫ID: number; 選んだ: { 認識ID: string; ケース: number }[] } }>("/api/soko/juchu/meihen-out", async (req, reply) => {
+    const b = req.body;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(b.変更日 ?? "")) return reply.code(400).send({ error: "変更日が正しくありません" });
+    if (!b.選んだ?.length) return reply.code(400).send({ error: "在庫が選ばれていません" });
+    return 一連で(async (c) => {
+      const j = (await c.query(`SELECT * FROM ${倉庫の受注} WHERE "受注ID" = $1 FOR UPDATE`, [n(b.受注ID)])).rows[0];
+      if (!j) return reply.code(404).send({ error: "この受注はありません" });
+      const all = await 倉庫の在庫見込み(c, n(j.商品コード), n(b.倉庫ID));
+      const 順 = (x: unknown) => (x == null ? "" : String(x));
+      const 選 = b.選んだ
+        .map((s) => ({ z: all.find((r) => r.認識ID === String(s.認識ID)) ?? null, ケース: n(s.ケース) }))
+        .sort((x, y) => 順(x.z?.賞味期限).localeCompare(順(y.z?.賞味期限)) || 順(x.z?.タグ).localeCompare(順(y.z?.タグ)) || 順(x.z?.入庫No).localeCompare(順(y.z?.入庫No)));
+      if (選.some((s) => !s.z)) return reply.code(400).send({ error: "選んだ在庫が見つかりません。もう一度選んでください。" });
+      const 譲渡人 = 半月の末日(b.変更日);
+      const 取引元 = await 短縮名(c, j.受注元ID);
+      for (const { z, ケース } of 選) {
+        const 入数 = (await c.query(`SELECT "入数" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(z!.商品コード)])).rows[0]?.入数;
+        await 行を足す(c, 倉庫の名変, {
+          変更No: await 次の番号(c, 倉庫の名変, "変更No"), 変更日: b.変更日, 取引元ID: j.受注元ID, 取引元, ユーザー伝票No: j.受注番号, 受注ID: j.受注ID,
+          商品コード: z!.商品コード, 商品名: z!.商品名, 規格: z!.規格, 入数: z!.入数, ケース, 商品kg: 入数 == null ? null : Number(入数) * ケース, 製造日: z!.製造日,
+          賞味期限: z!.賞味期限 ?? (await 賞味期限計算(c, z!.製造日, z!.商品コード)), 入庫No: z!.入庫No, 保管庫ID: z!.倉庫ID, 保管庫名: z!.倉庫名,
+          変更前名義ID: z!.入庫後名義ID, 在庫No: n(z!.認識ID), 産地コード: z!.産地コード, 移動先ID: 10, 移動先名: "名義変更", 譲渡人負担日: 譲渡人, 譲受人負担日: 日を足す(譲渡人, 1),
+          変更後名義ID: 0, 変更区分: 0, 変更Check: false, 抽出区分: false, 確認chk: false, 買取chk: false, 買取単価コード: 0, 買取金額: 0, 変更前在庫数: 0,
+        });
+      }
+      await c.query(`UPDATE ${倉庫の受注} SET "手配DataChk" = true WHERE "受注ID" = $1`, [j.受注ID]);
+      await 残ケースを出し直す(c, [j.受注ID]);
+      return { 件数: 選.length };
     });
   });
 }

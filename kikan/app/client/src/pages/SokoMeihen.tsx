@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { Field, today } from "../formParts";
 
@@ -16,9 +16,10 @@ const 月日 = (d: string) => `${d.slice(5, 7)}月${d.slice(8, 10)}日(${曜日[
  */
 export function SokoMeihen() {
   const nav = useNavigate();
-  const [日, set日] = useState(today());
+  const [sp] = useSearchParams();
+  const [日, set日] = useState(sp.get("date") || today());
   const [倉庫一覧, set倉庫一覧] = useState<Rec[]>([]);
-  const [倉庫, set倉庫] = useState(0);
+  const [倉庫, set倉庫] = useState(Number(sp.get("soko")) || 0);
   const [名義, set名義] = useState<Rec[]>([]);
   const [rows, setRows] = useState<Rec[]>([]);
   const [選んだ, set選んだ] = useState<number | null>(null);
@@ -158,6 +159,7 @@ export function SokoMeihen() {
         <button disabled={!rows.find((x) => x.変更No === 選んだ)?.変更Check} onClick={訂正}>訂正</button>
         <button disabled={!rows.length} onClick={全訂正}>全訂正</button>
         <button disabled={選んだ == null} onClick={削除}>削除</button>
+        <button onClick={() => (倉庫 ? nav(`/soko/juchu?meihen=${日}&soko=${倉庫}`) : alert("冷蔵庫が選択されていません"))}>受注表示</button>
         <button className="navy" onClick={通知書}>名変通知書印刷</button>
       </div>
       <datalist id="meihen-meigi">
