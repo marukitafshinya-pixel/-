@@ -160,9 +160,14 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
   const [合言葉, set合言葉] = useState<string | null>(null);
   const ro = s.合言葉 && 合言葉 === null;
 
-  async function 読む(code = 絞る) {
+  // 開くときにパスワードを聞く表（受注管理の相手先商品マスタ・相手先届け先マスタ。Access と同じ）
+  const 開くとき = s.kind === "j-aite" || s.kind === "j-todoke";
+  async function 読む(code = 絞る, pass = 合言葉) {
+    if (開くとき && pass === null) return;
     try {
-      const r = await api.get<{ rows: Rec[]; 選択肢: Opt[] }>(`/api/ws/mst/${s.kind}`, code ? { code: String(code) } : {});
+      const r = 開くとき
+        ? await api.post<{ rows: Rec[]; 選択肢: Opt[] }>(`/api/ws/mst/${s.kind}/open`, { code: code ? String(code) : undefined, 合言葉: pass })
+        : await api.get<{ rows: Rec[]; 選択肢: Opt[] }>(`/api/ws/mst/${s.kind}`, code ? { code: String(code) } : {});
       setRows(r.rows);
       set選択肢(r.選択肢);
       // 集荷先は、はじめは一番小さい集荷先を出す（Access と同じ）
@@ -174,6 +179,20 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
   useEffect(() => {
     読む(絞る);
   }, [絞る]);
+  useEffect(() => {
+    if (!開くとき) return;
+    (async () => {
+      const p = prompt("パスワードを入力してください");
+      if (p === null) return nav(-1);
+      const r = await api.post<{ ok: boolean }>("/api/ws/mst/unlock", { 合言葉: p, kind: s.kind }).catch((e) => (エラー(e), null));
+      if (!r?.ok) {
+        if (r) alert("パスワードが違います!!");
+        return nav(-1);
+      }
+      set合言葉(p);
+      読む(絞る, p);
+    })();
+  }, [s.kind]);
 
   async function 修正() {
     if (合言葉 !== null) return;

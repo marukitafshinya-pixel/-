@@ -24,6 +24,8 @@ type 設定 = {
   合言葉: boolean;
   /** 合言葉の置き場所（はじめは削除の合言葉。受注のマスタは受注のマスタの合言葉） */
   合言葉の設定?: string;
+  /** 開くときにも合言葉を聞く（見るだけでも要る。Access と同じ。2026/10/26 利用者：パスワード式に） */
+  開くとき合言葉?: boolean;
   /** 一覧に足す読むだけの列（SQL。表は t） */
   足す列?: string;
   /** 絞る列が文字のとき */
@@ -55,7 +57,7 @@ const 表 = {
   },
   // 受注管理の相手先商品マスタ（受注登録の FM_相手先商品マスタ。開くときに受注のマスタの合言葉）。取引元（受注元）で絞る
   "j-aite": {
-    表: t("kyotsu", "TM_相手先商品マスタ"), 鍵: null, 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 絞る列: "受注元コード",
+    表: t("kyotsu", "TM_相手先商品マスタ"), 鍵: null, 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 開くとき合言葉: true, 絞る列: "受注元コード",
     並び: `"得意先短縮コード", "商品コード"`,
     列: ["受注元コード", "得意先短縮コード", "得意先名", "相手先商品コード", "本社商品コード", "商品コード", "商品名", "製造場所ID", "帳合先コード1", "相手先商品名", "指定倉庫ID", "備考"],
     数の列: ["受注元コード", "得意先短縮コード", "商品コード", "製造場所ID", "指定倉庫ID"],
@@ -64,7 +66,7 @@ const 表 = {
   },
   // 受注管理の相手先届け先マスタ（受注登録の FM_相手先得意先マスタ）。取引元（相手先コード）で絞る
   "j-todoke": {
-    表: t("kyotsu", "TM_相手先届け先マスタ"), 鍵: "ID", 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 絞る列: "相手先コード", 並び: `"ID"`,
+    表: t("kyotsu", "TM_相手先届け先マスタ"), 鍵: "ID", 合言葉: true, 合言葉の設定: "JUCHU_MASTER_PASSWORD", 開くとき合言葉: true, 絞る列: "相手先コード", 並び: `"ID"`,
     列: ["相手先コード", "相手先名", "自社コード", "届け先", "相手方届け先コード", "備考"], 数の列: ["相手先コード", "自社コード"],
   },
   // WEB連携のマスタ（web_fe。Access の FM_マスタ管理）
@@ -107,11 +109,24 @@ function 合言葉が合う(v: unknown, 設定 = "JUCHU_DELETE_PASSWORD") {
 export function wsMastersRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
-  // 一覧（絞るコードを渡すとその相手先・集荷先だけ）と、絞り込みの選択肢
+  // 一覧（絞るコードを渡すとその相手先・集荷先だけ）と、絞り込みの選択肢。
+  // 開くときに合言葉が要る表は GET では出さず、合言葉を付けた POST（/open）で出す
   app.get<{ Params: { kind: string }; Querystring: { code?: string } }>("/api/ws/mst/:kind", async (req, reply) => {
     const s = 表を選ぶ(req.params.kind);
     if (!s) return reply.code(404).send({ error: "この表はありません" });
-    const code = req.query.code;
+    if (s.開くとき合言葉) return reply.code(403).send({ error: "パスワードを入力してください。" });
+    return 一覧(req.params.kind, req.query.code);
+  });
+  app.post<{ Params: { kind: string }; Body: { code?: string; 合言葉?: string } }>("/api/ws/mst/:kind/open", async (req, reply) => {
+    const s = 表を選ぶ(req.params.kind);
+    if (!s) return reply.code(404).send({ error: "この表はありません" });
+    if (s.開くとき合言葉 && !process.env[s.合言葉の設定 ?? "JUCHU_DELETE_PASSWORD"]) return reply.code(400).send({ error: "合言葉がサーバーに設定されていないため、開けません。" });
+    if (s.開くとき合言葉 && !合言葉が合う(req.body.合言葉, s.合言葉の設定)) return reply.code(403).send({ error: "パスワードが違います!!" });
+    return 一覧(req.params.kind, req.body.code ? String(req.body.code) : undefined);
+  });
+  async function 一覧(kind: string, code: string | undefined) {
+    const s = 表を選ぶ(kind)!;
+    const req = { params: { kind } };
     const 鍵 = s.鍵 ? `t."${s.鍵}"` : "t.ctid::text";
     const rows = await q(
       `SELECT ${鍵} AS "_鍵", ${s.列.map((k) => `t."${k}"`).join(", ")}${s.足す列 ? ", " + s.足す列 : ""}
@@ -139,7 +154,7 @@ export function wsMastersRoutes(app: FastifyInstance) {
          GROUP BY p."集荷先ID" ORDER BY p."集荷先ID"`,
       );
     return { rows, 選択肢 };
-  });
+  }
 
   app.post<{ Body: { 合言葉: string; kind?: string } }>("/api/ws/mst/unlock", async (req, reply) => {
     const 設定 = 表を選ぶ(req.body.kind ?? "")?.合言葉の設定 ?? "JUCHU_DELETE_PASSWORD";
