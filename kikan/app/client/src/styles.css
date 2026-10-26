@@ -1916,3 +1916,40 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .pz-t td { border: 1px solid #000; text-align: right; width: 26mm; padding: 0 3px; }
 .pz-max { margin: 0 0 4mm 48mm; } .pz-now { margin-left: 20mm; }
 .pz-print hr { border: none; border-top: 1px solid #000; margin: 6mm 0; }
+
+/* ロット別在庫表（名義分在庫報告書）：A4 横、名義ごと・26 行ごとにページ */
+.lz-print { font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; }
+.lz-page { page-break-after: always; padding: 2mm 4mm; }
+.lz-page:last-child { page-break-after: auto; }
+.lz-head { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; margin-bottom: 2mm; }
+.lz-soko { font-size: 15px; font-weight: bold; padding-left: 20mm; }
+.lz-title { text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px; align-self: start; }
+.lz-right { font-size: 12px; text-align: left; padding-left: 20mm; }
+.lz-meigi { font-size: 14px; font-weight: bold; }
+.lz-t { width: 100%; border-collapse: collapse; font-size: 11.5px; font-weight: bold; }
+.lz-t th, .lz-t td { border: 1px solid #000; padding: 3px 4px; height: 6.2mm; white-space: nowrap; }
+.lz-t th { font-weight: bold; }
+.lz-t td.c { text-align: center; }
+.lz-t td.r { text-align: right; }
+
+/* 在庫証明書（A4 横） */
+.zs-page { width: 277mm; min-height: 186mm; position: relative; font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 4mm 8mm; box-sizing: border-box; page-break-after: always; }
+.zs-page:last-child { page-break-after: auto; }
+.zs-title { text-align: center; font-size: 22px; font-weight: bold; text-decoration: underline; letter-spacing: 2px; }
+.zs-head { display: grid; grid-template-columns: 1fr 1fr 62mm; margin: 2mm 0 4mm; background: #fff; }
+.zs-page div, .zs-page table, .zs-page td, .zs-page th { background: #fff; }
+.zs-to { font-size: 14px; font-weight: bold; display: flex; flex-direction: column; gap: 9mm; padding-top: 2mm; }
+.zs-date { text-align: center; font-size: 12px; }
+.zs-from { font-size: 13px; font-weight: bold; line-height: 1.9; }
+.zs-co { font-size: 14px; }
+.zs-tel { display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; }
+.zs-in { border-collapse: collapse; width: 17mm; }
+.zs-in th { border: 1px solid #000; font-size: 10px; font-weight: normal; }
+.zs-in td { border: 1px solid #000; height: 11mm; }
+.zs-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+.zs-t th { border: 1px solid #000; font-weight: normal; padding: 1px 4px; }
+.zs-t td { border: 1px solid #000; padding: 1px 4px; height: 5.5mm; }
+.zs-t td.c { text-align: center; }
+.zs-t td.r { text-align: right; }
+.zs-sum td { border-top: 2px solid #000; }
+.zs-page-no { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 13px; }

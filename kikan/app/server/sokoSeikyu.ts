@@ -206,6 +206,21 @@ export function sokoSeikyuRoutes(app: FastifyInstance) {
     });
   });
 
+  // 在庫証明書（R_在庫証明書）：在庫のロット（在庫ケースのあるもの）。Access の帳票の元は「名義 1261 の在庫」に決め打ちで、そこへ画面の倉庫・名義の絞り込みを
+  // 重ねていた（1261 は今は在庫が無く、白紙になる）。Web 版は、名義を選んだときはその名義、選ばないときは Access と同じ 1261 にする
+  app.get<{ Querystring: { soko?: string; meigi?: string } }>("/api/soko/seikyu/shomei", async (req) =>
+    q(
+      `SELECT z."在庫ID", z."倉庫ID", z."倉庫名", z."入庫日"::date::text AS "入庫日", z."入庫No", z."商品コード", z."商品名", z."入数", z."製造日"::date::text AS "製造日",
+              z."賞味期限"::date::text AS "賞味期限", z."在庫ケース", z."在庫kg", z."入庫後名義ID",
+              (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = z."入庫後名義ID" LIMIT 1) AS "名義正式名",
+              (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = z."倉庫ID" LIMIT 1) AS "倉庫正式名"
+       FROM ${t("soko", "TD_在庫")} z
+       WHERE z."在庫ケース" <> 0 AND z."入庫後名義ID" = $1 AND ($2::int = 0 OR z."倉庫ID" = $2::int)
+       ORDER BY z."倉庫ID", z."入庫日", z."商品コード", z."入庫No"`,
+      [n(req.query.meigi) || 1261, n(req.query.soko)],
+    ),
+  );
+
   // 作業表の中身（帳票・チェック画面）。倉庫・名義で絞る（Access の帳票は パブリックコード で絞る）
   app.get<{ Querystring: { soko?: string; meigi?: string } }>("/api/soko/seikyu/rows", async (req) => {
     const a: unknown[] = [];

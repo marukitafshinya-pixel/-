@@ -10,7 +10,7 @@ const 年月日 = (v: string | null | undefined) => (v ? v.slice(0, 10).replace(
 const 月末 = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
 const 円 = (v: unknown) => `¥${num(Math.round(Number(v ?? 0)))}`;
 /** Web 版で作ってある帳票 */
-const 作った帳票 = new Set(["R_保管料請求書"]);
+const 作った帳票 = new Set(["R_保管料請求書", "R_在庫証明書"]);
 /** 明細の 1 ページの行数（A4 横） */
 const 明細の行数 = 26;
 
@@ -53,8 +53,20 @@ export function SokoSeikyu() {
     await 処理中(() => api.post("/api/soko/seikyu/shukei", { 開始, 終了, 再計算 }));
     読む();
   }
+  const [証明, set証明] = useState<{ rows: Rec[]; 差出人: Rec } | null>(null);
   async function 印刷() {
     if (!作った帳票.has(帳票)) return alert("この帳票はまだ作っていません（見本をいただいてから作ります）。");
+    if (帳票 === "R_在庫証明書") {
+      // 在庫証明書は在庫の表から作るので、月末集計はしない
+      try {
+        const rows = await 処理中(() => api.get<Rec[]>("/api/soko/seikyu/shomei", { ...(倉庫 ? { soko: String(倉庫) } : {}), ...(名義 ? { meigi: String(名義) } : {}) }));
+        const list = await api.get<Rec[]>("/api/ws/sashidashi").catch(() => [] as Rec[]);
+        set証明({ rows, 差出人: list.find((x) => x.区分 === "丸北北海道") ?? {} });
+      } catch (e) {
+        エラー(e);
+      }
+      return;
+    }
     try {
       await 集計();
       setRows(await api.get<Rec[]>("/api/soko/seikyu/rows", { ...(倉庫 ? { soko: String(倉庫) } : {}), ...(名義 ? { meigi: String(名義) } : {}) }));
@@ -94,6 +106,7 @@ export function SokoSeikyu() {
     <Field value={v} kind="date" className="sko-date" onCommit={(x) => { const p = parseDate(x); if (p === undefined) return alert("日付の書き方が正しくありません。"); set(p); }} />
   );
 
+  if (証明) return <ZaikoShomeiPrint rows={証明.rows} 差出人={証明.差出人} onClose={() => set証明(null)} />;
   if (見る === "印刷" && rows) return <HokanSeikyuPrint rows={rows} 開始={開始!} 終了={終了!} 印刷日時={印刷日時} onClose={() => set見る(null)} />;
   return (
     <div className="sz sko">
@@ -141,7 +154,7 @@ export function SokoSeikyu() {
             </tbody>
           </table>
           <div className="sko-foot">
-            <button className="navy" onClick={印刷}>印刷（月末集計をしてから）</button>
+            <button className="navy" onClick={印刷}>{帳票 === "R_在庫証明書" ? "印刷" : "印刷（月末集計をしてから）"}</button>
             <button onClick={チェック}>チェック画面</button>
             <button className="green" onClick={Excel}>チェックの Excel</button>
           </div>
@@ -269,6 +282,65 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
         );
       })}
       {ページ.length === 0 && <p className="sko-pad">この期間・倉庫・名義の保管料はありません。</p>}
+    </div>
+  );
+}
+
+/** 在庫証明書（Access の R_在庫証明書。いただいた見本の形）。A4 横、20 行ごとにページ、最後のページに合計 */
+function ZaikoShomeiPrint(props: { rows: Rec[]; 差出人: Rec; onClose: () => void }) {
+  const { rows, 差出人 } = props;
+  const 頁: Rec[][] = [];
+  for (let i = 0; i < Math.max(rows.length, 1); i += 20) 頁.push(rows.slice(i, i + 20));
+  const t = new Date(Date.now() + 9 * 3600 * 1000);
+  const 発行 = `${t.getUTCFullYear()}年${String(t.getUTCMonth() + 1).padStart(2, "0")}月${String(t.getUTCDate()).padStart(2, "0")}日 発行`;
+  const 日 = (v: unknown) => (v ? String(v).slice(0, 10).replace(/-/g, "/") : "");
+  const 計 = (k: string) => rows.reduce((a, r) => a + Number(r[k] ?? 0), 0);
+  const 先 = rows[0] ?? {};
+  return (
+    <div className="hs-wrap">
+      <div className="no-print hs-bar">
+        <button onClick={() => window.print()}>印刷</button> <button onClick={props.onClose}>閉じる</button>
+        {rows.length === 0 && <span className="small">　在庫がありません（名義を選ばないときは、Access と同じく名義 1261 の在庫を出します）。</span>}
+      </div>
+      {頁.map((p, i) => (
+        <div key={i} className="zs-page">
+          <div className="zs-title">在庫　証明書</div>
+          <div className="zs-head">
+            <div className="zs-to">
+              <div>{先.名義正式名 ?? ""}{先.名義正式名 ? "　御中" : ""}</div>
+              <div>{先.倉庫正式名 ?? 先.倉庫名 ?? ""}</div>
+            </div>
+            <div className="zs-date">{発行}</div>
+            <div className="zs-from">
+              <div>{差出人.住所}</div>
+              <div className="zs-co">{差出人.社名} {差出人.店舗}</div>
+              <div className="zs-tel">
+                <div>
+                  <div>TEL:{差出人.TEL}</div>
+                  <div style={{ marginTop: "4mm" }}>FAX:{差出人.FAX}</div>
+                </div>
+                <table className="zs-in"><tbody><tr><th>担当者</th></tr><tr><td /></tr></tbody></table>
+              </div>
+            </div>
+          </div>
+          <table className="zs-t">
+            <thead><tr><th>入庫日</th><th>倉庫名</th><th>入庫No</th><th>商品名</th><th>重量</th><th>製造日</th><th>賞味期限</th><th>在庫数</th><th>在庫kg</th></tr></thead>
+            <tbody>
+              {p.map((r, k) => (
+                <tr key={k}>
+                  <td className="c">{日(r.入庫日)}</td><td>{r.倉庫名}</td><td className="c">{r.入庫No}</td><td>{r.商品名}</td><td className="r">{r.入数}</td>
+                  <td className="c">{日(r.製造日)}</td><td className="c">{日(r.賞味期限)}</td><td className="r">{num(r.在庫ケース)}</td><td className="r">{num(r.在庫kg)}</td>
+                </tr>
+              ))}
+              {p.length === 0 && <tr><td /><td /><td /><td /><td /><td /><td /><td /><td /></tr>}
+              {i === 頁.length - 1 && (
+                <tr className="zs-sum"><td colSpan={7} className="r">合計　　</td><td className="r">{num(計("在庫ケース"))}</td><td className="r">{num(計("在庫kg"))}</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="zs-page-no">{i + 1} / {頁.length} ページ</div>
+        </div>
+      ))}
     </div>
   );
 }

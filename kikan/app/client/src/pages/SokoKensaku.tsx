@@ -427,7 +427,7 @@ export function SokoShukkoList() {
 
 /**
  * 予定在庫・パレット表示（Access の F_在庫_日付指定）。冷蔵庫と集計日を選んで［集計］すると、その日までの予定在庫（在庫＋WorkStation から来る入庫予定−集計日までの出庫）と
- * パレット枚数（今の在庫・予定の在庫・空く予定）を出す。印刷（在庫表〈パレット表示〉・ロット別在庫表）は見本をいただいてから。
+ * パレット枚数（今の在庫・予定の在庫・空く予定）を出す。［印刷］はパレット在庫集計、［在庫表印刷］はロット別在庫表（名義分在庫報告書）。
  */
 export function SokoYotei() {
   const nav = useNavigate();
@@ -455,12 +455,37 @@ export function SokoYotei() {
       const p = await 処理中(() => api.get<Rec>("/api/soko/yotei/pallet", { soko: String(soko) }));
       const list = await api.get<Rec[]>("/api/ws/sashidashi").catch(() => []);
       const t = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
+      setロット別(null);
       set印刷({ ...p, 差出人: list.find((x) => x.区分 === "丸北北海道") ?? {}, 日時: `${t.slice(0, 10).replace(/-/g, "/")} ${Number(t.slice(11, 13))}${t.slice(13, 19)}` });
       setTimeout(() => window.print(), 150);
     } catch (e) {
       エラー(e);
     }
   }
+  // ロット別在庫表（Access の［在庫表印刷］→ R_在庫表_ロット別。いただいた見本「名義分在庫報告書」の形）：集計した行のうち在庫ケースのあるもの。名義ごとにページを分ける
+  const [ロット別, setロット別] = useState<Rec[][] | null>(null);
+  function 在庫表印刷() {
+    if (!rows) return alert("先に［集計］をしてください。");
+    const 行 = rows.filter((r) => Number(r.在庫ケース ?? 0) !== 0)
+      .sort((a, b) => Number(a.入庫後名義ID) - Number(b.入庫後名義ID) || Number(a.商品コード) - Number(b.商品コード) || String(a.製造日 ?? "").localeCompare(String(b.製造日 ?? "")) || Number(a.在庫ID ?? 0) - Number(b.在庫ID ?? 0));
+    if (!行.length) return alert("在庫がありません。");
+    const 頁: Rec[][] = [];
+    let 前: unknown = null;
+    for (const r of 行) {
+      if (r.入庫後名義ID !== 前 || 頁[頁.length - 1].length >= 26) 頁.push([]);
+      頁[頁.length - 1].push(r);
+      前 = r.入庫後名義ID;
+    }
+    set印刷(null);
+    setロット別(頁);
+    setTimeout(() => window.print(), 150);
+  }
+  const 和暦 = () => {
+    const d = new Date(Date.now() + 9 * 3600 * 1000);
+    return `${d.getUTCFullYear() - 2018}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日${"日月火水木金土"[d.getUTCDay()]}曜日`;
+  };
+  const 年月日J = (v: unknown) => (v ? `${String(v).slice(2, 4)}年${String(v).slice(5, 7)}月${String(v).slice(8, 10)}日` : "");
+  const 年月日2 = (v: unknown) => (v ? `${String(v).slice(2, 4)}/${String(v).slice(5, 7)}/${String(v).slice(8, 10)}` : "");
   const 過剰 = (残: number, 許容: number) => (残 - 許容 >= 0 ? `+${num(残 - 許容)}` : num(残 - 許容));
   const 枠 = (題: string | null, 左: string, x: Rec) => (
     <div className="pz-block">
@@ -497,6 +522,36 @@ export function SokoYotei() {
           </div>
         </div>
       )}
+      {ロット別 && !印刷 && (
+        <div className="print-only lz-print">
+          {ロット別.map((p, i) => (
+            <div key={i} className="lz-page">
+              <div className="lz-head">
+                <div className="lz-soko">{p[0].倉庫名}</div>
+                <div className="lz-title">名義分在庫報告書</div>
+                <div className="lz-right">
+                  <div>{和暦()}　{i + 1}/{ロット別.length} ページ</div>
+                  <div className="lz-meigi">{p[0].名義正式名 ?? p[0].名義名}</div>
+                </div>
+              </div>
+              <table className="lz-t">
+                <thead>
+                  <tr><th>保管庫</th><th>入庫日</th><th>入庫No</th><th>コード</th><th>商品名</th><th>規格</th><th>製造日</th><th>賞味期限</th><th>入庫元数</th><th>在庫Cs</th><th>在庫kg</th><th>名義</th></tr>
+                </thead>
+                <tbody>
+                  {p.map((r, k) => (
+                    <tr key={k}>
+                      <td className="c">{r.倉庫名}</td><td className="c">{年月日J(r.入庫日)}</td><td className="c">{r.入庫No}</td><td className="c">{r.商品コード}</td><td className="c">{r.商品名}</td>
+                      <td className="c">{r.規格}</td><td className="c">{年月日2(r.製造日)}</td><td className="c">{年月日2(r.賞味期限)}</td>
+                      <td className="r">{num(r.入庫元数)}</td><td className="r">{num(r.在庫ケース)}</td><td className="r">{num(r.在庫kg)}</td><td>{r.名義名} 名義</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="kk-head no-print">
         <div className="kk-title">予定在庫・パレット表示</div>
         <span>冷蔵庫</span>
@@ -508,7 +563,7 @@ export function SokoYotei() {
         <日の欄 value={日} set={set日} />
         <button className="blue" onClick={集計}>集計</button>
         <button className="navy" onClick={印刷する}>印刷</button>
-        <button disabled title="印刷の見本をいただいてから作ります">在庫表印刷</button>
+        <button onClick={在庫表印刷} title="集計した在庫のロット別の一覧（名義分在庫報告書）を印刷します">在庫表印刷</button>
         <button onClick={() => nav(-1)}>閉じる</button>
       </div>
       <div className="sko-gridwrap no-print">

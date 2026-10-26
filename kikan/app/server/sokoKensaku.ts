@@ -133,7 +133,9 @@ export function sokoKensakuRoutes(app: FastifyInstance) {
         r.パレット積載元数 = 枚数(r.倉庫ID, r.商品コード, n(r.繰越ケース));
         r.パレット積載数 = 枚数(r.倉庫ID, r.商品コード, n(r.在庫ケース));
         r.空き予定パレット数 = r.パレット積載元数 - r.パレット積載数;
-        r.名義名 = (await c.query(`SELECT "短縮名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(r.入庫後名義ID)])).rows[0]?.短縮名 ?? null;
+        const 名義 = (await c.query(`SELECT "短縮名", "得意先名" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [n(r.入庫後名義ID)])).rows[0];
+        r.名義名 = 名義?.短縮名 ?? null;
+        r.名義正式名 = 名義?.得意先名 ?? null;
       }
       return rows.sort((a, b) => n(a.商品コード) - n(b.商品コード) || Number(a.架空実物) - Number(b.架空実物) || String(a.賞味期限 ?? "").localeCompare(String(b.賞味期限 ?? "")));
     } finally {
