@@ -114,7 +114,7 @@ export function SokoMeihen() {
     set選んだ(null);
     読む();
   }
-  // ［名変通知書印刷］（Access の cmd_名変通知書印刷。冷蔵庫を選んだときだけ。福山冷凍〈720〉用の帳票は見本がないため同じ形で出す）
+  // ［名変通知書印刷］（Access の cmd_名変通知書印刷。冷蔵庫を選んだときだけ。福山冷凍〈720〉は別の形）
   async function 通知書() {
     if (!倉庫) return alert("冷蔵庫が選択されていません");
     try {
@@ -265,10 +265,11 @@ function MeihenTsuchiPrint(props: { 中身: Rec; 差出人: Rec; onClose: () => 
     <div className="hs-wrap">
       <div className="no-print hs-bar">
         <button onClick={() => window.print()}>印刷</button> <button onClick={props.onClose}>閉じる</button>
-        <span>　No </span><input className="w5" value={番号} onChange={(e) => set番号(e.target.value)} />
+        {中身形(m) && <><span>　No </span><input className="w5" value={番号} onChange={(e) => set番号(e.target.value)} /></>}
         <span>　備考欄 </span><input className="w20" value={備考} onChange={(e) => set備考(e.target.value)} />
       </div>
-      {m.組.map((rows: Rec[], i: number) => {
+      {m.形 === "福山" && m.組.map((rows: Rec[], i: number) => <FukuyamaPage key={i} m={m} rows={rows} 備考={備考} 差出人={差出人} />)}
+      {m.形 !== "福山" && m.組.map((rows: Rec[], i: number) => {
         const 先 = rows[0];
         const 計 = rows.reduce((a, r) => a + Number(r.ケース ?? 0), 0);
         return (
@@ -322,6 +323,65 @@ function MeihenTsuchiPrint(props: { 中身: Rec; 差出人: Rec; onClose: () => 
           </div>
         );
       })}
+    </div>
+  );
+}
+
+const 中身形 = (m: Rec) => m.形 !== "福山"; // 福山冷凍の帳票には No の欄がない
+
+/**
+ * 福山冷凍（720）用の名義変更通知書（Access の R_名義変更通知書_福山冷凍。いただいた見本の形。A4 横）。
+ * 右上の日付は印刷する日。明細は 入庫No（名変の入庫No）・入庫年月日・品名・賞味期限・出庫数・保管料の譲渡人負担日／譲受人負担日（名変の行の値）・備考。
+ */
+function FukuyamaPage(props: { m: Rec; rows: Rec[]; 備考: string; 差出人: Rec }) {
+  const { m, rows } = props;
+  const 先 = rows[0];
+  const t = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  const 日 = (v: unknown) => (v ? String(v).slice(0, 10).replace(/-/g, "/") : "");
+  return (
+    <div className="mf-page">
+      <div className="mf-top">
+        <div className="mf-no">{m.受注番号.map((x: string, k: number) => <div key={k}>{x}</div>)}</div>
+        <div className="mf-title">冷蔵貨物寄託者名義変更通知書</div>
+      </div>
+      <div className="mf-row">
+        <div className="mf-to">{m.保管庫 ?? ""} 御中</div>
+        <div className="mf-date">{年月日(t)}</div>
+      </div>
+      <div className="mf-mid">
+        <div className="mf-text">
+          下記の通り当事者間に於いて貨物の譲渡をしましたので<br />{年月日(m.変更日)} より当該を譲渡人の名義に変更して下さる<br />様、冷蔵庫寄託約款に基き連署をもってご通知致します。
+        </div>
+        <table className="mf-who">
+          <tbody>
+            <tr><th>譲渡人</th><td className="k">住所:</td><td>{先.譲渡人住所 ?? ""}</td></tr>
+            <tr><th /><td className="k">氏名:</td><td>{先.譲渡人名 ?? ""}</td></tr>
+            <tr className="sp"><td colSpan={3} /></tr>
+            <tr><th>譲受人</th><td className="k">住所:</td><td>{先.譲受人住所 ?? ""}</td></tr>
+            <tr><th /><td className="k">氏名:</td><td>{先.譲受人名 ?? ""}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <table className="mf-t">
+        <thead>
+          <tr><th>入庫No</th><th>入庫年月日</th><th>品　名</th><th>賞味期限</th><th>出庫数</th><th>保管料<br /><small>譲渡人負担日</small></th><th>保管料<br /><small>譲受人負担日</small></th><th>備考</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.変更No}>
+              <td className="c">{r.名変入庫No}</td><td className="c">{日(r.入庫日)}</td><td className="hin">{r.商品名}</td><td className="c">{日(r.賞味期限)}</td>
+              <td className="r">{num(r.ケース)}</td><td className="c sm">{r.譲渡人負担日 ? 年月日(r.譲渡人負担日) : ""}</td><td className="c sm">{r.譲受人負担日 ? 年月日(r.譲受人負担日) : ""}</td>
+              <td className="r">入庫元数{r.入庫元数 ?? ""}個 残 {r.在庫ケース ?? ""}</td>
+            </tr>
+          ))}
+          <tr><td /><td /><td /><td /><td /><td /><td /><td /></tr>
+        </tbody>
+      </table>
+      <div className="mt-biko">{props.備考}</div>
+      <div className="mf-foot">
+        <span>※　受信されましたら返信をお願いします。　※</span>
+        <span className="mf-from">{props.差出人.社名 ?? ""}</span>
+      </div>
     </div>
   );
 }

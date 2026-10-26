@@ -289,21 +289,33 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
 /** 在庫証明書（Access の R_在庫証明書。いただいた見本の形）。A4 横、20 行ごとにページ、最後のページに合計 */
 function ZaikoShomeiPrint(props: { rows: Rec[]; 差出人: Rec; onClose: () => void }) {
   const { rows, 差出人 } = props;
-  const 頁: Rec[][] = [];
-  for (let i = 0; i < Math.max(rows.length, 1); i += 20) 頁.push(rows.slice(i, i + 20));
+  // 名義・倉庫ごとに 1 通（名義を選ばないときは全部の名義が出る）。1 通の中で 20 行ごとに改ページ
+  const 組 = new Map<string, Rec[]>();
+  for (const r of rows) {
+    const k = `${r.入庫後名義ID}|${r.倉庫ID}`;
+    if (!組.has(k)) 組.set(k, []);
+    組.get(k)!.push(r);
+  }
+  const 通: Rec[][] = 組.size ? [...組.values()] : [[]];
+  const 頁: { p: Rec[]; 通: Rec[]; i: number; n: number }[] = [];
+  for (const g of 通) {
+    const n = Math.max(1, Math.ceil(g.length / 20));
+    for (let i = 0; i < n; i++) 頁.push({ p: g.slice(i * 20, i * 20 + 20), 通: g, i, n });
+  }
   const t = new Date(Date.now() + 9 * 3600 * 1000);
   const 発行 = `${t.getUTCFullYear()}年${String(t.getUTCMonth() + 1).padStart(2, "0")}月${String(t.getUTCDate()).padStart(2, "0")}日 発行`;
   const 日 = (v: unknown) => (v ? String(v).slice(0, 10).replace(/-/g, "/") : "");
-  const 計 = (k: string) => rows.reduce((a, r) => a + Number(r[k] ?? 0), 0);
-  const 先 = rows[0] ?? {};
+  const 計 = (g: Rec[], k: string) => g.reduce((a, r) => a + Number(r[k] ?? 0), 0);
   return (
     <div className="hs-wrap">
       <div className="no-print hs-bar">
         <button onClick={() => window.print()}>印刷</button> <button onClick={props.onClose}>閉じる</button>
-        {rows.length === 0 && <span className="small">　在庫がありません（名義を選ばないときは、Access と同じく名義 1261 の在庫を出します）。</span>}
+        {rows.length === 0 && <span className="small">　在庫がありません。</span>}
       </div>
-      {頁.map((p, i) => (
-        <div key={i} className="zs-page">
+      {頁.map(({ p, 通: g, i, n }, j) => {
+        const 先 = g[0] ?? {};
+        return (
+        <div key={j} className="zs-page">
           <div className="zs-title">在庫　証明書</div>
           <div className="zs-head">
             <div className="zs-to">
@@ -333,14 +345,15 @@ function ZaikoShomeiPrint(props: { rows: Rec[]; 差出人: Rec; onClose: () => v
                 </tr>
               ))}
               {p.length === 0 && <tr><td /><td /><td /><td /><td /><td /><td /><td /><td /></tr>}
-              {i === 頁.length - 1 && (
-                <tr className="zs-sum"><td colSpan={7} className="r">合計　　</td><td className="r">{num(計("在庫ケース"))}</td><td className="r">{num(計("在庫kg"))}</td></tr>
+              {i === n - 1 && (
+                <tr className="zs-sum"><td colSpan={7} className="r">合計　　</td><td className="r">{num(計(g, "在庫ケース"))}</td><td className="r">{num(計(g, "在庫kg"))}</td></tr>
               )}
             </tbody>
           </table>
-          <div className="zs-page-no">{i + 1} / {頁.length} ページ</div>
+          <div className="zs-page-no">{i + 1} / {n} ページ</div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

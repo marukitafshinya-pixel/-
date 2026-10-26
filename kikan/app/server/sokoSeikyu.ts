@@ -207,7 +207,7 @@ export function sokoSeikyuRoutes(app: FastifyInstance) {
   });
 
   // 在庫証明書（R_在庫証明書）：在庫のロット（在庫ケースのあるもの）。Access の帳票の元は「名義 1261 の在庫」に決め打ちで、そこへ画面の倉庫・名義の絞り込みを
-  // 重ねていた（1261 は今は在庫が無く、白紙になる）。Web 版は、名義を選んだときはその名義、選ばないときは Access と同じ 1261 にする
+  // 重ねていた（1261 は今は在庫が無く、白紙になる）。Web 版は、名義を選んだときはその名義、選ばないとき（0）は全部の名義にする（名義・倉庫ごとに 1 通）
   app.get<{ Querystring: { soko?: string; meigi?: string } }>("/api/soko/seikyu/shomei", async (req) =>
     q(
       `SELECT z."在庫ID", z."倉庫ID", z."倉庫名", z."入庫日"::date::text AS "入庫日", z."入庫No", z."商品コード", z."商品名", z."入数", z."製造日"::date::text AS "製造日",
@@ -215,9 +215,9 @@ export function sokoSeikyuRoutes(app: FastifyInstance) {
               (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = z."入庫後名義ID" LIMIT 1) AS "名義正式名",
               (SELECT "得意先名" FROM ${得意先マスタ} m WHERE m."短縮コード" = z."倉庫ID" LIMIT 1) AS "倉庫正式名"
        FROM ${t("soko", "TD_在庫")} z
-       WHERE z."在庫ケース" <> 0 AND z."入庫後名義ID" = $1 AND ($2::int = 0 OR z."倉庫ID" = $2::int)
-       ORDER BY z."倉庫ID", z."入庫日", z."商品コード", z."入庫No"`,
-      [n(req.query.meigi) || 1261, n(req.query.soko)],
+       WHERE z."在庫ケース" <> 0 AND ($1::int = 0 OR z."入庫後名義ID" = $1::int) AND ($2::int = 0 OR z."倉庫ID" = $2::int)
+       ORDER BY z."入庫後名義ID", z."倉庫ID", z."入庫日", z."商品コード", z."入庫No"`,
+      [n(req.query.meigi), n(req.query.soko)],
     ),
   );
 
