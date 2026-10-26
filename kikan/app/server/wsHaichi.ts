@@ -108,4 +108,75 @@ export function wsHaichiRoutes(app: FastifyInstance) {
       return { ok: true };
     }),
   );
+
+  // ［自動］（Access は「テスト中」で動かない作り。2026/10/26 利用者の決め方で作った）。
+  // 一覧の残り（割付残数）を 1 枚＝パレット単位1 のパレットに分け、空いている枠に 1 枠 3 枚まで置く。
+  // 1 枚に満たない残り（端数。パレット単位の無い商品は残り全部）は T1・T2 へ（あふれたら手前の枠から）。満杯のパレットは同じ商品で枠をそろえる。満杯のパレットは、枚数の多いロットから（同じ枚数なら製造日の古い順）奥の枠
+  // （L7→L1、R5→R1、CL5→1、CR5→1）から埋める。書いてある枠はそのまま。入りきらないものは置かずに返す
+  app.post<{ Body: { date: string; 在庫: { 認識ID: string; 商品コード: number; 商品名: string; 製造日: string | null; タグ: string | null; 割付残数: number }[] } }>(
+    "/api/ws/haichi/auto",
+    async (req, reply) => {
+      const b = req.body;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date ?? "")) return reply.code(400).send({ error: "日付が正しくありません" });
+      return 一連で(async (c) => {
+        const r = await 行を用意(c, b.date);
+        type 枚 = { z: (typeof b.在庫)[number]; 数: number };
+        const ロット: { z: (typeof b.在庫)[number]; 満杯: 枚[]; 端数: 枚 | null }[] = [];
+        for (const z of b.在庫 ?? []) {
+          const 残 = n(z.割付残数);
+          if (残 <= 0) continue;
+          const 単位 = n((await c.query(`SELECT "パレット単位1" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [n(z.商品コード)])).rows[0]?.パレット単位1);
+          if (単位 === 0) ロット.push({ z, 満杯: [], 端数: { z, 数: 残 } }); // パレット単位が無い商品は残り全部を端数として 1 枚
+          else ロット.push({ z, 満杯: Array.from({ length: Math.floor(残 / 単位) }, () => ({ z, 数: 単位 })), 端数: 残 % 単位 ? { z, 数: 残 % 単位 } : null });
+        }
+        ロット.sort((x, y) => y.満杯.length - x.満杯.length || String(x.z.製造日 ?? "").localeCompare(String(y.z.製造日 ?? "")) || n(x.z.商品コード) - n(y.z.商品コード) || String(x.z.タグ ?? "").localeCompare(String(y.z.タグ ?? "")));
+        const 奥から = [
+          ...[7, 6, 5, 4, 3, 2, 1].flatMap((i) => [1, 2, 3].map((j) => `L${i}-${j}`)),
+          ...[5, 4, 3, 2, 1].map((i) => `R${i}-1`),
+          ...[5, 4, 3, 2, 1].map((i) => `CL-${i}`),
+          ...[5, 4, 3, 2, 1].map((i) => `CR-${i}`),
+        ];
+        const 空き = (k: string) => !String(r[k] ?? "").trim();
+        const 中身 = new Map<string, 枚[]>();
+        // 混ぜない＝満杯のパレットは、ほかの商品が入っている枠には入れない（空き枠が足りないときだけ混ぜる）
+        const 入れる = (枠たち: string[], p: 枚, 混ぜない = false) => {
+          for (const k of 枠たち) {
+            if (!空き(k)) continue;
+            const x = 中身.get(k) ?? [];
+            if (x.length >= 3) continue;
+            if (混ぜない && x.length && x.some((y) => n(y.z.商品コード) !== n(p.z.商品コード))) continue;
+            x.push(p);
+            中身.set(k, x);
+            return true;
+          }
+          return false;
+        };
+        const 置けない: 枚[] = [];
+        const 後で: 枚[] = [];
+        for (const l of ロット) for (const p of l.満杯) if (!入れる(奥から, p, true)) 後で.push(p);
+        for (const p of 後で) if (!入れる(奥から, p)) 置けない.push(p);
+        for (const l of [...ロット].sort((x, y) => String(x.z.製造日 ?? "").localeCompare(String(y.z.製造日 ?? ""))))
+          if (l.端数 && !入れる(["T1", "T2", ...[...奥から].reverse()], l.端数)) 置けない.push(l.端数);
+        // 枠に書く（手で置くときと同じ形：同じロットが続くときは商品名を書かない）
+        const 置いた = new Map<string, number>();
+        for (const [k, x] of 中身) {
+          let 文字 = "";
+          let 前 = "";
+          for (const p of x) {
+            const 日 = p.z.製造日 ? p.z.製造日.slice(-5) : "";
+            文字 += (文字 ? "\r\n" : "") + (前 === String(p.z.認識ID) ? "" : `${p.z.商品名 ?? ""}\r\n`) + `${日} ${p.z.タグ ?? ""} ${p.数}個`;
+            前 = String(p.z.認識ID);
+            置いた.set(前, (置いた.get(前) ?? 0) + p.数);
+          }
+          await c.query(`UPDATE ${配置図} SET "${k}" = $2, "${k}在庫ID" = $3 WHERE "ID" = $1`, [r.ID, 文字, 前]);
+        }
+        return {
+          枠数: 中身.size,
+          枚数: [...中身.values()].reduce((a, x) => a + x.length, 0),
+          置いた: Object.fromEntries(置いた),
+          置けない: 置けない.map((p) => ({ 商品名: p.z.商品名, 製造日: p.z.製造日, 数: p.数 })),
+        };
+      });
+    },
+  );
 }

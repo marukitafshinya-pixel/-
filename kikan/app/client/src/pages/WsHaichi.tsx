@@ -84,6 +84,26 @@ export default function WsHaichi() {
       エラー(e);
     }
   }
+  // ［自動］：一覧の残りを、空いている枠に置く（1 枠 3 枚まで。満杯のパレットは枚数の多いロットから奥の枠へ、端数は T1・T2 へ）
+  async function 自動() {
+    const 残 = 在庫.filter((z) => z.割付残数 > 0);
+    if (!残.length) return alert("置く在庫がありません。");
+    if (!confirm("一覧の残りを、空いている枠に自動で置きます。よろしいですか？\n（書いてある枠はそのままです）")) return;
+    try {
+      const r = await api.post<{ 枠数: number; 枚数: number; 置いた: Record<string, number>; 置けない: Rec[] }>("/api/ws/haichi/auto", {
+        date: 日, 在庫: 残.map((z) => ({ 認識ID: z.認識ID, 商品コード: z.商品コード, 商品名: z.商品名, 製造日: z.製造日, タグ: z.タグ, 割付残数: z.割付残数 })),
+      });
+      const g = await api.get<{ 配置: Rec | null }>("/api/ws/haichi", { date: 日 });
+      set配置(g.配置 ?? {});
+      set在庫((x) => x.map((y) => ({ ...y, 割付残数: y.割付残数 - (r.置いた[y.認識ID] ?? 0) })));
+      alert(
+        `${r.枠数} 枠に ${r.枚数} 枚置きました。` +
+          (r.置けない.length ? `\n\n空いている枠が足りず、置けなかったもの：\n${r.置けない.map((p) => `${p.商品名} ${p.製造日 ?? ""} ${p.数}個`).join("\n")}` : ""),
+      );
+    } catch (e) {
+      エラー(e);
+    }
+  }
   const 一覧 = 在庫.filter((z) => z.割付残数 !== 0);
 
   return (
@@ -100,6 +120,7 @@ export default function WsHaichi() {
         </div>
         <div className="kn-btns">
           <button onClick={() => window.print()}>印刷</button>
+          <button onClick={自動}>自動</button>
           <button onClick={リセット}>リセット</button>
           <button onClick={() => nav(-1)}>閉じる</button>
         </div>
