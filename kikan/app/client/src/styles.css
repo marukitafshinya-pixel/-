@@ -1906,7 +1906,7 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hs-grid tr.hs-subtotal td { border-left: none; border-right: none; border-bottom: none; border-top: 2px solid #000; }
 
 /* パレット在庫集計（予定在庫・パレット表示の［印刷］。Access の R_在庫表(パレット表示) の見本に合わせる） */
-.pz-print { font-family: "MS Gothic", "Noto Sans JP", sans-serif; color: #000; width: 182mm; min-height: 270mm; position: relative; padding-top: 2mm; }
+.pz-print { font-family: "MS Gothic", "Noto Sans JP", sans-serif; color: #000; width: 182mm; min-height: 255mm; position: relative; padding-top: 2mm; }
 .pz-title { text-align: center; font-size: 14px; margin: 2mm 0 8mm; }
 .pz-soko { font-size: 17px; font-weight: bold; margin: 0 0 2mm 2mm; }
 .pz-block { position: relative; padding: 2mm 0 10mm; }
@@ -2277,3 +2277,19 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hl-t td.b { font-weight: bold; font-size: 14px; }
 .hl-t td.big { font-size: 15px; }
 .hl-t td.small { font-size: 9px; }
+/* パレット在庫集計の 2 枚目（商品ごとのパレット数と在庫数） */
+.pz-page2 { break-before: page; page-break-before: always; }
+.pz-two { display: grid; grid-template-columns: 1.55fr 1fr; gap: 6mm; margin-top: 14mm; }
+.pz-cap { text-align: center; font-size: 15px; margin-bottom: 2mm; }
+.pz-list { border-collapse: collapse; width: 100%; font-size: 11px; }
+.pz-list th { border: 1px solid #000; font-weight: normal; padding: 1px 3px; }
+.pz-list td { border: 1px solid #000; padding: 1px 4px; }
+.pz-list td.r { text-align: right; }
+.pz-list td.c { text-align: center; font-weight: bold; }
+.pz-list tr.tot td { font-weight: bold; }
+/* パレット在庫集計は A4 縦（ほかの帳票の @page 横に引っぱられないよう名前付きのページにする） */
+.pz-print { page: pz; }
+@page pz { size: A4 portrait; margin: 8mm; }
+@media print { .sz.sko:has(.pz-print) { background: #fff; } }
+.pz-list td { height: 5.2mm; white-space: nowrap; }
+.pz-list td.nm { max-width: 62mm; overflow: hidden; text-overflow: clip; font-size: 10px; }

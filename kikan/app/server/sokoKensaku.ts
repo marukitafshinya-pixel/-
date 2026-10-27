@@ -172,7 +172,30 @@ export function sokoKensakuRoutes(app: FastifyInstance) {
     const 残今日 = 現在 - 今日の空き;
     const 入1 = 入(今日, 週), 空1 = 空き(今日, 週);
     const 入2 = 入(今日, 月), 空2 = 空き(今日, 月);
+    // 2 枚目：商品ごとのパレット数と在庫数（CC_KakuZaikoSum の 9〈今日から 30 日後まで〉→ C_ニチレイパレット積載確認）。
+    // ロットごとに 元数＝繰越ケース÷積載数、残数＝在庫ケース÷積載数（どちらも繰り上げ）、出庫数＝元数−残数。kg は 繰越kg・出荷kg・在庫kg
+    const c = await pool.connect();
+    let lots: Rec[] = [];
+    try {
+      lots = await 倉庫の在庫見込み(c, 0, soko, 月);
+    } finally {
+      c.release();
+    }
+    const 商品 = new Map<number, Rec>();
+    for (const l of lots) {
+      const 元 = 枚数(l.商品コード, n(l.繰越ケース));
+      const 残 = 枚数(l.商品コード, n(l.在庫ケース));
+      const x = 商品.get(n(l.商品コード)) ?? { 商品コード: n(l.商品コード), 商品名: l.商品名, 元数: 0, 出庫数: 0, 残数: 0, 元kg: 0, 出荷kg: 0, 残kg: 0 };
+      x.元数 += 元;
+      x.出庫数 += 元 - 残;
+      x.残数 += 残;
+      x.元kg += n(l.繰越kg);
+      x.出荷kg += n(l.出荷kg);
+      x.残kg += n(l.在庫kg);
+      商品.set(n(l.商品コード), x);
+    }
     return {
+      商品別: [...商品.values()].filter((x) => x.元数 || x.元kg).sort((a, b) => a.商品コード - b.商品コード),
       倉庫名: k.得意先名 ?? "", 許容: n(k.パレット積載許容数), 今日, 週, 月,
       今: { 現在, 空き: 今日の空き, 残: 残今日 },
       週後: { 入庫: 入1, 空き: 空1, 残: 残今日 + 入1 - 空1 },

@@ -486,7 +486,10 @@ export function SokoYotei() {
   };
   const 年月日J = (v: unknown) => (v ? `${String(v).slice(2, 4)}年${String(v).slice(5, 7)}月${String(v).slice(8, 10)}日` : "");
   const 年月日2 = (v: unknown) => (v ? `${String(v).slice(2, 4)}/${String(v).slice(5, 7)}/${String(v).slice(8, 10)}` : "");
-  const 過剰 = (残: number, 許容: number) => (残 - 許容 >= 0 ? `+${num(残 - 許容)}` : num(残 - 許容));
+  // 過剰枚数は許容を超えたときだけ出す（2026/10/27 の見本〈大宮〉では超えていないので空）
+  const 過剰 = (残: number, 許容: number) => (残 - 許容 > 0 ? `+${num(残 - 許容)}` : "");
+  // 2 段目の許容は 1.25 倍（見本：460 → 575）
+  const 許容2 = (v: number) => Math.round(v * 1.25);
   const 枠 = (題: string | null, 左: string, x: Rec) => (
     <div className="pz-block">
       {題 && <div className="pz-when">{題}</div>}
@@ -494,7 +497,7 @@ export function SokoYotei() {
         <thead><tr><th>最大許容枚数</th><th>過剰枚数</th></tr></thead>
         <tbody>
           <tr><td>{num(印刷!.許容)}</td><td>{過剰(x.残, 印刷!.許容)}</td></tr>
-          <tr><td>{num(印刷!.許容 + 50)}</td><td>{過剰(x.残, 印刷!.許容 + 50)}</td></tr>
+          <tr><td>{num(許容2(印刷!.許容))}</td><td>{過剰(x.残, 許容2(印刷!.許容))}</td></tr>
         </tbody>
       </table>
       <table className="pz-t pz-now">
@@ -515,6 +518,36 @@ export function SokoYotei() {
           {枠("1週間後", "入庫枚数", 印刷.週後)}
           <hr />
           {枠("1か月後", "入庫枚数", 印刷.月後)}
+          <div className="zd-from">
+            <div className="zd-co">{印刷.差出人.社名} {印刷.差出人.店舗}</div>
+            <div>{印刷.差出人.住所}</div>
+            <div>TEL:{印刷.差出人.TEL}　　FAX:{印刷.差出人.FAX}</div>
+          </div>
+        </div>
+      )}
+      {印刷 && 印刷.商品別?.length > 0 && (
+        <div className="print-only pz-print pz-page2">
+          <div className="zd-time">{印刷.日時}</div>
+          <div className="pz-title">パレット在庫集計</div>
+          <div className="pz-two">
+            {(["パレット数", "在庫数"] as const).map((題) => {
+              const ks = 題 === "パレット数" ? ["元数", "出庫数", "残数"] : ["元kg", "出荷kg", "残kg"];
+              return (
+                <div key={題}>
+                  <div className="pz-cap">{題}</div>
+                  <table className="pz-list">
+                    <thead><tr>{題 === "パレット数" && <th>商品名</th>}<th>元数</th><th>出庫数</th><th>残数</th></tr></thead>
+                    <tbody>
+                      {印刷.商品別.map((r: Rec, i: number) => (
+                        <tr key={i}>{題 === "パレット数" && <td className="nm">{r.商品名}</td>}{ks.map((k) => <td key={k} className="r">{num(Math.round(r[k]))}</td>)}</tr>
+                      ))}
+                      <tr className="tot">{題 === "パレット数" && <td className="c">合計</td>}{ks.map((k) => <td key={k} className="r">{num(Math.round(印刷.商品別.reduce((a: number, r: Rec) => a + Number(r[k] ?? 0), 0)))}</td>)}</tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
           <div className="zd-from">
             <div className="zd-co">{印刷.差出人.社名} {印刷.差出人.店舗}</div>
             <div>{印刷.差出人.住所}</div>
