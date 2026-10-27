@@ -209,7 +209,7 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
       <div className="no-print hs-bar">
         <button className="navy" onClick={() => window.print()}>印刷する</button>
         <button onClick={props.onClose}>戻る</button>
-        <span className="small">減額分は内容を確かめてから入れます（いまは 0）。</span>
+        <span className="small">減額分は 振替（入出庫料訂正・保管料訂正）とサービス料です。</span>
       </div>
       {ページ.map((p, i) => {
         const 組の行 = p.組;
@@ -232,7 +232,10 @@ function HokanSeikyuPrint(props: { rows: Rec[]; 開始: string; 終了: string; 
         );
         const 税 = (区分: number) => {
           const rs = 組の行.filter((r) => Number(r.税区分 ?? 0) === 区分);
-          const a = 計(rs, "当月入出庫料"), b = 計(rs, "当月保管料"), c = 計(rs, "諸経費"), dd = 0;
+          // 減額分＝振替（入出庫料訂正・保管料訂正。諸経費登録で入れる）とサービス料（2026/10/27 利用者）。
+          // 入出庫料・保管料は差し引く前の額にし、減額分で引く（計は明細の計と同じ）
+          const dd = 計(rs, "当月入出庫料補正") + 計(rs, "当月保管料補正") - 計(rs, "サービス料");
+          const a = 計(rs, "当月入出庫料") - 計(rs, "当月入出庫料補正"), b = 計(rs, "当月保管料") - 計(rs, "当月保管料補正") + 計(rs, "サービス料"), c = 計(rs, "諸経費");
           return [a, b, c, dd, a + b + c + dd];
         };
         const 課税 = 税(0), 非課税 = 税(1);
