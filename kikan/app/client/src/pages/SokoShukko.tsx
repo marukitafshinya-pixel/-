@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
 import { Field, today } from "../formParts";
 import { ZaikoSentaku } from "./WsZaikoSelect";
+import { 出庫の印刷, ニチレイ便 } from "./SokoChohyo";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -34,6 +35,7 @@ export function SokoShukko() {
   const [不足, set不足] = useState<Rec[] | null>(null);
   const [検索商品, set検索商品] = useState<string>("");
   const [検索倉庫, set検索倉庫] = useState<string>("");
+  const [印刷, set印刷] = useState<{ 種類: "出庫" | "輸送" | "送品" | "一括"; 名前: string; 出庫?: Rec | null; 配送?: Rec | null; 送品?: Rec | null } | null>(null);
   const [希望, set希望] = useState<{ mode: "zaiko" | "soko"; rows: Rec[]; 選べる: boolean; 商品: number; 倉庫: number } | null>(null);
 
   useEffect(() => {
@@ -251,6 +253,27 @@ export function SokoShukko() {
   );
   const 合計 = (data?.rows ?? []).reduce((a, r) => ({ ケース: a.ケース + Number(r.ケース ?? 0), kg: a.kg + Number(r.商品kg ?? 0) }), { ケース: 0, kg: 0 });
 
+  // 印刷（Access の cmd_出庫依頼書・cmd_通常輸送依頼書・cmd_送品案内書印刷・cmd_小口帳票一括印刷）。
+  // 輸送依頼書は、ニチレイの運送（130・135・160）は配送依頼書。ほか（ランテックは WEB 入力）は使っていないので作っていない
+  async function 印刷する(種類: "出庫" | "輸送" | "送品" | "一括") {
+    if (!id) return;
+    const ニチレイ = ニチレイ便.includes(Number(data?.便.運送会社ID));
+    if (種類 === "輸送" && !ニチレイ) return alert("輸送依頼書は、ニチレイの運送（配送依頼書）のときだけ出します。ランテックは WEB で入力してください。");
+    try {
+      const 読む = (k: string) => api.get<Rec>(`/api/soko/chohyo/${k}`, { id: String(id) });
+      const 名前 = { 出庫: "出庫依頼書", 輸送: "配送依頼書", 送品: "送品案内書", 一括: "小口帳票一括印刷" }[種類];
+      set印刷({
+        種類, 名前,
+        出庫: 種類 === "出庫" || 種類 === "一括" ? await 読む("shukko-irai") : null,
+        配送: (種類 === "輸送" || 種類 === "一括") && ニチレイ ? await 読む("haiso") : null,
+        送品: 種類 === "送品" || 種類 === "一括" ? await 読む("sohin") : null,
+      });
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  if (印刷) return <出庫の印刷 {...印刷} onClose={() => set印刷(null)} onReload={() => 印刷する(印刷.種類)} />;
+
   return (
     <div className="sko">
       <div className="sko-top">
@@ -333,10 +356,10 @@ export function SokoShukko() {
                   <label className="sko-f"><span>倉庫</span><Field value={検索倉庫} kind="num" className="sko-code" kyotsu="tokui" onCommit={set検索倉庫} /></label>
                   <button onClick={() => 在庫を見る("zaiko")} title="出庫場所（または倉庫）の在庫を見て、選んだものを明細に入れます">検索</button>
                   <button onClick={() => 在庫を見る("soko")} title="商品の在庫を冷蔵庫ごとに見ます">倉庫表示</button>
-                  <button disabled title="準備中">出庫依頼書</button>
-                  <button disabled title="準備中">輸送依頼書</button>
-                  <button disabled title="準備中">送品案内書</button>
-                  <button disabled title="準備中">印刷</button>
+                  <button disabled={!id} onClick={() => 印刷する("出庫")} title="冷蔵庫あての出庫依頼書">出庫依頼書</button>
+                  <button disabled={!id} onClick={() => 印刷する("輸送")} title="ニチレイの運送あての配送依頼書（ランテックは WEB 入力）">輸送依頼書</button>
+                  <button disabled={!id} onClick={() => 印刷する("送品")} title="届け先あての送品案内書">送品案内書</button>
+                  <button disabled={!id} onClick={() => 印刷する("一括")} title="輸送依頼書・送品案内書・出庫依頼書をまとめて（小口帳票一括印刷）">印刷</button>
                 </div>
               </div>
               <div className="sko-gridwrap">

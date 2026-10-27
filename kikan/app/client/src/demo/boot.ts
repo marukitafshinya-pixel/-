@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoHokan, sokoKeihi, sokoKensaku, sokoChinritsu, sokoSeikyu, sokoFuitchi, webRenkei, webMq, webLantec, webElixxi, webElixxiNyuko, webElixxiShukko, webHanmoriRpa, master, sakujo] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoChohyo, sokoHokan, sokoKeihi, sokoKensaku, sokoChinritsu, sokoSeikyu, sokoFuitchi, webRenkei, webMq, webLantec, webElixxi, webElixxiNyuko, webElixxiShukko, webHanmoriRpa, master, sakujo] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -81,6 +81,7 @@ async function main() {
     import("../../../server/sokoShukko"),
     import("../../../server/sokoJuchu"),
     import("../../../server/sokoMeihen"),
+    import("../../../server/sokoChohyo"),
     import("../../../server/sokoHokan"),
     import("../../../server/sokoKeihi"),
     import("../../../server/sokoKensaku"),
@@ -132,6 +133,7 @@ async function main() {
   sokoShukko.sokoShukkoRoutes(fakeApp);
   sokoJuchu.sokoJuchuRoutes(fakeApp);
   sokoMeihen.sokoMeihenRoutes(fakeApp);
+  sokoChohyo.sokoChohyoRoutes(fakeApp);
   sokoHokan.sokoHokanRoutes(fakeApp);
   sokoKeihi.sokoKeihiRoutes(fakeApp);
   sokoKensaku.sokoKensakuRoutes(fakeApp);

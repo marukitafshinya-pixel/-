@@ -133,7 +133,7 @@ function 入庫依頼書(props: { p: Rec; 枚: number; 全: number }) {
 }
 
 /** 送品案内書・送品受領書（R_送品案内書_冷蔵庫／ユーザー／無地） */
-function 送品案内書(props: { p: Rec }) {
+export function 送品案内書(props: { p: Rec }) {
   const p = props.p;
   const 差 = p.差出人;
   // 同じ商品の続きでは、相手先の商品コードの行を出さない
@@ -141,6 +141,7 @@ function 送品案内書(props: { p: Rec }) {
   return (
     <div className="pv-page sh">
       <div className="sh-head">
+        {p.No && <div className="sh-no">No.{p.No}</div>}
         <div className="sh-title">{[...String(p.表題).replace("（控）", "")].join(" ")}{String(p.表題).includes("（控）") ? "（控）" : ""}</div>
         <div className="sh-time">{p.印刷日時}</div>
       </div>
