@@ -97,8 +97,10 @@ export function hacchuRoutes(app: FastifyInstance) {
   });
 
   // 発注依頼書に載せる受注（R_発注依頼）。受注ID を指定したとき（受注検索の「印刷」）はその受注、ほかは条件にすべて合う受注
-  app.get<{ Querystring: Record<string, string> }>("/api/hacchu/report", async (req) => {
+  app.get<{ Querystring: Record<string, string> }>("/api/hacchu/report", async (req, reply) => {
     const p = req.query;
+    // 条件なしで開いたとき（発注依頼の画面を通らずに開いたとき）は、分かる言葉で返す
+    if (!p.jid && !(p.納品日 && p.届け先コード && p.商品コード)) return reply.code(400).send({ error: "発注依頼の画面から開いてください（条件がありません）。" });
     let where: string[];
     let args: unknown[];
     if (p.jid) {
