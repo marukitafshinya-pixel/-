@@ -234,6 +234,83 @@ async function 配送依頼書(c: PoolClient, 輸送ID: number) {
   return { 便: { 輸送ID, 運送会社ID: p.運送会社ID }, 設定, pages };
 }
 
+// ---------------- 出荷関連報告書（FSD_出荷帳票印刷。2026/10/27 利用者：この 2 つで良い） ----------------
+const 冷凍区分 = t("soko_fe", "TM_冷凍区分");
+
+/**
+ * 出荷明細票（R_出荷予定明細票、A4 横）。出荷日の範囲の便の出荷を、便（運送会社・車番）ごとに 1 枚。倉庫を選べばその倉庫（出荷元）だけ。
+ * 行は 積順・出荷元・届け先コード・入庫先（得意先名）・商品コード・品名・規格・ケース・kg・日付ﾛｯﾄ（賞味期限）・着日（納品日）・社内連絡・備考。
+ */
+async function 出荷明細票(c: PoolClient, 開始: string, 終了: string, 倉庫: number) {
+  const rows = (
+    await c.query(
+      `SELECT s.*, s."出荷日"::date::text AS "出荷日", s."納品日"::date::text AS "納品日", s."賞味期限"::date::text AS "賞味期限",
+              p."運送会社ID", p."運送会社名", p."車番", m."得意先名" AS "入庫先", w."短縮名" AS "出荷元"
+       FROM ${輸送計画} p JOIN ${出荷} s ON s."輸送ID" = p."輸送ID"
+       LEFT JOIN ${得意先マスタ} m ON m."短縮コード" = s."届け先コード" LEFT JOIN ${得意先マスタ} w ON w."短縮コード" = s."倉庫ID"
+       WHERE s."輸送ID" <> 0 AND s."出荷日" BETWEEN $1::date AND $2::date AND ($3::int = 0 OR s."倉庫ID" = $3::int)
+       ORDER BY s."出荷日", p."運送会社ID", s."輸送ID", s."納品日", s."倉庫ID", s."商品積込順", s."出庫ID"`,
+      [開始, 終了, 倉庫],
+    )
+  ).rows as Rec[];
+  const 組 = new Map<string, Rec[]>();
+  for (const r of rows) {
+    const k = `${r.出荷日}|${r.輸送ID}`;
+    if (!組.has(k)) 組.set(k, []);
+    組.get(k)!.push(r);
+  }
+  const 名義 = (await 得意先(c, 11)).得意先名 ?? "";
+  return {
+    印刷日時: 日本の今().日時, 名義,
+    便: [...組.values()].map((g) => ({
+      出荷日: g[0].出荷日, 運送会社名: g[0].運送会社名 ?? "", 車番: g[0].車番 ?? "", kg: g.reduce((a, r) => a + Number(r.商品kg ?? 0), 0),
+      行: g.map((r) => ({
+        積順: r.商品積込順, 出荷元: r.出荷元 ?? r.倉庫名, コード: r.届け先コード, 入庫先: r.入庫先 ?? r.届け先, 商品コード: r.商品コード, 品名: r.商品名, 規格: r.規格,
+        ケース: n(r.ケース), kg: Number(r.商品kg ?? 0), 日付ロット: r.賞味期限, 着日: r.納品日, 社内連絡: r.社内連絡 ?? "", 備考: r.備考 ?? "",
+      })),
+    })),
+  };
+}
+
+/** 日洋の届け先（R_日洋専用出荷通知書 のもとのクエリ） */
+const 日洋の届け先 = [273, 297, 1230, 3218, 3220];
+/**
+ * 日洋 出荷通知書（R_日洋専用出荷通知書、A4 縦）。出荷日の範囲の、日洋の届け先への出荷を 輸送ID・届け先・名義・納品日 ごとに 1 枚。
+ * 宛先は取引元の名前「御中」、差出人は丸北（住所・TEL・FAX）。行は 商品コード（本社コード）・製品名・区分・規格・ケース・kg・賞味期限・発注No。
+ */
+async function 日洋出荷通知書(c: PoolClient, 開始: string, 終了: string, 担当者: string, 備考: string) {
+  const 列 = [`s."輸送ID"`, `s."届け先コード"`, `s."入庫後名義ID"`, `s."納品日"`, `s."出荷日"`, `s."商品コード"`, `s."商品名"`, `s."規格"`, `s."賞味期限"`, `s."タグ"`, `s."ユーザー伝票No"`, `s."取引元ID"`, `s."商品積込順"`];
+  const rows = (
+    await c.query(
+      `SELECT ${列.join(", ")}, MAX(p."運送会社名") AS "運送会社名", MAX(p."車番") AS "車番", MAX(p."冷凍区分ID") AS "冷凍区分ID", MAX(m."本社コード") AS "本社コード",
+              SUM(s."ケース") AS "ケース", SUM(s."商品kg") AS "商品kg"
+       FROM ${出荷} s JOIN ${輸送計画} p ON p."輸送ID" = s."輸送ID" LEFT JOIN ${商品マスタ} m ON m."商品コード" = s."商品コード"
+       WHERE s."出荷日" BETWEEN $1::date AND $2::date AND s."届け先コード" = ANY($3::int[])
+       GROUP BY ${列.join(", ")} HAVING SUM(s."ケース") <> 0
+       ORDER BY s."輸送ID", s."届け先コード", s."納品日", s."商品積込順", s."商品コード"`,
+      [開始, 終了, 日洋の届け先],
+    )
+  ).rows as Rec[];
+  const 差 = Object.fromEntries((await c.query(`SELECT * FROM ${差出人の表}`)).rows.map((r: Rec) => [r.区分, r])) as Record<string, Rec>;
+  const 組 = new Map<string, Rec[]>();
+  for (const r of rows) {
+    const k = `${r.輸送ID}|${r.届け先コード}|${r.入庫後名義ID}|${日付(r.納品日)}`;
+    if (!組.has(k)) 組.set(k, []);
+    組.get(k)!.push(r);
+  }
+  const 区分名 = new Map((await c.query(`SELECT "冷凍ID", "コメント" FROM ${冷凍区分}`)).rows.map((r: Rec) => [n(r.冷凍ID), String(r.コメント ?? "").replace(/輸送$/, "")]));
+  const out: Rec[] = [];
+  for (const g of 組.values()) {
+    out.push({
+      印刷日時: 日本の今().日時, 宛先: (await 得意先(c, g[0].取引元ID)).得意先名 ?? "", 担当者: 担当者 ? `${担当者} 様` : "", 備考: 備考 ? `備考：${備考}` : "",
+      届け先: (await 得意先(c, g[0].届け先コード)).得意先名 ?? "", 入庫日: 日付(g[0].納品日), 発送日: 日付(g[0].出荷日), 運送会社名: g[0].運送会社名 ?? "", 車番: g[0].車番 ?? "",
+      区分: 区分名.get(n(g[0].冷凍区分ID)) ?? "", 差出人: 差["丸北"] ?? {}, 本社: 差["丸北北海道"] ?? {},
+      行: g.map((r) => ({ 商品コード: r.本社コード || r.商品コード, 製品名: r.商品名, 区分: r.タグ ?? "", 規格: r.規格, ケース: n(r.ケース), kg: Number(r.商品kg ?? 0), 賞味期限: 日付(r.賞味期限), 発注No: r.ユーザー伝票No ?? "" })),
+    });
+  }
+  return { 枚: out };
+}
+
 export function sokoChohyoRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
   const 便の番号 = (v: unknown) => n(v);
@@ -246,6 +323,15 @@ export function sokoChohyoRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { id: string } }>("/api/soko/chohyo/haiso", async (req, reply) =>
     一連で(async (c) => (await 配送依頼書(c, 便の番号(req.query.id))) ?? reply.code(404).send({ error: "この便はありません" })),
   );
+  const 日付か = (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
+  app.get<{ Querystring: { from: string; to: string; soko?: string } }>("/api/soko/chohyo/meisai", async (req, reply) => {
+    if (!日付か(req.query.from) || !日付か(req.query.to)) return reply.code(400).send({ error: "出荷日を入れてください" });
+    return 一連で((c) => 出荷明細票(c, req.query.from, req.query.to, n(req.query.soko)));
+  });
+  app.get<{ Querystring: { from: string; to: string; tanto?: string; biko?: string } }>("/api/soko/chohyo/nichiyo", async (req, reply) => {
+    if (!日付か(req.query.from) || !日付か(req.query.to)) return reply.code(400).send({ error: "出荷日を入れてください" });
+    return 一連で((c) => 日洋出荷通知書(c, req.query.from, req.query.to, String(req.query.tanto ?? ""), String(req.query.biko ?? "")));
+  });
   // 配送依頼書の決まった文字を直す（運送会社ごと）
   app.post<{ Body: { 運送会社ID: number; 設定: 配送設定 } }>("/api/soko/chohyo/haiso-settei", async (req, reply) => {
     const id = n(req.body.運送会社ID);

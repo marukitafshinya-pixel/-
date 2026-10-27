@@ -27,7 +27,7 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
       { label: "出庫入力", to: "/soko/shukko", 説明: "出庫登録画面です。" },
       { label: "出庫参照", to: "/soko/shukko", 説明: "出庫の明細を見る画面です。（出庫入力と同じ画面）" },
       { label: "出庫抽出帳票", to: "/soko/shukkachu", 説明: "抽出した条件で出庫の明細を印刷表示できます。" },
-      { label: "出荷関連報告書", 説明: "出庫に関する印刷選択画面です。" },
+      { label: "出荷関連報告書", to: "/soko/houkoku", 説明: "出庫に関する印刷選択画面です（出荷明細票・日洋 出荷通知書）。" },
       { label: "出庫リスト表示", to: "/soko/shukko-list", 説明: "ニチレイ用　出庫リスト表示" },
     ],
   },

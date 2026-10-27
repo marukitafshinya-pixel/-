@@ -60,6 +60,7 @@ import WsShukkaChu from "./pages/WsShukkaChu";
 import WsYusoChu from "./pages/WsYusoChu";
 import { MasterMenu, ShohinForm, ShohinList, TokuiForm, TokuiList, UnsoForm, UnsoList, UserList, CalendarPage, MisetteiList, SakujoPage } from "./pages/Master";
 import { HousouChohyo } from "./pages/HousouChohyo";
+import { SokoHoukoku } from "./pages/SokoChohyo";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -179,6 +180,7 @@ function App() {
       <Route path="/ws/zaikohyo" element={<WsZaikoHyo />} />
       <Route path="/ws/hokan" element={<WsHokan />} />
       <Route path="/housou/chohyo" element={<HousouChohyo />} />
+      <Route path="/soko/houkoku" element={<SokoHoukoku />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
