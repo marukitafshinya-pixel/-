@@ -2082,3 +2082,198 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hd-settei input { flex: 1; }
 .sh-head { position: relative; }
 .sh-no { position: absolute; left: 0; top: 0; font-size: 10px; }
+
+/* ===== 包装場の帳票（HousouChohyo.tsx） ===== */
+.hz-bar { flex-wrap: wrap; }
+.hz-bar .grp { margin: 0 2px 0 10px; font-size: 12px; color: #ffd; }
+.hz-bar button.on { background: #ffd966; }
+.hz-bar .sp { flex: 1; }
+.hz-yotei, .hz-bun, .hz-nisshi { font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; }
+.hz-kakunin { border-collapse: collapse; }
+.hz-kakunin th { border: 1px solid #000; font-size: 10px; font-weight: normal; padding: 0 6px; }
+.hz-kakunin td { border: 1px solid #000; height: 9mm; }
+/* 包装予定表 A4 縦 */
+.hz-yotei { padding: 8mm 10mm; }
+.hy-head { display: flex; justify-content: center; position: relative; margin-bottom: 2mm; }
+.hy-head .t { font-size: 20px; font-weight: bold; font-style: italic; letter-spacing: 2px; }
+.hy-head .dt { position: absolute; right: 18mm; top: 2px; font-size: 13px; }
+.hy-t { width: 100%; border-collapse: collapse; font-size: 11px; }
+.hy-t th { border-top: 1px solid #000; border-bottom: 1px solid #000; border-left: 1px solid #000; font-weight: normal; padding: 1px; }
+.hy-t th:first-child { border-left: none; }
+.hy-t tbody.day { border-top: 2px solid #000; border-bottom: 1px solid #000; }
+.hy-t td { border-left: 1px dashed #999; border-bottom: 1px dashed #bbb; padding: 0 3px; height: 6mm; vertical-align: middle; }
+.hy-t td.left { border-left: none; border-right: 1px solid #000; vertical-align: top; position: relative; }
+.hy-t td.left .date { font-size: 12px; }
+.hy-t td.left .pan { text-align: right; font-size: 8px; }
+.hy-t td.left .shukkin { color: #d00; font-weight: bold; font-size: 10px; }
+.hy-t td.left .shukkin2 { font-size: 9px; padding-left: 8mm; }
+.hy-t td.name { font-size: 11px; }
+.hy-t td.c { text-align: center; font-size: 10px; }
+.hy-t td.r { text-align: right; }
+.hy-t td.it { font-style: italic; }
+.hy-t td.red { color: #d00; }
+.hy-t td.biko { font-size: 11px; }
+.hy-t tr.sum td { border-bottom: none; height: 5mm; }
+.hy-t tr.sum td.left span { font-size: 9px; margin-right: 6mm; }
+.hy-t tr.sum td.total { font-weight: bold; color: #d00; text-decoration: underline; text-align: center; }
+/* 製造分割予定表 A4 縦 */
+.hz-bun { padding: 8mm 10mm; }
+.hb-head { display: flex; justify-content: center; position: relative; margin-bottom: 3mm; }
+.hb-head .t { font-size: 20px; font-weight: bold; font-style: italic; }
+.hb-head .dt { position: absolute; right: 0; top: 4px; font-size: 10px; }
+.hb-block { margin-bottom: 5mm; break-inside: avoid; }
+.hb-top { display: grid; grid-template-columns: 1fr 37mm 14mm; align-items: start; }
+.hb-l .hin { font-size: 15px; font-weight: bold; }
+.hb-l .hin span { margin-right: 6mm; }
+.hb-l .sub { font-size: 12px; font-weight: bold; display: flex; gap: 6mm; margin-top: 1mm; }
+.hb-l .sub .colon { margin-left: 6mm; }
+.hb-l .sub .kojo { margin-left: 8mm; }
+.hb-l .sub .mai { margin-left: 10mm; }
+.hb-l .kg { font-size: 10px; padding-left: 20mm; }
+.hb-plan { border-collapse: collapse; font-size: 10px; }
+.hb-plan th { border: 1px solid #000; font-weight: normal; text-align: left; padding: 0 3px; white-space: nowrap; }
+.hb-plan td { border: 1px solid #000; width: 13mm; text-align: right; padding: 0 3px; }
+.hb-top .dan { font-size: 12px; font-weight: bold; padding: 4mm 0 0 4mm; }
+.hb-tables { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3mm; }
+.hb-t { border-collapse: collapse; width: 100%; font-size: 10px; }
+.hb-t th { border: 1px dashed #000; font-weight: normal; padding: 0 2px; }
+.hb-t td { border: 1px dashed #000; height: 8mm; vertical-align: top; }
+.hb-t td.kubun { font-size: 16px; text-align: center; vertical-align: middle; width: 8mm; }
+.hb-t td.kibo { font-size: 10px; }
+/* 包装日誌 A4 縦 */
+.hz-nisshi { padding: 6mm 9mm; font-size: 11px; }
+.hn-top { display: grid; grid-template-columns: 40mm 1fr 60mm; align-items: start; margin-bottom: 1mm; }
+.hn-in { border-collapse: collapse; }
+.hn-in th { border: 1px solid #000; font-size: 8px; font-weight: normal; padding: 0 3px; }
+.hn-in td { border: 1px solid #000; height: 10mm; }
+.hn-title { text-align: center; font-size: 16px; letter-spacing: 3px; font-family: "MS PMincho", "Noto Serif JP", serif; }
+.hn-title .no { text-align: left; font-size: 12px; margin: 2mm 0 0 8mm; text-decoration: underline; width: 45mm; }
+.hn-right .date { font-size: 12px; text-align: right; }
+.hn-right .sign { border-bottom: 1px solid #000; font-size: 11px; margin: 1mm 0 0 18mm; }
+.hn-t, .hn-g, .hn-x { width: 100%; border-collapse: collapse; }
+.hn-t th, .hn-t td, .hn-g th, .hn-g td, .hn-x th, .hn-x td { border: 1px solid #000; padding: 1px 3px; }
+.hn-t th.l, .hn-x th.l { text-align: left; font-weight: normal; }
+.hn-t td.name { font-size: 20px; font-family: "MS PMincho", "Noto Serif JP", serif; letter-spacing: 2px; }
+.hn-t tr.h2 td, .hn-t tr.h2 th { height: 9mm; }
+.hn-t tr.h3 td, .hn-t tr.h3 th { height: 12mm; }
+.hn-t tr.h4 td, .hn-t tr.h4 th { height: 14mm; }
+.hn-t td.lot div { font-size: 20px; letter-spacing: 3px; font-family: "MS PMincho", "Noto Serif JP", serif; }
+.hn-t td.lot span { font-size: 11px; letter-spacing: 0; margin-right: 4mm; }
+.hn-t td.lot2 div { font-size: 13px; font-weight: bold; }
+.hz-nisshi .small { font-size: 10px; }
+.hz-nisshi .tiny { font-size: 7px; }
+.hz-nisshi .pad { margin-left: 12mm; }
+.hn-g th { font-weight: normal; font-size: 10px; }
+.hn-g td { height: 6mm; font-size: 9px; }
+.hn-g td.mai { text-align: right; font-size: 8px; }
+.hn-x td { height: 12mm; }
+.hn-t.foot td { height: 7mm; }
+.hn-foot { font-size: 9px; margin-top: 1mm; }
+/* 数量チェック表 A4 横 */
+.hz-check { padding: 8mm 12mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.hq-top { display: flex; gap: 40mm; align-items: baseline; font-size: 16px; }
+.hq-top .t { font-size: 22px; }
+.hq-head { display: grid; grid-template-columns: 1fr 1.1fr; margin: 2mm 0; }
+.hq-l .name { font-size: 22px; margin-bottom: 1mm; }
+.hq-l .row { display: flex; gap: 8mm; font-size: 14px; letter-spacing: 1px; margin: 1mm 0 0 4mm; align-items: baseline; }
+.hq-l .row b { font-size: 16px; }
+.hq-l .row.small { font-size: 12px; }
+.hq-l .row .b { font-weight: bold; margin-left: 10mm; }
+.hq-people { border-collapse: collapse; font-size: 10px; }
+.hq-people th { text-align: right; font-weight: normal; padding: 2px 4px; white-space: nowrap; }
+.hq-people td { padding: 2px 8px; }
+.hq-t { width: 100%; border-collapse: collapse; font-size: 10px; }
+.hq-t th { border: 1px solid #000; font-weight: normal; padding: 1px; }
+.hq-t th.tiny { font-size: 7px; }
+.hq-t td { border: 1px solid #000; height: 9mm; }
+/* パレット票（A5 を 2 つ） */
+.hz-pallet { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; padding: 10mm 12mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.hp-card { position: relative; }
+.hp-top { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 2mm 0 8mm; }
+.hp-top .date { font-size: 36px; }
+.hp-top .no { font-size: 30px; }
+.hp-t { width: 100%; border-collapse: collapse; }
+.hp-t th { border: 1px solid #000; font-size: 18px; font-weight: normal; width: 10mm; line-height: 1.1; }
+.hp-t th.small { font-size: 13px; }
+.hp-t th.tiny { font-size: 9px; }
+.hp-t td { border: 1px solid #000; text-align: center; }
+.hp-t tr.kubun td.tag { font-size: 54px; font-style: italic; height: 22mm; }
+.hp-t tr.hin td { font-size: 22px; height: 22mm; }
+.hp-t tr.hin .stop { color: #d00; font-size: 16px; }
+.hp-t tr.hi td.big { font-size: 64px; height: 22mm; }
+.hp-t tr.su td.qty { font-size: 52px; text-align: right; padding-right: 2mm; height: 18mm; }
+.hp-t tr.su td.pal { width: 30mm; }
+.hp-t tr.iro td.color { color: #335; font-size: 26px; font-weight: bold; height: 10mm; }
+.hp-t tr.iro td.cno { color: #335; font-size: 22px; font-weight: bold; }
+.hp-t tr.biko td { text-align: left; font-size: 16px; height: 7mm; }
+.hp-time { font-size: 18px; margin-top: 1mm; }
+/* 区分表示（2 つ） */
+.hz-kubun { display: grid; grid-template-columns: 1fr 1fr; padding: 16mm 10mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.hk-card { text-align: center; }
+.hk-card .tag { font-size: 96px; line-height: 1; }
+.hk-card .name { font-size: 30px; font-weight: bold; margin-top: 4mm; }
+.hk-card .date { font-size: 56px; color: #1f3864; margin-top: 18mm; }
+/* 仕掛原料管理札（4 つ） */
+.hz-shikake { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm 30mm; padding: 12mm 12mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.hf-card { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.hf-card td, .hf-card th { border: 1px solid #888; }
+.hf-card th { font-weight: normal; font-size: 18px; width: 22mm; height: 13mm; }
+.hf-card tr.top td { height: 11mm; }
+.hf-card td.code { text-align: center; }
+.hf-card .lbl { font-size: 11px; border-bottom: 1px solid #888; }
+.hf-card td.code .v { font-size: 20px; }
+.hf-card td.kojo { font-size: 6px; writing-mode: vertical-rl; text-align: center; padding: 0; }
+.hf-card td.kojo.blue { background: #9fd3e0; }
+.hf-card td.kojo.pink { background: #f6c6d8; }
+.hf-card td.sp { border-top: none; border-right: none; }
+.hf-card td.gen { text-align: center; border-left: 1px solid #888; }
+.hf-card tr.top td.gen { width: auto; }
+.hf-card td.gen .v { font-size: 12px; font-weight: bold; }
+.hf-card tr.name td { font-size: 20px; height: 16mm; vertical-align: top; padding: 1mm 2mm; }
+.hf-card tr.date td { font-size: 32px; text-align: center; color: #1f2a44; }
+/* ロボットパレット引き出し確認表 A4 横 */
+.hz-robot, .hz-renraku { padding: 8mm 10mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.hr-head, .hl-head { display: grid; grid-template-columns: 1fr 1.6fr 1fr; align-items: start; }
+.hr-head .date, .hl-head .date { font-size: 14px; padding-left: 14mm; margin-top: 2mm; }
+.hr-head .t, .hl-head .t { font-size: 15px; margin-top: 2mm; }
+.hr-head .hz-kakunin, .hl-head .hz-kakunin { justify-self: end; }
+.hr-mid { display: grid; grid-template-columns: 50mm 18mm auto 1fr; align-items: end; margin-bottom: 1mm; }
+.hr-mid .lbl { font-size: 14px; align-self: start; padding-top: 2mm; }
+.hr-mid .kara { font-size: 12px; text-align: right; padding-right: 1mm; }
+.hr-kara { border-collapse: collapse; }
+.hr-kara th { border: 1px solid #000; font-weight: normal; font-size: 12px; width: 21mm; }
+.hr-kara td { border: 1px solid #000; height: 8mm; }
+.hr-mid .chk { font-size: 12px; padding-left: 6mm; }
+.hr-t { width: 100%; border-collapse: collapse; }
+.hr-t th { border: 1px solid #000; font-weight: normal; font-size: 12px; padding: 1px; }
+.hr-t th.small { font-size: 9px; }
+.hr-t td { border: 1px solid #000; height: 11mm; }
+.hr-t td.jun { font-weight: bold; vertical-align: top; text-align: center; }
+.hr-t td.hin { border-left: none; vertical-align: top; }
+.hr-t td.hin .n { font-weight: bold; font-size: 12px; }
+.hr-t td.hin .k { display: flex; gap: 4mm; padding-left: 8mm; font-size: 12px; margin-top: 2mm; }
+.hr-t td.hin .k .tag { font-size: 14px; }
+.hr-t td.hin .k .red { color: #d00; margin-left: auto; padding-right: 2mm; }
+.hr-t td.robo { font-size: 20px; font-style: italic; text-align: center; }
+.hr-t td.c { text-align: center; font-size: 13px; }
+.hr-t td.r { text-align: right; font-size: 12px; vertical-align: bottom; }
+.hr-t td.p { font-size: 11px; vertical-align: top; text-align: center; }
+/* 包装連絡表 A4 横 */
+.hl-pal { display: flex; gap: 6mm; font-size: 14px; padding-left: 26mm; margin-top: -6mm; }
+.hl-pal .mai { margin-left: 14mm; margin-right: 6mm; }
+.hl-lbl { font-size: 14px; margin-top: 6mm; position: relative; }
+.hl-lbl .caster { position: absolute; left: 175mm; top: 2mm; font-weight: bold; font-size: 13px; }
+.hl-moushi { margin: 1mm 0 6mm 15mm; }
+.hl-moushi div { color: #d00; font-size: 14px; height: 6mm; padding-left: 26mm; }
+.hl-moushi div.gray { background: #e6e6e6; font-weight: bold; }
+.hl-t { width: 100%; border-collapse: collapse; }
+.hl-t th { border: 1px solid #000; font-weight: normal; font-size: 11px; }
+.hl-t th.tiny { font-size: 8px; }
+.hl-t td { border: 1px solid #000; height: 6mm; padding: 0 3px; font-size: 12px; }
+.hl-t td.jun { font-weight: bold; }
+.hl-t td.c { text-align: center; }
+.hl-t td.r { text-align: right; font-size: 13px; }
+.hl-t td.tag { font-size: 16px; }
+.hl-t td.b { font-weight: bold; font-size: 14px; }
+.hl-t td.big { font-size: 15px; }
+.hl-t td.small { font-size: 9px; }

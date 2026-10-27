@@ -23,7 +23,7 @@ const sections: { title: string; items: { label: string; to: string }[] }[] = [
   // 製造管理 丸北（Access の 製造管理 丸北.accdb のメニュー）
   { title: "製造管理　丸北", items: [{ label: "製造管理メニュー", to: "/seizo" }, { label: "丸北 計量枚数登録", to: "/seizo/dekidaka" }, { label: "丸北 包装日誌登録", to: "/seizo/hoso" }, { label: "包装予定追加", to: "/seizo/yotei" }, { label: "他工場 計量日誌登録", to: "/seizo/tako" }, { label: "他工場 包装日誌登録", to: "/seizo/hoso?soko=191" }, { label: "取引先商品製造一覧", to: "/seizo/kensaku" }] },
   // 包装場管理System（Access の 包装場管理System.accdb。作っている途中）
-  { title: "包装場管理", items: [{ label: "包装準備", to: "/housou/junbi" }, { label: "ロボットハイ積みマスタ", to: "/housou/robot" }] },
+  { title: "包装場管理", items: [{ label: "包装準備", to: "/housou/junbi" }, { label: "ロボットハイ積みマスタ", to: "/housou/robot" }, { label: "包装場の帳票", to: "/housou/chohyo" }] },
   // 手配出力用カレンダー（Access の 手配出力用カレンダー.accdb）
   { title: "手配出力用カレンダー", items: [{ label: "配送予定カレンダー", to: "/tehai" }] },
   // 倉庫管理System（Access の 倉庫管理System.accdb。外の冷蔵庫の在庫・出庫・名義変更・保管料）
