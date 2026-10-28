@@ -112,7 +112,8 @@ export function wsHaichiRoutes(app: FastifyInstance) {
   // ［自動］（Access は「テスト中」で動かない作り。2026/10/26 利用者の決め方で作った）。
   // 一覧の残り（割付残数）を 1 枚＝パレット単位1 のパレットに分け、空いている枠に 1 枠 3 枚まで置く。
   // 1 枚に満たない残り（端数。パレット単位の無い商品は残り全部）は T1・T2 へ（あふれたら手前の枠から）。満杯のパレットは同じ商品で枠をそろえる。満杯のパレットは、枚数の多いロットから（同じ枚数なら製造日の古い順）奥の枠
-  // （L7→L1、R5→R1、CL5→1、CR5→1）から埋める。書いてある枠はそのまま。入りきらないものは置かずに返す
+  // （L7→L1、R5→R1）から埋める。番地が C の枠（CL・CR）は保管庫の通路にあたり、ふさぐとフォークリフトが入れないので、
+  // ほかの枠と T1・T2 がいっぱいのときだけ最後に使う（2026/10/28 利用者の依頼）。書いてある枠はそのまま。入りきらないものは置かずに返す
   app.post<{ Body: { date: string; 在庫: { 認識ID: string; 商品コード: number; 商品名: string; 製造日: string | null; タグ: string | null; 割付残数: number }[] } }>(
     "/api/ws/haichi/auto",
     async (req, reply) => {
@@ -133,9 +134,8 @@ export function wsHaichiRoutes(app: FastifyInstance) {
         const 奥から = [
           ...[7, 6, 5, 4, 3, 2, 1].flatMap((i) => [1, 2, 3].map((j) => `L${i}-${j}`)),
           ...[5, 4, 3, 2, 1].map((i) => `R${i}-1`),
-          ...[5, 4, 3, 2, 1].map((i) => `CL-${i}`),
-          ...[5, 4, 3, 2, 1].map((i) => `CR-${i}`),
         ];
+        const 通路 = [...[5, 4, 3, 2, 1].map((i) => `CL-${i}`), ...[5, 4, 3, 2, 1].map((i) => `CR-${i}`)];
         const 空き = (k: string) => !String(r[k] ?? "").trim();
         const 中身 = new Map<string, 枚[]>();
         // 混ぜない＝満杯のパレットは、ほかの商品が入っている枠には入れない（空き枠が足りないときだけ混ぜる）
@@ -151,12 +151,18 @@ export function wsHaichiRoutes(app: FastifyInstance) {
           }
           return false;
         };
-        const 置けない: 枚[] = [];
         const 後で: 枚[] = [];
+        const 通路へ: 枚[] = [];
         for (const l of ロット) for (const p of l.満杯) if (!入れる(奥から, p, true)) 後で.push(p);
-        for (const p of 後で) if (!入れる(奥から, p)) 置けない.push(p);
+        for (const p of 後で) if (!入れる(奥から, p)) 通路へ.push(p);
+        const 端数の残り: 枚[] = [];
         for (const l of [...ロット].sort((x, y) => String(x.z.製造日 ?? "").localeCompare(String(y.z.製造日 ?? ""))))
-          if (l.端数 && !入れる(["T1", "T2", ...[...奥から].reverse()], l.端数)) 置けない.push(l.端数);
+          if (l.端数 && !入れる(["T1", "T2", ...[...奥から].reverse()], l.端数)) 端数の残り.push(l.端数);
+        // ほかが埋まったときだけ、C の枠（通路）を使う
+        const 置けない: 枚[] = [];
+        const 通路の後で: 枚[] = [];
+        for (const p of 通路へ) if (!入れる(通路, p, true)) 通路の後で.push(p);
+        for (const p of [...通路の後で, ...端数の残り]) if (!入れる(通路, p)) 置けない.push(p);
         // 枠に書く（手で置くときと同じ形：同じロットが続くときは商品名を書かない）
         const 置いた = new Map<string, number>();
         for (const [k, x] of 中身) {
