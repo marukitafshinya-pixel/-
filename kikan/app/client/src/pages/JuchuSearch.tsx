@@ -58,10 +58,23 @@ export default function JuchuSearch() {
   useEffect(() => {
     if (!checked) return;
     setLoading(true);
-    api.get<Row[]>("/api/juchu/search", f).then((r) => {
-      setRows(r);
-      setLoading(false);
-    });
+    // 前の条件の答えが後から届いたときは使わない。エラーのときは「読み込み中」のままにせず知らせる（2026/10/28 点検）
+    let 古い = false;
+    api
+      .get<Row[]>("/api/juchu/search", f)
+      .then((r) => {
+        if (古い) return;
+        setRows(r);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (古い) return;
+        setLoading(false);
+        alert(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      古い = true;
+    };
   }, [f, checked]);
 
   function set(patch: Record<string, string | undefined>) {

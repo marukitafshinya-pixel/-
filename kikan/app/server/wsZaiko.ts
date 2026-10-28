@@ -376,11 +376,14 @@ export async function 入庫できる(c: PoolClient, 届け先コード: unknown
   return r.rowCount! > 0;
 }
 
-/** 在庫の出庫ケース：登録済み（chk）の出荷 ＋ 在庫変更。実データの値と同じ決め方（在庫変更は全部足す） */
+/**
+ * 在庫の出庫ケース：登録済み（chk）の出荷 ＋ 登録済み（変更Check）の在庫変更（Access の DSum も登録済みだけ）。
+ * まだ登録していない振替の行は数えない（2026/10/28 点検：数えると、振替の［登録］でもう一度引いて二重に減る）
+ */
 async function 在庫の出庫ケース(c: PoolClient, 在庫ID: number): Promise<number> {
   const r = await c.query(
     `SELECT COALESCE((SELECT SUM("ケース") FROM ${出荷} WHERE "chk" = true AND "在庫ID" = $1), 0)
-          + COALESCE((SELECT SUM("ケース") FROM ${在庫変更} WHERE "在庫No" = $1), 0) AS n`,
+          + COALESCE((SELECT SUM("ケース") FROM ${在庫変更} WHERE "在庫No" = $1 AND "変更Check" = true), 0) AS n`,
     [在庫ID],
   );
   return n(r.rows[0].n);

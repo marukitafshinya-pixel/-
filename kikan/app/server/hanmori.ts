@@ -166,12 +166,16 @@ async function 販盛番号取得(c: PoolClient) {
     const 納品日 = 日付(s.納品予定日);
     if (kg === null || 納品日 === null) continue;
     const r = await c.query(
+      // まだ結んでいない受注か、同じ伝票の同じ行の受注だけ（2026/10/28 点検：同じ重さの行が 2 つあると、
+      // 1 回目で正しく結んだ受注の行番号（枝番3）を 2 回目で書き換え、2 つの受注が同じ行を指していた）
       `SELECT "受注ID", "販盛伝票番号" FROM ${受注}
-       WHERE "受注ID" >= $1 AND "商品kg" = $2 AND "受注番号" = $3 AND "納品日" = $4::date ORDER BY "受注ID" LIMIT 1`,
-      [番号を探す受注ID, cint(kg), s.外部番号 ?? "999999", 納品日],
+       WHERE "受注ID" >= $1 AND "商品kg" = $2 AND "受注番号" = $3 AND "納品日" = $4::date
+         AND ("販盛伝票番号" IS NULL OR ("販盛伝票番号" = $5 AND "枝番3" = $6))
+       ORDER BY "受注ID" LIMIT 1`,
+      [番号を探す受注ID, cint(kg), s.外部番号 ?? "999999", 納品日, s.伝票番号, s.行],
     );
     const j = r.rows[0];
-    if (j && (j.販盛伝票番号 === null || j.販盛伝票番号 === s.伝票番号)) await 結ぶ(j.受注ID, s, "認識に成功！");
+    if (j) await 結ぶ(j.受注ID, s, "認識に成功！");
   }
 }
 

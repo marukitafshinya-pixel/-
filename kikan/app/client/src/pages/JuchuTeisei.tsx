@@ -28,7 +28,7 @@ export default function JuchuTeisei() {
       api.get<any[]>("/api/juchu/form/shohin", { saki: r.受注先ID }).then((rows) =>
         setShohinOpts(rows.map((x) => ({ code: x.商品コード, name: x.商品名 }))),
       );
-    });
+    }).catch((e) => alert(e instanceof Error ? e.message : String(e)));
   }, [jid]);
 
   const patch = (p: Rec) => setT((o) => ({ ...o, ...p }));

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { q, t } from "./db.js";
 import { requireUser } from "./auth.js";
+import { 一連で } from "./ws.js";
 
 // 受注グループマスタ（Access の FM_受注先マスタ登録）。受注先選択画面のボタン・受注先の一覧のもとになる表
 const 受注先マスタ = t("juchu_fe", "TM_受注先マスタ");
@@ -75,15 +76,19 @@ export function juchuMasterRoutes(app: FastifyInstance) {
       return { ID: b.ID };
     }
     // 新しい行。ID は Access のオートナンバーと同じく今までの一番大きい番号の次
-    const [{ id }] = await q<{ id: number }>(`SELECT COALESCE(MAX("ID"), 0) + 1 AS id FROM ${受注先マスタ}`);
-    const all: Record<string, unknown> = {
-      道内区分: false, 転売区分: false, 一般ユーザー: false, 仕入区分: false, 伝票送付: false, デポ区分: false, 使用不可: false,
-      取扱い区分: 0, ユーザー区分: 0,
-      ...v, ID: id,
-    };
-    const k = Object.keys(all);
-    await q(`INSERT INTO ${受注先マスタ} (${k.map((x) => `"${x}"`).join(", ")}) VALUES (${k.map((_, i) => `$${i + 1}`).join(", ")})`, k.map((x) => all[x]));
-    return { ID: id };
+    // 同時に 2 人が足しても同じ ID にならないように鍵を取る（2026/10/28 点検）
+    return 一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_受注先マスタ.ID'))`);
+      const id = Number((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS id FROM ${受注先マスタ}`)).rows[0].id);
+      const all: Record<string, unknown> = {
+        道内区分: false, 転売区分: false, 一般ユーザー: false, 仕入区分: false, 伝票送付: false, デポ区分: false, 使用不可: false,
+        取扱い区分: 0, ユーザー区分: 0,
+        ...v, ID: id,
+      };
+      const k = Object.keys(all);
+      await c.query(`INSERT INTO ${受注先マスタ} (${k.map((x) => `"${x}"`).join(", ")}) VALUES (${k.map((_, i) => `$${i + 1}`).join(", ")})`, k.map((x) => all[x]));
+      return { ID: id };
+    });
   });
 
   app.post<{ Body: { ID: number } }>("/api/juchu-master/delete", async (req) => {

@@ -28,9 +28,10 @@ const パレット輸送の届け先 = [164, 1221];
 
 /** 入庫のロボット設定の行（なければ作る。Access は入庫と結んだ一覧で、設定の項目を入れると行ができる） */
 async function 設定の行(c: PoolClient, 入庫ID: number): Promise<Rec> {
+  // 先に鍵を取ってから確かめる（同時に 2 人が直しても、1 つの入庫に設定の行が 2 つできないように。2026/10/28 点検）
+  await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_ロボットPrgNo_製造別.ID'))`);
   const r = (await c.query(`SELECT * FROM ${ロボット設定} WHERE "入庫ID" = $1 ORDER BY "ID" LIMIT 1`, [入庫ID])).rows[0];
   if (r) return r;
-  await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_ロボットPrgNo_製造別.ID'))`);
   const id = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS m FROM ${ロボット設定}`)).rows[0].m);
   await c.query(`INSERT INTO ${ロボット設定} ("ID", "入庫ID", "積み段数", "積み付け数", "スピード", "長さ㎜", "幅㎜", "高さ㎜", "パレット枚数", "ニチレイ積載数", "ロボットPrgNo") VALUES ($1, $2, 0, 0, 0, 0, 0, 0, 0, 0, 0)`, [id, 入庫ID]);
   return (await c.query(`SELECT * FROM ${ロボット設定} WHERE "ID" = $1`, [id])).rows[0];

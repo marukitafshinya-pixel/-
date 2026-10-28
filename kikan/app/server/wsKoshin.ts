@@ -371,8 +371,13 @@ export function wsKoshinRoutes(app: FastifyInstance) {
       const KT = String(req.body.更新時間 ?? "");
       const ある = (await c.query(`SELECT to_regclass('ws."TD_在庫BackUp"') AS r`)).rows[0]?.r;
       if (!KT || !ある) return reply.code(400).send({ error: "戻せる更新がありません。" });
+      // 2026/10/28 点検：写しはいちばん新しい更新の前のものだけ。古い更新を戻すと、その後の積込確認・振替などの在庫が消えるので止める
+      const 最後 = String((await c.query(`SELECT "更新時間" FROM ${利用者} ORDER BY "ID" LIMIT 1`)).rows[0]?.更新時間 ?? "");
+      if (最後 !== KT) return reply.code(400).send({ error: "いちばん新しい在庫更新だけ元に戻せます。この更新はもう戻せません。" });
       await c.query(`DELETE FROM ${在庫}`);
       await c.query(`INSERT INTO ${在庫} SELECT * FROM ${在庫の写し}`);
+      // 二度戻さないように、写しを消す
+      await c.query(`DROP TABLE ${在庫の写し}`);
       await c.query(`UPDATE ${入庫} SET "chk" = false WHERE "更新時間" = $1`, [KT]);
       await c.query(`UPDATE ${出荷} SET "chk" = false WHERE "更新時間" = $1`, [KT]);
       await c.query(`UPDATE ${輸送計画} SET "chk" = false WHERE "更新時間" = $1`, [KT]);

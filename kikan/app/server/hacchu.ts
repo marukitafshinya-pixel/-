@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
+import { 一連で } from "./ws.js";
 
 // 発注依頼（F_受注元選択・F_発注書印刷・F_日本食研発注書印刷・R_発注依頼）と特定商品表示（FM_特定商品表示）で使う表
 const 受注 = t("juchu", "TD_受注");
@@ -178,12 +179,16 @@ export function hacchuRoutes(app: FastifyInstance) {
       );
       return { ok: true };
     }
-    const [{ id }] = await q<{ id: number }>(`SELECT COALESCE(MAX("ID"), 0) + 1 AS id FROM ${受注特定項目}`);
-    await q(
-      `INSERT INTO ${受注特定項目} ("ID", "商品コード", "商品名", "届け先コード", "届け先", "備考", "入力時間")
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [id, ...v, 日本の今().日時],
-    );
-    return { ok: true };
+    // 同時に 2 人が足しても同じ ID にならないように鍵を取る（2026/10/28 点検）
+    return 一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_受注特定項目.ID'))`);
+      const id = Number((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS id FROM ${受注特定項目}`)).rows[0].id);
+      await c.query(
+        `INSERT INTO ${受注特定項目} ("ID", "商品コード", "商品名", "届け先コード", "届け先", "備考", "入力時間")
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [id, ...v, 日本の今().日時],
+      );
+      return { ok: true };
+    });
   });
 }

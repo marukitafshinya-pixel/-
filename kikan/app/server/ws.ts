@@ -476,6 +476,7 @@ export function wsRoutes(app: FastifyInstance) {
       const 値 = b.値 === "" ? null : b.値;
       await c.query(`UPDATE ${出荷} SET "${b.項目}" = $2 WHERE "出庫ID" = $1`, [Number(b.出庫ID), 値]);
       const 科目 = (await c.query(`SELECT "訂正科目名" FROM ${t("ws_fe", "TM_訂正科目マスタ")} WHERE "訂正科目ID" = $1`, [b.科目ID])).rows[0];
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_訂正履歴管理.訂正ID'))`);
       const next = Number((await c.query(`SELECT COALESCE(MAX("訂正ID"), 0) + 1 AS n FROM ${訂正履歴}`)).rows[0].n);
       await c.query(
         `INSERT INTO ${訂正履歴} ("訂正ID", "訂正科目ID", "訂正科目名", "訂正フォーム名", "訂正テーブル名", "訂正IndexField名", "訂正Index",

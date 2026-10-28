@@ -449,7 +449,11 @@ export function sokoRoutes(app: FastifyInstance) {
           [z.在庫ID, 先.在庫ID, String(先.在庫ID)],
         );
         知らせ += r.rowCount ?? 0;
-        if (z !== 先) await c.query(`DELETE FROM ${倉庫の在庫} WHERE "在庫ID" = $1`, [z.在庫ID]);
+        if (z !== 先) {
+          // 消すロットの名変は、まとめ先のロットに付け替える（2026/10/28 点検：消したロットを指したままだと、保管料・名変の取り消しで数えられなかった）
+          await c.query(`UPDATE ${倉庫の名変} SET "在庫No" = $2 WHERE "在庫No" = $1`, [z.在庫ID, 先.在庫ID]);
+          await c.query(`DELETE FROM ${倉庫の在庫} WHERE "在庫ID" = $1`, [z.在庫ID]);
+        }
       }
       // Access は最初のロットの登録済み出庫だけを引くため、ほかのロットから付け替えた出庫と名変の分の在庫が多く残る。Web 版は付け替えたあとの全部と名変を引く
       const 出 = n((await c.query(`SELECT SUM("ケース") AS v FROM ${倉庫の出荷} WHERE "在庫ID" = $1 AND "chk" = true`, [先.在庫ID])).rows[0].v);

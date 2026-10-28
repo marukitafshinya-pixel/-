@@ -57,7 +57,8 @@ export function authRoutes(app: FastifyInstance) {
       token,
       login,
     ]);
-    reply.setCookie(COOKIE, token, { path: "/", httpOnly: true, sameSite: "lax", maxAge: DAYS * 86400 });
+    // HTTPS で動かすときは COOKIE_SECURE=1 にすると、ログインの記録を暗号の通信でだけ送る（社内の http のままでも使えるように、はじめは付けない）
+    reply.setCookie(COOKIE, token, { path: "/", httpOnly: true, sameSite: "lax", secure: process.env.COOKIE_SECURE === "1", maxAge: DAYS * 86400 });
     return { ok: true };
   });
 

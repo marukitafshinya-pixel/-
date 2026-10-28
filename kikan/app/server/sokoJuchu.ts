@@ -46,6 +46,8 @@ async function 受注を取り込む(c: PoolClient) {
        WHERE a.table_schema = 'soko' AND a.table_name = 'TD_受注' AND b.table_schema = 'juchu' AND b.table_name = 'TD_受注' ORDER BY a.ordinal_position`,
     )
   ).rows.map((r: Rec) => `"${r.column_name}"`);
+  // 2 人が同時に開いても同じ受注を 2 回写さないように（2026/10/28 点検）
+  await c.query(`SELECT pg_advisory_xact_lock(hashtext('soko.TD_受注 取込'))`);
   const max = n((await c.query(`SELECT MAX("受注ID") AS m FROM ${倉庫の受注}`)).rows[0].m);
   const ids = (
     await c.query(`INSERT INTO ${倉庫の受注} (${cols.join(", ")}) SELECT ${cols.join(", ")} FROM ${受注登録の受注} WHERE "受注ID" > $1 ORDER BY "受注ID" RETURNING "受注ID"`, [max])

@@ -130,7 +130,7 @@ export function wsHibetsuRoutes(app: FastifyInstance) {
         };
         for (const s of (await c.query(`SELECT "在庫ID", "出荷日"::date::text AS d, SUM("ケース") AS k FROM ${sys.出荷} WHERE "chk" = true AND "在庫ID" <> 0 GROUP BY 1, 2`)).rows)
           足す(n(s.在庫ID), s.d, n(s.k));
-        for (const h of (await c.query(`SELECT "在庫No", "変更日"::date::text AS d, SUM("ケース") AS k FROM ${sys.在庫変更} WHERE "変更日" >= $1::date GROUP BY 1, 2`, [最初])).rows)
+        for (const h of (await c.query(`SELECT "在庫No", "変更日"::date::text AS d, SUM("ケース") AS k FROM ${sys.在庫変更} WHERE "変更日" >= $1::date AND "変更Check" = true GROUP BY 1, 2`, [最初])).rows)
           足す(n(h.在庫No), h.d, n(h.k));
         for (let 日 = 最初; 日 <= 昨日; 日 = 日を足す(日, 1)) {
           if (控えのある日.has(日)) continue;

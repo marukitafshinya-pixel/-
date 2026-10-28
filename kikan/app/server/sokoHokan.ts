@@ -30,15 +30,17 @@ export function 半月の末日(d: string): string {
 
 /** 小数点の計算（Access の My小数点計算。小数第 1 位だけを見る。1＝四捨五入、2＝繰上げ、3＝繰下げ、ほかはそのまま） */
 export function 小数点計算(v: number, 方法: number): number {
-  const s = String(v);
+  // Access の CStr(Double) と同じく 15 けたで文字にする（17 けただと 55.00000000000001 のような値で繰上げがずれる。2026/10/28 点検）
+  const x = Number(v.toPrecision(15));
+  const s = String(x);
   const i = s.indexOf(".");
-  if (i < 0) return v;
+  if (i < 0) return x;
   const 第1位 = Number(s[i + 1]);
   const 整数 = Number(s.slice(0, i));
   if (方法 === 1) return 第1位 >= 5 ? 整数 + 1 : 整数;
   if (方法 === 2) return 整数 + 1;
   if (方法 === 3) return 整数;
-  return v;
+  return x;
 }
 
 const 以下 = (a: unknown, b: unknown) => a != null && b != null && String(a).slice(0, 10) <= String(b).slice(0, 10);
@@ -461,10 +463,11 @@ export function sokoHokanRoutes(app: FastifyInstance) {
     });
   });
   // 訂正の［削除］：数を全部 0 にして、管理備考に「日時 削除(Web)」（Access はパソコンの名前）。登録は［修正］のときと同じ
+  // 製造ケース・製造kg も 0 にする（Access は残すため、その日に入れたロットを消すと、次の集計で在庫が戻っていた。2026/10/28 点検）
   app.post<{ Body: { 合言葉: string; 在庫ID: number } }>("/api/soko/hokan/teisei/delete", async (req, reply) => {
     if (!合言葉が合う(req.body.合言葉)) return reply.code(403).send({ error: "パスワードが違います" });
     await q(
-      `UPDATE ${倉庫の在庫} SET "入庫元数" = 0, "在庫ケース" = 0, "繰越ケース" = 0, "出庫ケース" = 0, "在庫kg" = 0, "繰越kg" = 0, "出荷kg" = 0, "管理備考" = $2 WHERE "在庫ID" = $1`,
+      `UPDATE ${倉庫の在庫} SET "入庫元数" = 0, "在庫ケース" = 0, "繰越ケース" = 0, "出庫ケース" = 0, "製造ケース" = 0, "在庫kg" = 0, "繰越kg" = 0, "出荷kg" = 0, "製造kg" = 0, "管理備考" = $2 WHERE "在庫ID" = $1`,
       [n(req.body.在庫ID), `${日本の今().日時} 削除(Web)`],
     );
     return { ok: true };

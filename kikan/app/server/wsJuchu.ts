@@ -51,6 +51,8 @@ async function 受注を取り込む(c: PoolClient) {
        WHERE a.table_schema = 'ws' AND a.table_name = 'TD_受注' AND b.table_schema = 'juchu' AND b.table_name = 'TD_受注' ORDER BY a.ordinal_position`,
     )
   ).rows.map((r: Rec) => `"${r.column_name}"`);
+  // 2 人が同時に開いても同じ受注を 2 回写さないように（2026/10/28 点検）
+  await c.query(`SELECT pg_advisory_xact_lock(hashtext('ws.TD_受注 取込'))`);
   const max = n((await c.query(`SELECT MAX("受注ID") AS m FROM ${WS受注}`)).rows[0].m);
   const r = await c.query(
     `INSERT INTO ${WS受注} (${cols.join(", ")}) SELECT ${cols.join(", ")} FROM ${受注登録の受注} WHERE "受注ID" > $1 ORDER BY "受注ID"`,
@@ -241,6 +243,8 @@ export function wsJuchuRoutes(app: FastifyInstance) {
       // 作る行（在庫から選んだ行、または在庫なしの 1 行）
       type 行 = { z: Rec | null; ケース: number; kg: number | null };
       const 行たち: 行[] = [];
+      // 在庫の画面で何も選ばなかったとき（空の一覧）は作らない（2026/10/28 点検：0 ケースの行ができていた）
+      if (Array.isArray(b.選んだ) && b.選んだ.length === 0) return reply.code(400).send({ error: "在庫が選ばれていません。" });
       if (b.選んだ?.length) {
         const all = await 在庫見込み(c, { 商品コード: n(j.商品コード), 倉庫ID: n(b.倉庫ID), 計画: true });
         for (const s of b.選んだ) {
@@ -274,7 +278,7 @@ export function wsJuchuRoutes(app: FastifyInstance) {
         }
         if (z) {
           Object.assign(v, {
-            商品コード: z.商品コード, 商品名: z.商品名, 規格: z.規格, 入数: z.入数, ケース, 商品kg: kg ?? ケース * n(z.入数),
+            商品コード: z.商品コード, 商品名: z.商品名, 規格: z.規格, 入数: z.入数, ケース, 商品kg: kg || ケース * n(z.入数), // kg が 0 で届いたとき（ケースはある）は入数から（2026/10/28 点検）
             パレット使用枚数: await パレット計算(c, z.商品コード, ケース),
             入庫日: z.入庫日, 製造日: z.製造日, 賞味期限: z.賞味期限 ?? (await 賞味期限計算(c, z.製造日, z.商品コード)),
             入庫No: z.入庫No ?? null, 入庫ID: z.入庫ID, 倉庫ID: z.倉庫ID, 倉庫名: z.倉庫名, タグ: z.タグ ?? null, 入庫前名義ID: z.入庫後名義ID,

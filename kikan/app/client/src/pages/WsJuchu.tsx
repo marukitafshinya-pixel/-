@@ -181,7 +181,7 @@ export default function WsJuchu() {
       set在庫画面({ data: { rows: z.rows, 本社依頼kg: null, 本社依頼残kg: null, 表題: "" }, 受注: j, resolve }),
     );
     set在庫画面(null);
-    if (!選んだ) return false;
+    if (!選んだ || 選んだ.length === 0) return false; // 何も選ばずに閉じたときはやめる
     await api.post("/api/ws/juchu/out", { 輸送ID, 受注ID: j.受注ID, 倉庫ID: soko ?? 0, 選んだ });
     return true;
   }

@@ -625,10 +625,12 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
       const 全部 = await 倉庫の在庫見込み(c, n(req.body.shohin), n(req.body.soko));
       const 集荷日 = 日付(p.集荷日);
       let 件数 = 0;
+      // 先に全部を確かめる（途中で止めると、それまでの行だけが入ってしまうため。2026/10/28 点検）
+      if ((req.body.選んだ ?? []).some((id) => 全部.find((r) => r.認識ID === String(id))?.出荷止め区分))
+        return reply.code(400).send({ error: "出荷止めが設定されている為、抽出できません。" });
       for (const id of req.body.選んだ ?? []) {
         const z = 全部.find((r) => r.認識ID === String(id));
         if (!z) continue;
-        if (z.出荷止め区分) return reply.code(400).send({ error: "出荷止めが設定されている為、抽出できません。" });
         let 手配元ID = n(z.倉庫ID);
         let 手配帳合ID = n(z.倉庫ID);
         let 入庫前名義ID = z.入庫後名義ID;
@@ -695,11 +697,17 @@ export function sokoShukkoRoutes(app: FastifyInstance) {
     await q(`UPDATE ${倉庫の出荷} SET "抽出区分" = false WHERE "抽出区分" = true`);
     return { ok: true };
   });
-  app.post<{ Body: { 輸送ID: number } }>("/api/soko/yomikomi/read", async (req) =>
+  app.post<{ Body: { 輸送ID: number; date?: string } }>("/api/soko/yomikomi/read", async (req) =>
     一連で(async (c) => {
       const 輸送ID = n(req.body.輸送ID);
       const p = (await c.query(`SELECT "出荷計画日"::date::text AS d FROM ${倉庫の便} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
-      const r = await c.query(`UPDATE ${倉庫の出荷} SET "輸送ID" = $1, "出荷日" = $2::date WHERE "抽出区分" = true`, [輸送ID, p?.d ?? 日本の今().日付]);
+      // 印（抽出区分）はほかの画面（入庫登録(出庫時)・受注検索）も使うので、まだ登録していない行で、いま見ている出荷日の行だけを動かす
+      // （2026/10/28 点検：登録済みの出庫や、ほかの人が印を付けた行まで便に入り、出荷日が書き換わっていた）
+      const 日 = /^\d{4}-\d{2}-\d{2}$/.test(String(req.body.date ?? "")) ? String(req.body.date) : null;
+      const r = await c.query(
+        `UPDATE ${倉庫の出荷} SET "輸送ID" = $1, "出荷日" = $2::date WHERE "抽出区分" = true AND "chk" = false ${日 ? `AND "出荷日" = $3::date` : ""}`,
+        日 ? [輸送ID, p?.d ?? 日本の今().日付, 日] : [輸送ID, p?.d ?? 日本の今().日付],
+      );
       await c.query(`UPDATE ${倉庫の出荷} SET "抽出区分" = false WHERE "抽出区分" = true`);
       return { 件数: r.rowCount };
     }),

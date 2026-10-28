@@ -95,7 +95,8 @@ export function wsOsakaRoutes(app: FastifyInstance) {
       const m = 商品 ? (await c.query(`SELECT "商品名", "グループ商品コード", "入数", "規格" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [商品])).rows[0] : null;
       const v: Rec = {
         個別受注ID: id, 年月, 集計開始日: 開始, 集計終了日: 終了, 運賃振分区分: 大阪, 運賃振分区分名: "大阪丸北",
-        商品コード: 商品 || null, 商品名: m?.商品名 ?? null, グループ商品コード: m?.グループ商品コード ?? null, 入数: m?.入数 ?? null, 規格: m?.規格 ?? null,
+        // 月の表の商品はグループの商品コード（一覧もグループで絞る。2026/10/28 点検：子のコードのままだと一覧から消えた）
+        商品コード: (n(m?.グループ商品コード) || 商品) || null, 商品名: m?.商品名 ?? null, グループ商品コード: m?.グループ商品コード ?? null, 入数: m?.入数 ?? null, 規格: m?.規格 ?? null,
         統一受注ID: 商品 ? `${年月}-${m?.グループ商品コード ?? 商品}` : null, chk: false, 受注元KG: 0, 受注元数: 0,
       };
       const cols = Object.keys(v);

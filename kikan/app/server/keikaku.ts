@@ -125,6 +125,8 @@ export async function 出荷に知らせる(c: PoolClient, 入庫ID: number, 通
 export async function 生産計画を取り込む(開始: string, 終了: string) {
   return 一連で(async (c) => {
     await c.query(`LOCK TABLE ${入庫} IN EXCLUSIVE MODE`);
+    // 製造管理の画面が入庫ID を取る鍵と同じ鍵も取る（取り込みの途中で同じ入庫ID を使わないように。2026/10/28 点検）
+    await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_入庫.入庫ID'))`);
     const 今 = 日本の今();
     const 今日 = 今.日付;
     const { 前回: 前回の変更日, 今回: 今回の変更日 } = await 変更日(c);
@@ -171,7 +173,10 @@ export async function 生産計画を取り込む(開始: string, 終了: string
     const 前回 = (await c.query(`SELECT ctid::text AS k, * FROM ${前回生産計画}`)).rows as Rec[];
     const 印 = (r: Rec, 通知: string) => Object.assign(r, { 抽出区分: true, 通知, 変わった: true });
     for (const p of 前回) {
-      const s = 空(p.製造ID) ? undefined : 新規.find((x) => x.製造ID === p.製造ID);
+      // 製造ID の無い行（包装予定追加などで手で足した入庫）は大阪の計画と比べられないので、変更にしない
+      // （2026/10/28 点検：製造変更とされ、製造ID 0 の入庫がまとめて消えていた。データを壊すため Access から直した）
+      if (!n(p.製造ID)) continue;
+      const s = 新規.find((x) => x.製造ID === p.製造ID);
       if (!s) {
         印(p, "製造変更"); // 製造予定の商品がなくなった
         continue;
@@ -200,7 +205,7 @@ export async function 生産計画を取り込む(開始: string, 終了: string
       await c.query(`UPDATE ${新規生産計画} SET "抽出区分" = true, "通知" = $2, "変更記録" = $3 WHERE ctid = $1::tid`, [s.k, s.通知, s.変更記録 ?? null]);
 
     // ---- 4. C_生産計画データ変更案内 ----
-    for (const p of 前回.filter((x) => x.抽出区分))
+    for (const p of 前回.filter((x) => x.抽出区分 && n(x.製造ID)))
       await c.query(`UPDATE ${入庫} SET "製造変更chk" = true, "変更通知" = $2 WHERE COALESCE("chk", false) = false AND "製造ID" = $1`, [n(p.製造ID), p.通知]);
     const 消す = (
       await c.query(

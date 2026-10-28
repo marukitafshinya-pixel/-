@@ -56,7 +56,7 @@ export function KibouDialog(props: {
 }) {
   const 受注分 = props.受注分;
   const [rows, setRows] = useState<Rec[]>(() => {
-    const r0 = props.data.rows.map((r) => ({ ...r, 抽出区分: false, 実算ケース: r.在庫ケース, 実算kg: 0 }));
+    const r0 = props.data.rows.map((r) => ({ ...r, 抽出区分: false, 実算ケース: r.在庫ケース, 実算kg: r.在庫kg ?? 0 }));
     return 受注分 ? 割り付ける(r0, 受注分.残ケース, true) : r0;
   });
   const [絞り, set絞り] = useState<"全体" | "当日" | "検体">("全体");

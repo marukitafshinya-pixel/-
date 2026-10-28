@@ -224,7 +224,7 @@ export function WsYomikomi(props: { 系?: "ws" | "soko" }) {
   }
   async function 読込() {
     try {
-      const r = await api.post<{ 件数: number }>(`/api/${系}/yomikomi/read`, { 輸送ID: id });
+      const r = await api.post<{ 件数: number }>(`/api/${系}/yomikomi/read`, { 輸送ID: id, date });
       alert(`${r.件数} 件を読み込みました。`);
       nav(系 === "ws" ? `/ws?date=${planDate}&id=${id}` : `/soko/shukko?date=${planDate}&id=${id}`);
     } catch (e) {

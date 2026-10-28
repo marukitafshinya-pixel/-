@@ -42,9 +42,12 @@ async function 一行(c: PoolClient, s: any): Promise<void> {
       ?.商品コード ?? 0;
   // すでに取り込んだ受注か（オーダーNo＝年間ID・商品コード・数量回答＝商品kg が同じもの）。
   // Access ではこの確かめが働いておらず二重に取り込めたが、重ならないように直した（2026/10/20 利用者の依頼）
+  // 2026/10/28 点検：数量回答が空の受注は商品kg が空で入るため、「= 0」では見つからず取り込むたびに増えていた。空どうしも同じと見る。
+  // 同時に 2 人が取り込んでも重ならないように、確かめる前に鍵を取る
+  await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_受注.受注ID'))`);
   const 済み = await 一つ(
-    `SELECT "受注ID" FROM ${受注} WHERE "統一受注ID" = $1 AND "商品コード" = $2 AND "商品kg" = $3 ORDER BY "受注ID" LIMIT 1`,
-    [数の文字(s.オーダーNo), 商品コード, 数(s.数量回答) ?? 0],
+    `SELECT "受注ID" FROM ${受注} WHERE "統一受注ID" = $1 AND "商品コード" = $2 AND "商品kg" IS NOT DISTINCT FROM $3::float8 ORDER BY "受注ID" LIMIT 1`,
+    [数の文字(s.オーダーNo), 商品コード, 数(s.数量回答)],
   );
   if (済み) {
     await c.query(`UPDATE ${SB受注} SET "丸北受注ID" = $2, "取込みチェック" = true, "取込み備考" = '●:取込み済み' WHERE "ID" = $1`, [
