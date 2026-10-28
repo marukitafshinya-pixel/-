@@ -2388,3 +2388,48 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .kkm .kkm-log { font-size: 18px; font-weight: bold; color: #4a78c8; }
 .kkm .kkm-close { width: 120px; height: 30px; margin-top: 10px; }
 .kkm .kk-done { width: 300px; font-size: 13px; }
+/* 倉庫管理のメニュー（Access の FM_メインメニュー の見た目） */
+.skm { background: #4a90d9; min-height: 100vh; padding: 8px; }
+.skm > div { max-width: 570px; }
+.skm-top { display: flex; align-items: center; gap: 12px; border: 2px solid #fff; padding: 6px; background: #4a90d9; }
+.skm-top button { border-radius: 4px; font-weight: bold; padding: 3px 10px; border: 1px solid #fff; background: #fff; }
+.skm-soko { background: #ddd !important; border: 3px double #333 !important; font-weight: normal !important; font-size: 16px; padding: 3px 18px !important; }
+.skm-imp { color: #1f6fd0; }
+.skm-out { color: #e00; }
+.skm-out.mada { color: #e99; }
+.skm-top .sz-exit { background: #444; color: #fff; font-size: 18px; padding: 2px 20px; border: 3px double #ddd; font-weight: normal; }
+.skm-ver { flex: 1; text-align: right; color: #9ef; font-style: italic; font-weight: bold; }
+.skm-cats { margin-top: 8px; background: #777; border: 2px solid #fff; padding: 8px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 28px; }
+.skm-cats button { background: #fff; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; padding: 2px; }
+.skm-cats button.on { background: #cde6ff; color: #e00; border-color: #369; }
+.skm-info { margin-top: 8px; background: #fdeefc; border: 1px solid #888; min-height: 44px; padding: 4px 6px; font-size: 18px; }
+.skm-list { margin-top: 8px; background: #bbb; border: 1px solid #888; min-height: 200px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; align-content: start; }
+.skm-list button { height: 36px; background: #fff; border: 1px solid #999; border-radius: 4px; }
+.skm-list button.mada { background: #eee; color: #888; }
+.skm-shime { margin-top: 8px; color: #fff; font-size: 13px; display: flex; gap: 12px; align-items: center; }
+/* 包装場管理のメニュー（Access の 帳票管理 の見た目） */
+.hgm { background: #e5e2cf; min-height: 100vh; padding: 6px 10px; }
+.hgm > div { max-width: 800px; }
+.hgm-date { display: flex; align-items: center; gap: 4px; padding-left: 150px; }
+.hgm-date > span { background: #cff4ff; border: 1px solid #aaa; padding: 6px 30px; }
+.hgm-date button { height: 30px; width: auto; display: inline-block; }
+.hgm-date .hgm-close { margin-left: auto; }
+.hgm-up { display: flex; gap: 30px; margin-top: 6px; padding-bottom: 14px; border-bottom: 1px solid #333; }
+.hgm-list { background: #444; flex: 1; min-height: 200px; padding: 6px 0 6px 30px; }
+.hgm-list-head { display: flex; gap: 70px; margin-bottom: 8px; }
+.hgm-lbl { background: #ff0; color: #00c; font-weight: bold; padding: 2px 46px; border: 2px solid #000; }
+.hgm-day { background: #6b6799; color: #ff0; padding: 2px 30px; border: 1px solid #999; }
+.hgm-list table { border-collapse: collapse; width: 470px; font-size: 12px; }
+.hgm-list th { background: #087c7c; color: #fff; border: 1px solid #ccc; font-weight: normal; }
+.hgm-list td { background: #6b6799; color: #ff0; border: 1px solid #ccc; padding: 1px 4px; font-weight: bold; }
+.hgm-right { display: flex; flex-direction: column; gap: 10px; width: 206px; padding-top: 8px; }
+.hgm-gap { height: 46px; }
+.hgm button.navy, .hgm button.green, .hgm button.sky, .hgm button.blue { background: #fff; border: 1px solid #ccc; border-radius: 3px; min-height: 30px; font-weight: bold; }
+.hgm button.navy { color: #1a2a80; }
+.hgm button.green { color: #109040; }
+.hgm button.sky { color: #10a0e0; }
+.hgm button.blue { color: #4a78c8; }
+.hgm button.mada { opacity: 0.45; cursor: default; }
+.hgm-low { display: grid; grid-template-columns: 206px 206px 206px; gap: 24px; padding: 18px 0 0 34px; }
+.hgm-col { display: flex; flex-direction: column; gap: 8px; }
+.hgm-other { margin-top: 24px; font-size: 13px; color: #555; display: flex; gap: 8px; align-items: center; }

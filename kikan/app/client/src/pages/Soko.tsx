@@ -7,11 +7,14 @@ type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
 const 短い日 = (v: string | null) => (v ? `${v.slice(2, 4)}/${v.slice(5, 7)}/${v.slice(8, 10)}` : "");
 
-/** 倉庫管理のメニュー（Access の T_画面一覧 の分類ごと）。to のないものはまだ作っていない */
-const メニュー: { 分類: string; items: { label: string; to?: string; 説明: string }[] }[] = [
-  { 分類: "倉庫", items: [{ label: "倉庫別データ検索", to: "/soko/kensaku", 説明: "倉庫別にデータを参照します。" }] },
+/**
+ * 倉庫管理のメニュー（Access の FM_メインメニュー の 8 つのボタン＝T_画面一覧 の分類 1〜8）。to のないものはまだ作っていない。
+ * 倉庫別データ検索（分類 0）は上の［倉庫管理］。使っていない画面（請求書入力・仮入庫登録・商品買取単価・直送買取金額訂正など）は載せない。
+ */
+const メニュー: { 分類: string; 案内: string; items: { label: string; to?: string; 説明: string }[] }[] = [
   {
-    分類: "在庫・保管料",
+    分類: "倉庫データ",
+    案内: "倉庫の在庫・保管料・請求書を扱います。",
     items: [
       { label: "倉庫商品一覧", to: "/soko/hokan", 説明: "倉庫ごとの商品別詳細データ" },
       { label: "予定在庫・パレット表示", to: "/soko/yotei", 説明: "倉庫、商品、名義別の在庫合計" },
@@ -22,7 +25,8 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
     ],
   },
   {
-    分類: "出庫",
+    分類: "出庫データ",
+    案内: "出庫登録・出庫関連の印刷を行います。",
     items: [
       { label: "出庫入力", to: "/soko/shukko", 説明: "出庫登録画面です。" },
       { label: "出庫参照", to: "/soko/shukko", 説明: "出庫の明細を見る画面です。（出庫入力と同じ画面）" },
@@ -31,10 +35,10 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
       { label: "出庫リスト表示", to: "/soko/shukko-list", 説明: "ニチレイ用　出庫リスト表示" },
     ],
   },
-  { 分類: "名義変更", items: [{ label: "名義変更", to: "/soko/meihen", 説明: "名義変更・登録を行います" }, { label: "名義変更関連印刷", 説明: "名義変更に関する印刷選択画面です。" }] },
-  { 分類: "確認", items: [{ label: "入庫確認", to: "/soko/nyuko-kakunin", 説明: "入庫データの確認" }, { label: "出庫確認", to: "/soko/shukko-kakunin", 説明: "出庫の確認" }] },
-  {
-    分類: "入庫",
+  { 分類: "名義変更", 案内: "名義変更の登録・名義変更関連の印刷を行います。", items: [{ label: "名義変更", to: "/soko/meihen", 説明: "名義変更・登録を行います" }, { label: "名義変更関連印刷", 説明: "名義変更に関する印刷選択画面です。" }] },
+    {
+    分類: "未登録・案内",
+    案内: "入庫未登録のデータの登録と、入庫データの照合を行います。",
     items: [
       { label: "入庫登録(出庫時)", to: "/soko/idou", 説明: "入庫未登録(出庫時)のデータを登録します。" },
       { label: "入庫登録(ｲﾝﾎﾟｰﾄ)", to: "/soko/nyuko", 説明: "WorkStation からインポートして、入庫未登録のデータを登録します。" },
@@ -42,8 +46,31 @@ const メニュー: { 分類: string; items: { label: string; to?: string; 説�
       { label: "重複データ(在庫)", 説明: "Access でももとの表（TD_在庫繰越の重複レコード）が無く開けない画面のため、作っていません。重複は倉庫商品一覧を開いたときの点検で「重複入庫」として印が付きます。" },
     ],
   },
-  { 分類: "マスタ", items: [{ label: "倉庫賃率・入庫設定", to: "/soko/chinritsu", 説明: "倉庫への入庫条件を設定します。" }] },
+  {
+    分類: "入出庫確認",
+    案内: "冷蔵庫からの入庫・出庫の報告と照らし合わせます。",
+    items: [
+      { label: "入庫確認", to: "/soko/nyuko-kakunin", 説明: "入庫データの確認" },
+      { label: "出庫確認", to: "/soko/shukko-kakunin", 説明: "出庫の確認" },
+      { label: "週間入庫予定表", 説明: "使っているかを確かめています。" },
+      { label: "週間出庫予定表", 説明: "使っているかを確かめています。" },
+    ],
+  },
+  { 分類: "年度末処理", 案内: "年度末の処理です（保管費用集計は使っていないため、載せていません）。", items: [] },
+  {
+    分類: "マスタ設定",
+    案内: "倉庫の賃率や、共通のマスタを設定します。",
+    items: [
+      { label: "倉庫賃率・入庫設定", to: "/soko/chinritsu", 説明: "倉庫への入庫条件を設定します。" },
+      { label: "運送会社マスタ", to: "/master/unso", 説明: "運送会社の登録（全部のシステムで共通）。" },
+      { label: "得意先マスタ", to: "/master/tokui", 説明: "得意先の登録（全部のシステムで共通）。" },
+      { label: "商品マスタ", to: "/master/shohin", 説明: "商品の登録（全部のシステムで共通）。" },
+    ],
+  },
+  { 分類: "訂正", 案内: "訂正の処理です（直送買取金額訂正は、JAふらのの買取が今は無いため載せていません）。", items: [] },
 ];
+/** Access のメニューのボタンの並び（2 段 × 4） */
+const ボタンの並び = ["倉庫データ", "出庫データ", "名義変更", "未登録・案内", "入出庫確認", "年度末処理", "マスタ設定", "訂正"];
 const 月日 = (d: string) => `${d.slice(5, 7)}月${d.slice(8, 10)}日`;
 /** 起動時の確かめ（締め・日時更新・入庫待ちの知らせ）は、Access と同じく開いたとき 1 回だけ */
 let 起動済み = false;
@@ -57,6 +84,8 @@ export function SokoMenu() {
   const nav = useNavigate();
   const [st, setSt] = useState<Rec | null>(null);
   const [情報, set情報] = useState("");
+  const [分類, set分類] = useState(() => { try { return sessionStorage.getItem("soko-menu") ?? ""; } catch { return ""; } });
+  useEffect(() => { try { sessionStorage.setItem("soko-menu", 分類); } catch { /* 覚えられなくてもよい */ } }, [分類]);
   const 様子 = () => api.get<Rec>("/api/soko/status").then(setSt);
   useEffect(() => {
     if (起動済み) {
@@ -91,29 +120,33 @@ export function SokoMenu() {
     }
     様子();
   }
+  const 今 = メニュー.find((m) => m.分類 === 分類);
   return (
-    <div className="menu">
-      <header>
-        <h1>倉庫管理System</h1>
-        <span className="who">
-          {st && <>前回の締め：{st.前回更新日?.replace(/-/g, "/") ?? "―"}（{st.更新時間 ?? ""}）</>}
-          <button onClick={締める}>昨日まで締める</button>
-          <button onClick={() => nav("/")}>閉じる</button>
-        </span>
-      </header>
-      {メニュー.map((sec) => (
-        <section key={sec.分類}>
-          <h2 className="menu-sec">{sec.分類}</h2>
-          <div className="menu-grid">
-            {sec.items.map((i) => (
-              <button key={i.label} disabled={!i.to} onClick={() => i.to && nav(i.to)} onMouseEnter={() => set情報(i.to ? i.説明 : `${i.説明}（準備中）`)}>
-                {i.label}
-              </button>
-            ))}
-          </div>
-        </section>
-      ))}
-      <div className="soko-info">{情報}</div>
+    <div className="skm">
+      <div className="skm-top">
+        <button className="skm-soko" onClick={() => nav("/soko/kensaku")} title="倉庫別データ検索">倉庫管理</button>
+        <button className="skm-imp" onClick={() => nav("/soko/nyuko")} title="WorkStation から入庫データを取り込む画面を開きます">インポート</button>
+        <button className="skm-out mada" disabled title="Web 版にはまだ入れていません">データ出力</button>
+        <span className="skm-ver">オンライン</span>
+        <button className="sz-exit" onClick={() => nav("/")}>終　了</button>
+      </div>
+      <div className="skm-cats">
+        {ボタンの並び.map((k) => (
+          <button key={k} className={分類 === k ? "on" : ""} onClick={() => { set分類(k); set情報(""); }}>{k}</button>
+        ))}
+      </div>
+      <div className="skm-info">{情報 || 今?.案内 || "ボタンを押すと、画面の一覧が出ます。"}</div>
+      <div className="skm-list">
+        {今?.items.map((i) => (
+          <button key={i.label} className={i.to ? "" : "mada"} disabled={!i.to} onClick={() => i.to && nav(i.to)} onMouseEnter={() => set情報(i.to ? i.説明 : `${i.説明}（準備中）`)} onMouseLeave={() => set情報("")}>
+            {i.label}
+          </button>
+        ))}
+      </div>
+      <div className="skm-shime">
+        {st && <>前回の締め：{st.前回更新日?.replace(/-/g, "/") ?? "―"}（{st.更新時間 ?? ""}）</>}
+        <button onClick={締める}>昨日まで締める</button>
+      </div>
     </div>
   );
 }

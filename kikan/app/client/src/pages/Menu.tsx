@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { today } from "../formParts";
 import type { User } from "../main";
 
 // 基幹システムのメインメニュー（2026/10/28 利用者：いただいた画面のボタン 12 個を仮のメインにする）。
@@ -233,30 +234,101 @@ export function WsMenu() {
   );
 }
 
-/** 包装場管理（Access の 包装場管理System.accdb）のメニュー。作った画面だけ */
+type Rec = Record<string, any>;
+const 曜 = "日月火水木金土";
+const 日を足す = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") + k * 86400000).toISOString().slice(0, 10);
+
+/**
+ * 包装場管理のメニュー（Access の 包装場管理System の F_包装管理日誌「帳票管理」）。いただいた画面のボタンの並び。
+ * 上の一覧は「生産登録状況」（FS_出来高入力状況：製造日がその日の工場の入庫。Access は今日に決まっていたが、Web 版は画面の日付）。
+ * to のないもの（白いボタン）は Web 版にまだ入れていない。
+ */
 export function HousouMenu() {
   const nav = useNavigate();
-  const 項目: 項目[] = [
-    { label: "包装準備", to: "/housou/junbi", 説明: "包装日の入庫に、ロボット（パレタイザー）の積み付けを入れます。" },
-    { label: "ロボットハイ積みマスタ", to: "/housou/robot", 説明: "商品ごとのロボットのハイ積みの設定です。" },
-    { label: "包装場の帳票", to: "/housou/chohyo", 説明: "包装予定表・包装日誌・数量チェック表・札などを印刷します。" },
-  ];
+  const [日, set日] = useState(() => {
+    try {
+      return sessionStorage.getItem("housou-menu-date") ?? today();
+    } catch {
+      return today();
+    }
+  });
+  const [rows, setRows] = useState<Rec[] | null>(null);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("housou-menu-date", 日);
+    } catch {
+      /* 覚えられなくてもよい */
+    }
+    setRows(null);
+    api.get<Rec[]>("/api/housou/menu", { date: 日 }).then(setRows, () => setRows([]));
+  }, [日]);
+  const d = new Date(日 + "T00:00:00");
+  const ボタン = (label: string, to?: string, cls = "") => (
+    <button key={label} className={cls + (to ? "" : " mada")} disabled={!to} title={to ? "" : "Web 版にはまだ入れていません"} onClick={() => to && nav(to)}>
+      {label}
+    </button>
+  );
+  const 帳票 = (k: string) => `/housou/chohyo?date=${日}&k=${k}`;
   return (
-    <div className="sz sko">
-      <div className="kk-head">
-        <div className="kk-title">包装場管理</div>
-        <button onClick={() => nav("/")}>閉じる</button>
+    <div className="hgm">
+      <div className="hgm-date">
+        <button onClick={() => set日(日を足す(日, -1))}>◀</button>
+        <span>{`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${曜[d.getDay()]})`}</span>
+        <button onClick={() => set日(日を足す(日, 1))}>▶</button>
+        <button className="hgm-close" onClick={() => nav("/")}>閉じる</button>
       </div>
-      <table className="sz-grid">
-        <tbody>
-          {項目.map((x) => (
-            <tr key={x.label}>
-              <td><button onClick={() => x.to && nav(x.to)} style={{ minWidth: 220 }}>{x.label}</button></td>
-              <td className="small">{x.説明}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="hgm-up">
+        <div className="hgm-list">
+          <div className="hgm-list-head">
+            <span className="hgm-lbl">生産登録状況</span>
+            <span className="hgm-day">{日.slice(2).replace(/-/g, "/")}</span>
+          </div>
+          <table>
+            <thead>
+              <tr><th>順</th><th>商品名</th><th>区分</th><th>ケース</th><th>ﾊﾟﾚﾀｲｻﾞｰNo</th></tr>
+            </thead>
+            <tbody>
+              {(rows ?? []).map((r) => (
+                <tr key={r.入庫ID}>
+                  <td className="c">{r.包装順 ?? ""}</td>
+                  <td>{r.商品名}</td>
+                  <td className="c">{r.タグ}</td>
+                  <td className="r">{r.ケース}</td>
+                  <td className="r">{r.ロボットPrgNo ?? 0}</td>
+                </tr>
+              ))}
+              {rows && rows.length === 0 && <tr><td colSpan={5} className="c">この日の製造はありません。</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div className="hgm-right">
+          {ボタン("カレンダー　登録", undefined, "navy")}
+          <div className="hgm-gap" />
+          {ボタン("Google連携用カレンダー出力(csv)", undefined, "sky")}
+          {ボタン("包装予定表　印刷", 帳票("yotei"), "green")}
+          {ボタン("ふらのパレット使用予定", undefined, "green")}
+        </div>
+      </div>
+      <div className="hgm-low">
+        <div className="hgm-col">
+          {ボタン("包装札　印刷設定", `/housou/junbi?date=${日}`, "navy")}
+          {ボタン("包装時間　登録", undefined, "navy")}
+          {ボタン("週間予定表作成(補佐用)", undefined, "navy")}
+          {ボタン("Oxpa取込み(パレタイザー)", undefined, "navy")}
+        </div>
+        <div className="hgm-col">
+          {ボタン("包装日誌印刷", 帳票("check,nisshi,bunkatsu"), "green")}
+          {ボタン("製品在庫表　印刷", undefined, "green")}
+          {ボタン("無地　包装札印刷", undefined, "green")}
+          {ボタン("無地　仕掛札印刷", undefined, "green")}
+        </div>
+        <div className="hgm-col">{ボタン("分割予定表", 帳票("bunkatsu"), "blue")}</div>
+      </div>
+      <div className="hgm-other">
+        ほかの画面：
+        <button onClick={() => nav("/housou/robot")}>ロボットハイ積みマスタ</button>
+        <button onClick={() => nav(`/housou/chohyo?date=${日}`)}>包装場の帳票（ぜんぶ）</button>
+      </div>
     </div>
   );
 }

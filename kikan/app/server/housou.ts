@@ -80,6 +80,16 @@ async function パレット枚数を出し直す(c: PoolClient, 入庫日: strin
 export function housouRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
+  // 包装場管理のメニューの「生産登録状況」（Access の FS_出来高入力状況：製造日がその日の工場〈倉庫 11〉の入庫。商品 746 は除く。包装順）。
+  // Access は今日に決まっていたが、Web 版はメニューの日付で出す
+  app.get<{ Querystring: { date: string } }>("/api/housou/menu", async (req) =>
+    q(
+      `SELECT "入庫ID", "包装順", "商品名", "タグ", "ケース", "ロボットPrgNo" FROM ${入庫}
+       WHERE "製造日" = $1::date AND "倉庫ID" = 11 AND "商品コード" <> 746 ORDER BY "包装順", "入庫ID"`,
+      [req.query.date],
+    ),
+  );
+
   app.get<{ Querystring: { date: string } }>("/api/housou/junbi", async (req) => ({
     rows: await その日の行({ query: (s: string, p: unknown[]) => q(s, p).then((rows) => ({ rows })) } as any, req.query.date),
     プログラム: await q(`SELECT "ロボットプログラムNo" AS id, "パレット", "品番", "段数", "積み付け数" FROM ${積み付けマスタ} ORDER BY "ロボットプログラムNo"`),

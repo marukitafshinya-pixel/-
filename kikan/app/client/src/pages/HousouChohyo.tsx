@@ -384,7 +384,7 @@ export function HousouChohyo() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
   const [日, set日] = useState(sp.get("date") ?? today());
-  const [選んだ, set選んだ] = useState<string[]>(sp.get("k") === "fuda" ? 札のまとめ : sp.get("k") ? [sp.get("k")!] : []);
+  const [選んだ, set選んだ] = useState<string[]>(sp.get("k") === "fuda" ? 札のまとめ : sp.get("k") ? sp.get("k")!.split(",") : []);
   const [作業場, set作業場] = useState("");
   const [中身, set中身] = useState<Record<string, Rec>>({});
   useEffect(() => {
