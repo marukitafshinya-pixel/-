@@ -8,6 +8,7 @@
 
 使い方: PGURL=... python3 make_data.py > data.sql
 """
+import json
 import os
 import subprocess
 import sys
@@ -441,6 +442,10 @@ for i, (code, 台数, 段数, 個数, 開始, 終了, 人員, dd) in enumerate([
     分 = (int(終了.split(":")[0]) * 60 + int(終了.split(":")[1])) - (int(開始.split(":")[0]) * 60 + int(開始.split(":")[1]))
     ins("housou_fe.TM_包装時間", ID=1 + i, 製造日=day(dd), 商品コード=code, 品名=商品名[code][0], 台数=台数, 段数=段数, 包装個数=個数, 実働時間分=分, 人員=人員,
         ケース_秒=round(分 / 個数 * 60), **{"1台あたり（秒）": round(分 / 台数 * 60, 1)}, 開始時間=Raw(f"'1899-12-30 {開始}'::timestamp"), 終了時間=Raw(f"'1899-12-30 {終了}'::timestamp"))
+
+# ロボット積み付けマスタ（housou.TM_ロボット積み付けマスタ）：2026/10/28 利用者からいただいた一覧（robot_master.json、133 行）をそのまま入れる
+for _r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "robot_master.json"), encoding="utf-8")):
+    ins("housou.TM_ロボット積み付けマスタ", **_r)
 
 # ---------------- プログラムの決めごと（server/schema.sql）の取引先名を、見本の名前にする ----------------
 out.append('DELETE FROM app."受注検索_受注元ボタン";')
