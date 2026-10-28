@@ -4,6 +4,7 @@ import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate } from "../formParts";
 import { KibouDialog, type 希望在庫 } from "./WsKibou";
 import { 輸送依頼書印刷, 出荷予定明細票印刷 } from "./Chohyo";
+import { ZaikoSentaku } from "./WsZaikoSelect";
 
 type Rec = Record<string, any>;
 type 選択肢 = Record<string, { id: number; name: string }[]>;
@@ -47,6 +48,10 @@ export default function WsMain() {
   const [依頼書, set依頼書] = useState<Rec | null>(null);
   const [予定, set予定] = useState<{ 開始: string; 終了: string; 便だけ: boolean } | null>(null);
   const [予定票, set予定票] = useState<Rec | null>(null);
+  const [在庫選択, set在庫選択] = useState<{ 出庫ID: number; 商品コード: number; 倉庫ID: number } | null>(null);
+  const [版, set版] = useState(0); // 在庫選択をやめたとき、打った商品コードを元に戻すため
+  const [備考選ぶ, set備考選ぶ] = useState<Rec | null>(null);
+  const [備考欄, set備考欄] = useState<Rec[] | null>(null);
 
   useEffect(() => {
     api.get<選択肢>("/api/ws/choices").then(setCh);
@@ -112,6 +117,69 @@ export default function WsMain() {
     } catch (e) {
       alert(e instanceof ApiError ? e.message : String(e));
     }
+  }
+
+  // 明細の届け先・出荷場所を一覧で直す（Access の FS_出荷明細 cmb_届け先・cmb_出荷元。詳細画面と同じ保存）
+  async function 明細を直す(r: Rec, 項目: "届け先コード" | "倉庫ID", 値: string) {
+    const code = 値.trim() === "" ? null : Number(値);
+    if (code === (r[項目] ?? null)) return;
+    if (項目 === "届け先コード" && r.受注ID) {
+      // Access と同じく、受注の品は受注ID を打って確かめる
+      const a = prompt(`商品名：${r.商品名 ?? ""} ${r.ケース ?? ""} 個\n\n届け先：${r.届け先 ?? ""}\n\nは受注の品です（受注ID ${r.受注ID}）\n\n届け先を変更してよろしいですか？\n良ければ受注IDを入力してください。`);
+      if (String(a ?? "").trim() !== String(r.受注ID)) {
+        set版((x) => x + 1);
+        return;
+      }
+    }
+    try {
+      await api.post("/api/ws/detail/save", { 出庫ID: r.出庫ID, [項目]: code, 一覧から: true });
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+    set版((x) => x + 1);
+    await load();
+  }
+  function 商品を変える(r: Rec, 値: string) {
+    const code = Number(値);
+    if (!値.trim() || !code || code === r.商品コード) return;
+    set在庫選択({ 出庫ID: r.出庫ID, 商品コード: code, 倉庫ID: r.倉庫ID ?? 0 });
+  }
+  // 左の積込順（Access の FS_積込順）
+  async function 積込を直す(k: Rec, 項目: string, 値: string) {
+    if (String(k[項目] ?? "") === 値) return;
+    try {
+      await api.post("/api/ws/tsumi/save", { ID: k.ID, 項目, 値 });
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+    await load();
+  }
+  async function 積込を足す() {
+    try {
+      await api.post("/api/ws/tsumi/new", { 輸送ID });
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+    await load();
+  }
+  async function 積込を消す(k: Rec) {
+    if (!confirm(`届け順：${k.届け順 ?? ""}\n届け先：${k.届け先名 ?? ""}\n\n積み順：${k.積込順 ?? ""}\n集荷先：${k.出荷元名 ?? ""}\n\n並び順およびコメントの削除しますか？`)) return;
+    try {
+      await api.post("/api/ws/tsumi/delete", { ID: k.ID });
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : String(e));
+    }
+    await load();
+  }
+  async function 備考を選ぶ(k: Rec) {
+    if (!備考欄) {
+      try {
+        set備考欄((await api.get<any>("/api/ws/detail-choices")).備考欄 ?? []);
+      } catch (e) {
+        return alert(e instanceof ApiError ? e.message : String(e));
+      }
+    }
+    set備考選ぶ(k);
   }
 
   // 振分け（Access の cmd_Auto振分け）
@@ -323,33 +391,42 @@ export default function WsMain() {
             ))}
           </div>
           {(data?.積込 ?? []).map((k) => (
-            <div key={k.ID} className="ws-tsumi">
-              {leftTab === "届順" ? (
-                <>
-                  <div className="nums">
-                    <span>届順</span>
-                    <b>{k.届け順}</b>
-                    <span>積順</span>
-                    <b>{k.積込順}</b>
-                  </div>
-                  <div>
-                    <span className="c">{k.積込順届け先}</span> {k.届け先名}
-                  </div>
-                  <div>
-                    <span className="c">{k.積込順出荷元}</span> {k.出荷元名}
-                  </div>
-                </>
-              ) : (
-                <div className="memo">{k.積込備考}</div>
+            <div key={`${k.ID}-${版}`} className={"ws-tsumi" + (leftTab === "備考" ? " memo-mode" : "")}>
+              <div className="nums">
+                <span>届順</span>
+                <Field value={k.届け順} kind="num" className="ws-tn" onCommit={(v) => 積込を直す(k, "届け順", v.trim())} />
+                <span>積順</span>
+                <Field value={k.積込順} kind="num" className="ws-tn" onCommit={(v) => 積込を直す(k, "積込順", v.trim())} />
+                <button className="small ws-tdel" onClick={() => 積込を消す(k)} title="この並び順とコメントを消します">削除</button>
+              </div>
+              <div className="ws-tcode">
+                <Field value={k.積込順届け先} kind="num" kyotsu="tokui" className="c" onCommit={(v) => 積込を直す(k, "積込順届け先", v.trim())} />
+                <span>{k.届け先名}</span>
+              </div>
+              <div className="ws-tcode">
+                <Field value={k.積込順出荷元} kind="num" kyotsu="tokui" className="c" onCommit={(v) => 積込を直す(k, "積込順出荷元", v.trim())} />
+                <span>{k.出荷元名}</span>
+              </div>
+              {leftTab === "備考" && (
+                <textarea
+                  key={k.積込備考 ?? ""}
+                  className="memo"
+                  defaultValue={k.積込備考 ?? ""}
+                  title="ダブルクリックで備考欄から選べます"
+                  onBlur={(e) => 積込を直す(k, "積込備考", e.target.value)}
+                  onDoubleClick={() => 備考を選ぶ(k)}
+                />
               )}
             </div>
           ))}
+          <button className="small ws-furi" disabled={!輸送ID} onClick={積込を足す} title="並び順の行を 1 つ足します">追加</button>
           <button className="small ws-furi" disabled={!輸送ID} onClick={振分け} title="届け先・出荷元ごとに届け順と積込順を作り直します">振分け</button>
         </div>
         <div className="ws-gridwrap">
           <table className="ws-grid">
             <thead>
               <tr>
+                <th title="積込確認（✔で在庫に登録）">積込</th>
                 <th>通知</th>
                 <th>切替</th>
                 <th>順</th>
@@ -368,12 +445,14 @@ export default function WsMain() {
                 <th>受注ID</th>
                 <th>年間ID</th>
                 <th>P数</th>
-                <th title="積込確認（✔で在庫に登録）">積込</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.出庫ID}>
+                  <td className="c">
+                    <input type="checkbox" checked={!!r.積込確認} onChange={(e) => 積込確認(r, e.target.checked)} />
+                  </td>
                   <td className="notice">
                     <div className="y">{r.通知}</div>
                     <div className="r">{r.変更通知}</div>
@@ -382,11 +461,17 @@ export default function WsMain() {
                     <button className="small" onClick={() => nav(`/ws/detail/${r.出庫ID}`)}>詳細</button>
                   </td>
                   <td className="jun">{r.商品積込順}</td>
-                  <td className="r kc">{r.届け先コード}</td>
+                  <td className="r kc">
+                    <Field key={`t${版}`} value={r.届け先コード} kind="num" kyotsu="tokui" readOnly={!!r.chk} className="ws-code" onCommit={(v) => 明細を直す(r, "届け先コード", v)} />
+                  </td>
                   <td>{r.届け先}</td>
-                  <td className="r kc">{r.倉庫ID}</td>
+                  <td className="r kc">
+                    <Field key={`s${版}`} value={r.倉庫ID} kind="num" kyotsu="tokui" readOnly={!!r.chk} className="ws-code" onCommit={(v) => 明細を直す(r, "倉庫ID", v)} />
+                  </td>
                   <td>{r.倉庫名}</td>
-                  <td className="r kc">{r.商品コード}</td>
+                  <td className="r kc">
+                    <Field key={`c${版}`} value={r.商品コード} kind="num" kyotsu="shohin" readOnly={!!r.chk} className="ws-code" onCommit={(v) => 商品を変える(r, v)} />
+                  </td>
                   <td className="bold">{r.商品名}</td>
                   <td className="r">{num(r.ケース)}</td>
                   <td className="r">{num(r.商品kg)}</td>
@@ -400,9 +485,6 @@ export default function WsMain() {
                   <td className="r">{r.受注ID || ""}</td>
                   <td>{r.年間受注ID}</td>
                   <td className="r bold">{r.パレット使用枚数}</td>
-                  <td className="c">
-                    <input type="checkbox" checked={!!r.積込確認} onChange={(e) => 積込確認(r, e.target.checked)} />
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -429,6 +511,42 @@ export default function WsMain() {
             日付を移す(d);
           }}
         />
+      )}
+      {在庫選択 && (
+        <ZaikoSentaku
+          {...在庫選択}
+          onDone={async () => {
+            set在庫選択(null);
+            set版((x) => x + 1);
+            await load();
+          }}
+        />
+      )}
+      {備考選ぶ && (
+        <div className="modal" onClick={() => set備考選ぶ(null)}>
+          <div className="find" onClick={(e) => e.stopPropagation()}>
+            <div className="find-head">備考欄選択（押すと積込備考をこの文にします）<button onClick={() => set備考選ぶ(null)}>やめる</button></div>
+            <div className="find-list">
+              <table>
+                <tbody>
+                  {(備考欄 ?? []).map((o: any) => (
+                    <tr key={o.id} onClick={async () => {
+                      const k = 備考選ぶ;
+                      set備考選ぶ(null);
+                      await api.post("/api/ws/tsumi/save", { ID: k.ID, 項目: "積込備考", 値: o.name }).catch((e) => alert(e instanceof ApiError ? e.message : String(e)));
+                      set版((x) => x + 1);
+                      await load();
+                    }}>
+                      <td className="sub">{o.分類}</td>
+                      <td className="sub">{o.作業分類}</td>
+                      <td>{o.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
       {依頼書 && <輸送依頼書印刷 y={依頼書} onClose={() => set依頼書(null)} />}
       {予定 && (

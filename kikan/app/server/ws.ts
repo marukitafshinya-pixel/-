@@ -216,6 +216,46 @@ export function wsRoutes(app: FastifyInstance) {
     return { plan, rows, 積込 };
   });
 
+  // 左の積込順（Access の FS_積込順）：届け順・積込順・届け先・出荷元・積込備考を直す。届け先を変えたら、その受付時間を積込備考の前に足す
+  const 積込順の項目 = ["届け順", "積込順", "積込順届け先", "積込順出荷元", "積込備考"];
+  app.post<{ Body: { ID: number; 項目: string; 値: unknown } }>("/api/ws/tsumi/save", async (req, reply) => {
+    const 項目 = req.body.項目;
+    if (!積込順の項目.includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
+    let 値: unknown = req.body.値 === "" || req.body.値 === undefined ? null : req.body.値;
+    if (値 !== null && 項目 !== "積込備考") {
+      値 = Number(値);
+      if (!Number.isFinite(値 as number)) return reply.code(400).send({ error: "数を入れてください" });
+    }
+    return 一連で(async (c) => {
+      const k = (await c.query(`SELECT * FROM ${積込順} WHERE "ID" = $1 FOR UPDATE`, [Number(req.body.ID)])).rows[0];
+      if (!k) return reply.code(404).send({ error: "この行はありません" });
+      const v: Record<string, unknown> = { [項目]: 値 };
+      if (項目 === "積込順届け先" && 値 !== null) {
+        const 受付 = (await c.query(`SELECT "受付時間" FROM ${得意先マスタ} WHERE "短縮コード" = $1 LIMIT 1`, [値])).rows[0]?.受付時間 ?? "";
+        v.積込備考 = `${受付}${k.積込備考 ?? ""}`.slice(0, 255) || null;
+      }
+      const cols = Object.keys(v);
+      await c.query(`UPDATE ${積込順} SET ${cols.map((x, i) => `"${x}" = $${i + 2}`).join(", ")} WHERE "ID" = $1`, [k.ID, ...cols.map((x) => v[x])]);
+      return { ok: true };
+    });
+  });
+  app.post<{ Body: { 輸送ID: number } }>("/api/ws/tsumi/new", async (req, reply) => {
+    const 輸送ID = Number(req.body.輸送ID);
+    if (!輸送ID) return reply.code(400).send({ error: "便を選んでください" });
+    return 一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TD_積込順.ID'))`);
+      const id = Number((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS m FROM ${積込順}`)).rows[0].m);
+      const 次 = (await c.query(`SELECT COALESCE(MAX("届け順"), 0) + 1 AS t, COALESCE(MAX("積込順"), 0) + 1 AS k FROM ${積込順} WHERE "輸送ID" = $1`, [輸送ID])).rows[0];
+      await c.query(`INSERT INTO ${積込順} ("ID", "輸送ID", "届け順", "積込順") VALUES ($1, $2, $3, $4)`, [id, 輸送ID, Number(次.t), Number(次.k)]);
+      return { ID: id };
+    });
+  });
+  app.post<{ Body: { ID: number } }>("/api/ws/tsumi/delete", async (req, reply) => {
+    const r = await q(`DELETE FROM ${積込順} WHERE "ID" = $1 RETURNING 1`, [Number(req.body.ID)]);
+    if (!r.length) return reply.code(404).send({ error: "この行はありません" });
+    return { ok: true };
+  });
+
   // 上の欄を直す。輸送の運送会社を変えたときは、Access と同じく区分などの初めの値を入れる
   app.post<{ Body: Record<string, any> }>("/api/ws/plan/save", async (req, reply) => {
     const b = req.body;
@@ -386,6 +426,17 @@ export function wsRoutes(app: FastifyInstance) {
       // 届け先：届け先の受付時間を備考に足す
       if ("届け先コード" in v) v.備考 = await 特別項目(c, 1, String(v.備考 ?? cur.備考 ?? ""), v.届け先コード);
       // 出荷場所：在庫を読み込んでいない行は、入庫前名義を出荷場所条件の名義にする
+      // 出荷明細票の一覧で出荷場所を変えたとき（Access の FS_出荷明細 cmb_出荷元_AfterUpdate）：手配元・手配帳合を出荷場所条件から（無ければ出荷場所）、
+      // 社内連絡を「 mm/dd（便の集荷日）出荷場所 引取り」にする。詳細画面（FSD_出荷明細2）はこれをしない
+      if ("倉庫ID" in v && b.一覧から) {
+        const 場所 = (await c.query(`SELECT "手配元ID", "手配帳合ID" FROM ${出荷場所条件} WHERE "倉庫ID" = $1 LIMIT 1`, [v.倉庫ID])).rows[0];
+        v.手配元ID = 場所?.手配元ID ?? v.倉庫ID;
+        v.手配帳合ID = 場所?.手配帳合ID ?? v.倉庫ID;
+        v.手配元 = await 短縮名(c, v.手配元ID);
+        v.手配帳合 = await 短縮名(c, v.手配帳合ID);
+        const 集荷日 = (await c.query(`SELECT "集荷日"::date::text AS d FROM ${輸送計画} WHERE "輸送ID" = $1`, [cur.輸送ID])).rows[0]?.d;
+        v.社内連絡 = `${集荷日 ? ` ${集荷日.slice(5, 7)}/${集荷日.slice(8, 10)}` : ""}${v.倉庫名 ?? ""} 引取り`;
+      }
       if ("倉庫ID" in v && (cur.認識ID ?? "0") === "0") {
         const m = (await c.query(`SELECT "名義ID" FROM ${出荷場所条件} WHERE "倉庫ID" = $1 LIMIT 1`, [v.倉庫ID])).rows[0];
         v.入庫前名義ID = m?.名義ID ?? v.倉庫ID;

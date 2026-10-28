@@ -2452,3 +2452,15 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .kh-grid td.r { text-align: right; }
 .hj-note { margin: 2px 0 6px; color: #555; }
 .hj-grid td { white-space: nowrap; }
+/* 出荷明細票の左の積込順（直せる形。Access の FS_積込順） */
+.ws-tsumi .ws-tn { width: 30px; background: #ffff00; color: #000; text-align: center; border: 0; font-weight: bold; }
+.ws-tsumi .ws-tdel { margin-left: auto; font-size: 10px; padding: 0 3px; }
+.ws-tcode { display: flex; gap: 4px; align-items: center; margin-top: 2px; font-size: 12px; }
+.ws-tcode input.c { width: 40px; border: 0; padding: 0 2px; }
+.ws-tcode span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ws-tsumi textarea.memo { width: 100%; box-sizing: border-box; height: 6.2em; margin-top: 3px; font-size: 12px; resize: vertical; }
+.ws-grid input.ws-code { width: 44px; text-align: right; border: 1px solid transparent; background: transparent; color: inherit; font: inherit; }
+.ws-grid input.ws-code:not([readonly]):hover, .ws-grid input.ws-code:focus { border-color: #888; background: #fff; }
+.ws-left { width: 196px; }
+.ws-tsumi .nums span { font-size: 11px; white-space: nowrap; padding: 0 2px; }
+.ws-tsumi .ws-tdel { white-space: nowrap; }
