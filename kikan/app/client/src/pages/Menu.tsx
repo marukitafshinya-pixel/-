@@ -1,39 +1,23 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import type { User } from "../main";
 
-// 受注管理のメニュー（Access の FM_メインメニュー）。まだ作っていない画面は「準備中」を開く。
-// 受注日報・売上日報・日本食研web確認表・伝票発行は、社内で「移さない」と決めたので載せない（09_必要な機能と帳票.md。伝票発行は受注検索の「印刷」で代わりにする）。
-const sections: { title: string; items: { label: string; to: string }[] }[] = [
-  { title: "受注管理", items: [
-  { label: "受注登録", to: "/juchu/select" },
-  { label: "受注検索", to: "/juchu/search" },
-  { label: "販盛受注取込み", to: "/form/F_販盛インポート" },
-  { label: "販盛売上出力", to: "/form/F_販盛インポート売上" },
-  { label: "単価チェック", to: "/form/F_販盛単価確認" },
-  { label: "SB受注取り込み", to: "/form/F_エスビー受注インポート" },
-  { label: "発注依頼", to: "/form/F_受注元選択" },
-  { label: "特定商品表示", to: "/form/FM_特定商品表示" },
-  { label: "受注グループマスタ", to: "/form/FM_受注先マスタ登録" },
-  { label: "相手先届け先マスタ", to: "/juchu/aite-todoke" },
-  { label: "相手先商品マスタ", to: "/juchu/aite" },
-  ] },
-  // 丸北WorkStation（Access の WorkStation のメインメニュー）。作ったものから足していく
-  { title: "丸北WorkStation", items: [{ label: "出荷明細票", to: "/ws" }, { label: "在庫表", to: "/ws/zaikohyo" }, { label: "保管庫詳細", to: "/ws/hokan" }, { label: "出荷停止在庫", to: "/ws/teishi" }, { label: "検査結果登録", to: "/ws/kensa" }, { label: "検査待ち在庫", to: "/ws/kensamachi" }, { label: "サンプル登録", to: "/ws/sample" }, { label: "在庫確認（パレット）", to: "/ws/zpallet" }, { label: "パレット配置図", to: "/ws/haichi" }, { label: "相手先商品", to: "/ws/aite" }, { label: "相手先届け先", to: "/ws/aite-todoke" }, { label: "集荷先パレット設定", to: "/ws/shuka-pallet" }, { label: "商品使用予定数入力", to: "/ws/stock" }, { label: "大阪受注登録", to: "/ws/osaka" }, { label: "出荷抽出帳票", to: "/ws/shukkachu" }, { label: "輸送抽出帳票", to: "/ws/yusochu" }, { label: "在庫抽出帳票", to: "/ws/zaikochu" }, { label: "名義運賃振分設定", to: "/master/user" }, { label: "在庫更新", to: "/ws/koshin" }, { label: "日別の在庫", to: "/ws/hibetsu" }, { label: "パレット輸送割付", to: "/ws/pallet" }] },
-  // 製造管理 丸北（Access の 製造管理 丸北.accdb のメニュー）
-  { title: "製造管理　丸北", items: [{ label: "製造管理メニュー", to: "/seizo" }, { label: "丸北 計量枚数登録", to: "/seizo/dekidaka" }, { label: "丸北 包装日誌登録", to: "/seizo/hoso" }, { label: "包装予定追加", to: "/seizo/yotei" }, { label: "他工場 計量日誌登録", to: "/seizo/tako" }, { label: "他工場 包装日誌登録", to: "/seizo/hoso?soko=191" }, { label: "取引先商品製造一覧", to: "/seizo/kensaku" }] },
-  // 包装場管理System（Access の 包装場管理System.accdb。作っている途中）
-  { title: "包装場管理", items: [{ label: "包装準備", to: "/housou/junbi" }, { label: "ロボットハイ積みマスタ", to: "/housou/robot" }, { label: "包装場の帳票", to: "/housou/chohyo" }] },
-  // 手配出力用カレンダー（Access の 手配出力用カレンダー.accdb）
-  { title: "手配出力用カレンダー", items: [{ label: "配送予定カレンダー", to: "/tehai" }] },
-  // 倉庫管理System（Access の 倉庫管理System.accdb。外の冷蔵庫の在庫・出庫・名義変更・保管料）
-  { title: "倉庫管理System", items: [{ label: "倉庫管理メニュー", to: "/soko" }, { label: "入庫登録(ｲﾝﾎﾟｰﾄ)", to: "/soko/nyuko" }, { label: "在庫抽出帳票", to: "/soko/zaikochu" }, { label: "出庫抽出帳票", to: "/soko/shukkachu" }] },
-  // 製造計画（Access の 製造計画.accdb のメニュー）
-  { title: "製造計画", items: [{ label: "生産計画インポート", to: "/keikaku" }, { label: "変更内容確認", to: "/keikaku/henko" }, { label: "製造カレンダー確認", to: "/keikaku/calendar" }, { label: "変更履歴表示", to: "/keikaku/log" }] },
-  // WEB連携（Access の WEB連携。elixxi・ランテック・販盛・MerQurius への出力）
-  { title: "WEB連携", items: [{ label: "WEB連携メニュー", to: "/web" }, { label: "相手先サイトの設定", to: "/web/settei" }] },
-  // マスタ管理（Access の「Accessマスタ管理」）
-  { title: "マスタ管理", items: [{ label: "商品マスタ", to: "/master/shohin" }, { label: "得意先マスタ", to: "/master/tokui" }, { label: "運送会社マスタ", to: "/master/unso" }, { label: "ユーザーマスタ", to: "/master/user" }, { label: "ユーザーマスタ未設定", to: "/master/misettei" }, { label: "カレンダー設定", to: "/master/calendar" }, { label: "古いデータを消す", to: "/master/sakujo" }, { label: "マスタ選択", to: "/master" }] },
+// 基幹システムのメインメニュー（2026/10/28 利用者：いただいた画面のボタン 12 個を仮のメインにする）。
+// 各ボタンから、それぞれのメニュー画面に移る。to のないもの（白いボタン）は Web 版にまだ入れていない。
+const ボタン: { label: string; to?: string }[] = [
+  { label: "製造計画", to: "/keikaku" },
+  { label: "受注登録", to: "/juchu" },
+  { label: "倉庫管理", to: "/soko" },
+  { label: "マスタ管理", to: "/master" },
+  { label: "製造管理", to: "/seizo" },
+  { label: "丸北管理", to: "/maruhoku" },
+  { label: "原料管理" },
+  { label: "商品推移" },
+  { label: "包装場管理", to: "/housou" },
+  { label: "仕掛管理" },
+  { label: "WEB連携", to: "/web" },
+  { label: "丸北　輸送管理" },
 ];
 
 export default function Menu({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -54,18 +38,225 @@ export default function Menu({ user, onLogout }: { user: User; onLogout: () => v
           </button>
         </span>
       </header>
-      {sections.map((sec) => (
-        <section key={sec.title}>
-          <h2 className="menu-sec">{sec.title}</h2>
-          <div className="menu-grid">
-            {sec.items.map((i) => (
-              <button key={i.label} onClick={() => nav(i.to)}>
-                {i.label}
+      <div className="top-grid">
+        {ボタン.map((b) => (
+          <button key={b.label} className={b.to ? "" : "mada"} disabled={!b.to} title={b.to ? "" : "Web 版にはまだ入れていません"} onClick={() => b.to && nav(b.to)}>
+            {b.label}
+          </button>
+        ))}
+      </div>
+      <div className="top-other">
+        ほかの画面：<button onClick={() => nav("/tehai")}>配送予定カレンダー（手配出力用カレンダー）</button>
+      </div>
+    </div>
+  );
+}
+
+type 項目 = { label: string; to?: string; 説明?: string };
+
+/**
+ * 受注管理のメニュー（Access の 受注管理 のメニュー）。いただいた画面のボタンのうち、
+ * 使っていない画面（伝票発行・受注日報・日本食研受注確認表。09_必要な機能と帳票.md で「移さない」）は載せない。
+ * to のないものは Web 版にまだ入れていない。
+ */
+export function JuchuMenu() {
+  const nav = useNavigate();
+  const 左: 項目[] = [
+    { label: "発注依頼", to: "/form/F_受注元選択" },
+    { label: "受注登録", to: "/juchu/select" },
+    { label: "受注検索", to: "/juchu/search" },
+    { label: "相手先商品マスタ", to: "/juchu/aite" },
+    { label: "相手先届け先マスタ", to: "/juchu/aite-todoke" },
+    { label: "受注グループマスタ", to: "/form/FM_受注先マスタ登録" },
+    { label: "特定商品表示", to: "/form/FM_特定商品表示" },
+  ];
+  const 右: 項目[] = [
+    { label: "販盛 受注取込処理", to: "/form/F_販盛インポート" },
+    { label: "販盛 売上出力処理", to: "/form/F_販盛インポート売上" },
+    { label: "SB受注取り込み", to: "/form/F_エスビー受注インポート" },
+    { label: "食研HD愛媛 受注取込" },
+    { label: "販盛単価確認", to: "/form/F_販盛単価確認" },
+    { label: "ランテック2か月以上未配達リスト" },
+  ];
+  const ボタン = (x: 項目) => (
+    <button key={x.label} className={x.to ? "" : "mada"} disabled={!x.to} title={x.to ? "" : "Web 版にはまだ入れていません"} onClick={() => x.to && nav(x.to)}>
+      {x.label}
+    </button>
+  );
+  return (
+    <div className="jm">
+      <div className="jm-head">
+        <div className="jm-title">受注管理</div>
+        <button onClick={() => nav("/")}>閉じる</button>
+      </div>
+      <div className="jm-body">
+        <div className="jm-col">{左.map(ボタン)}</div>
+        <div className="jm-col right">{右.map(ボタン)}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 丸北管理（Access の 丸北WorkStation の FM_メインメニュー）。受注・出荷・在庫・情報管理のタブ。
+ * 一覧のあるボタン（Access の F_処理選択。T_画面一覧 の分類）は、押すと左に画面の一覧を出し、そこから開く。
+ * 住所録（分類 630）は個人の情報のため移さない。オートナンバー修正・データ出力（ファイルへの書き出し）は Web 版では要らない。
+ */
+type WsBtn = { label: string; to?: string; 一覧?: 項目[] };
+const WSタブ: { k: string; 名: string; ボタン: WsBtn[] }[] = [
+  {
+    k: "juchu",
+    名: "受注",
+    ボタン: [
+      { label: "大阪受注登録", to: "/ws/osaka" },
+      { label: "印刷", 一覧: [{ label: "大阪発注割振り(製造分)" }, { label: "大阪発注割振り(在庫)" }] },
+      { label: "道内ストック表示設定", to: "/ws/stock" },
+    ],
+  },
+  {
+    k: "shukka",
+    名: "出荷",
+    ボタン: [
+      {
+        label: "出荷登録",
+        一覧: [{ label: "出荷登録", to: "/ws" }, { label: "積荷情報" }, { label: "入庫依頼書確認用" }, { label: "elixxi入庫登録", to: "/web/elixxi-nyuko" }],
+      },
+      { label: "回送積込確認書作成", to: "/ws/pallet" },
+      { label: "検索", 一覧: [{ label: "出荷抽出帳票", to: "/ws/shukkachu" }, { label: "輸送抽出帳票", to: "/ws/yusochu" }] },
+      { label: "ニチレイ入庫リスト" },
+    ],
+  },
+  {
+    k: "zaiko",
+    名: "在庫",
+    ボタン: [
+      {
+        label: "在庫登録",
+        一覧: [
+          { label: "在庫表示・印刷", to: "/ws/zaikohyo" },
+          { label: "在庫表示詳細・印刷", to: "/ws/hokan" },
+          { label: "サンプル登録", to: "/ws/sample" },
+          { label: "検査結果登録", to: "/ws/kensa" },
+          { label: "検査待ち在庫", to: "/ws/kensamachi" },
+          { label: "出荷停止在庫確認", to: "/ws/teishi" },
+          { label: "日別の在庫", to: "/ws/hibetsu" },
+        ],
+      },
+      { label: "在庫確認", to: "/ws/zpallet" },
+      { label: "パレット配置図", to: "/ws/haichi" },
+      { label: "検索", 一覧: [{ label: "在庫抽出帳票", to: "/ws/zaikochu" }] },
+    ],
+  },
+  {
+    k: "joho",
+    名: "情報管理",
+    ボタン: [
+      { label: "在庫更新", to: "/ws/koshin" },
+      { label: "得意先マスタ", to: "/master/tokui" },
+      { label: "商品マスタ", to: "/master/shohin" },
+      { label: "運送会社マスタ", to: "/master/unso" },
+      {
+        label: "出荷のマスタ",
+        一覧: [
+          { label: "相手先科目マスタ", to: "/ws/aite" },
+          { label: "相手先届け先", to: "/ws/aite-todoke" },
+          { label: "集荷先パレット設定", to: "/ws/shuka-pallet" },
+        ],
+      },
+      { label: "名義運賃振分設定", to: "/master/user" },
+    ],
+  },
+];
+
+export function WsMenu() {
+  const nav = useNavigate();
+  const [タブ, setタブ] = useState(() => sessionStorage.getItem("ws-menu-tab") ?? "shukka");
+  const [一覧, set一覧] = useState<WsBtn | null>(null);
+  const 今 = WSタブ.find((t) => t.k === タブ) ?? WSタブ[1];
+  function 押す(b: WsBtn) {
+    if (b.一覧) set一覧(b);
+    else if (b.to) nav(b.to);
+  }
+  return (
+    <div className="wm">
+      <div className="wm-head">
+        <div className="wm-title">丸北管理　ワークステーション</div>
+        <div className="wm-co">丸北北海道</div>
+        <button className="wm-nenkan" onClick={() => nav("/ws/nenkan")}>年間受注</button>
+      </div>
+      <div className="wm-body">
+        <div className="wm-side">
+          {一覧 && (
+            <>
+              {一覧.一覧!.map((x) => (
+                <button key={x.label} className={x.to ? "" : "mada"} disabled={!x.to} title={x.to ? "" : "Web 版にはまだ入れていません"} onClick={() => x.to && nav(x.to)}>
+                  {x.label}
+                </button>
+              ))}
+              <button className="wm-close" onClick={() => set一覧(null)}>閉じる</button>
+            </>
+          )}
+        </div>
+        <div className="wm-main">
+          <div className="sz-tabs">
+            {WSタブ.map((t) => (
+              <button
+                key={t.k}
+                className={タブ === t.k ? "on" : ""}
+                onClick={() => {
+                  setタブ(t.k);
+                  set一覧(null);
+                  try {
+                    sessionStorage.setItem("ws-menu-tab", t.k);
+                  } catch {
+                    /* 覚えられなくてもよい */
+                  }
+                }}
+              >
+                {t.名}
               </button>
             ))}
           </div>
-        </section>
-      ))}
+          <div className="wm-page">
+            {今.ボタン.map((b) => (
+              <button key={b.label} className={(b.to || b.一覧 ? "" : "mada") + (一覧 === b ? " on" : "")} disabled={!b.to && !b.一覧} onClick={() => 押す(b)}>
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="wm-foot">
+        <button className="sz-exit" onClick={() => nav("/")}>終　了</button>
+      </div>
+    </div>
+  );
+}
+
+/** 包装場管理（Access の 包装場管理System.accdb）のメニュー。作った画面だけ */
+export function HousouMenu() {
+  const nav = useNavigate();
+  const 項目: 項目[] = [
+    { label: "包装準備", to: "/housou/junbi", 説明: "包装日の入庫に、ロボット（パレタイザー）の積み付けを入れます。" },
+    { label: "ロボットハイ積みマスタ", to: "/housou/robot", 説明: "商品ごとのロボットのハイ積みの設定です。" },
+    { label: "包装場の帳票", to: "/housou/chohyo", 説明: "包装予定表・包装日誌・数量チェック表・札などを印刷します。" },
+  ];
+  return (
+    <div className="sz sko">
+      <div className="kk-head">
+        <div className="kk-title">包装場管理</div>
+        <button onClick={() => nav("/")}>閉じる</button>
+      </div>
+      <table className="sz-grid">
+        <tbody>
+          {項目.map((x) => (
+            <tr key={x.label}>
+              <td><button onClick={() => x.to && nav(x.to)} style={{ minWidth: 220 }}>{x.label}</button></td>
+              <td className="small">{x.説明}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

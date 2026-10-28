@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, MemoryRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { api } from "./api";
 import Login from "./pages/Login";
-import Menu from "./pages/Menu";
+import Menu, { HousouMenu, JuchuMenu, WsMenu } from "./pages/Menu";
 import JuchuSakiSelect from "./pages/JuchuSakiSelect";
 import JuchuSearch from "./pages/JuchuSearch";
 import JuchuTodokeForm from "./pages/JuchuTodokeForm";
@@ -76,6 +76,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Menu user={user} onLogout={() => setUser(null)} />} />
+      <Route path="/juchu" element={<JuchuMenu />} />
+      <Route path="/maruhoku" element={<WsMenu />} />
+      <Route path="/housou" element={<HousouMenu />} />
       <Route path="/juchu/select" element={<JuchuSakiSelect />} />
       <Route path="/juchu/search" element={<JuchuSearch />} />
       <Route path="/form/FM_受注登録_届け先指定" element={<JuchuTodokeForm />} />

@@ -2345,3 +2345,34 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .ny-renraku { font-size: 9px; margin-top: 6mm; }
 .sm-t td.renraku div { max-height: 2.4em; overflow: hidden; }
 .sm-t td { height: 6mm; }
+
+/* メインメニュー（12 個のボタン）。白いボタンは Web 版にまだ入れていない */
+.top-grid { display: grid; grid-template-columns: repeat(4, minmax(140px, 228px)); gap: 40px 34px; padding: 40px 40px 24px; }
+.top-grid button { height: 56px; font-size: 20px; font-family: serif; color: #333; border: 1px solid #8fa8d8; border-radius: 2px; background: linear-gradient(#e8eefa, #b9cdee); cursor: pointer; }
+.top-grid button.mada, .jm button.mada, .wm button.mada { background: #fff; color: #555; cursor: default; }
+.top-other { padding: 0 40px 24px; font-size: 13px; color: #555; }
+@media (max-width: 760px) { .top-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px; } }
+/* 受注管理のメニュー */
+.jm { background: #fbefef; min-height: 100vh; padding: 12px; }
+.jm-head { display: flex; justify-content: space-between; align-items: center; max-width: 520px; }
+.jm-title { font-size: 18px; font-weight: bold; }
+.jm-body { display: flex; gap: 20px; max-width: 520px; margin-top: 16px; }
+.jm-col { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.jm-col button { height: 36px; background: #f2f2f2; border: 1px solid #aaa; font-size: 14px; }
+.jm-col.right button { color: #1f6fa8; font-weight: bold; }
+/* 丸北管理（WorkStation）のメニュー */
+.wm { background: #c5d9a0; min-height: 100vh; padding: 10px; }
+.wm-head { border: 1px solid #fff; padding: 8px; max-width: 560px; display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+.wm-title { font-size: 22px; font-style: italic; font-weight: bold; color: #1b2f7a; }
+.wm-co { background: #4f8fe0; color: #fff; border: 2px solid #fff; padding: 2px 10px; font-weight: bold; }
+.wm-nenkan { justify-self: center; grid-column: 1 / 3; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 2px 10px; }
+.wm-body { display: flex; gap: 6px; border: 1px solid #fff; margin-top: 8px; padding: 6px; max-width: 560px; }
+.wm-side { width: 190px; min-height: 210px; background: #8fb0c8; display: flex; flex-direction: column; gap: 3px; padding: 4px; }
+.wm-side button { text-align: left; background: #ccc; border: 2px outset #eee; color: #0b1f8a; font-weight: bold; padding: 3px 6px; }
+.wm-side .wm-close { margin-top: auto; align-self: center; text-align: center; background: #fff; color: #000; font-weight: normal; border: 1px solid #999; }
+.wm-main { flex: 1; }
+.wm-page { background: #f8f8f8; border: 1px solid #888; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; min-height: 180px; align-content: start; }
+.wm-page button { background: #fff; border: 1px solid #ccc; border-radius: 4px; height: 42px; }
+.wm-page button.on { border-color: #333; font-weight: bold; }
+.wm-foot { border: 1px solid #fff; margin-top: 8px; max-width: 560px; display: flex; justify-content: flex-end; padding: 8px; }
+.jm-col button.mada { color: #999; }
