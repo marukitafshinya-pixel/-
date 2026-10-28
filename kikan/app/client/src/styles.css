@@ -2376,3 +2376,15 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .wm-page button.on { border-color: #333; font-weight: bold; }
 .wm-foot { border: 1px solid #fff; margin-top: 8px; max-width: 560px; display: flex; justify-content: flex-end; padding: 8px; }
 .jm-col button.mada { color: #999; }
+/* 製造計画のメニュー（Access の FM_メインメニュー の見た目） */
+.kkm { background: #e3ead6; min-height: 100vh; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.kkm > * { width: 290px; }
+.kkm-dates { display: flex; gap: 10px; justify-content: center; width: 300px; }
+.kkm-date { width: 140px; font-size: 22px; padding: 2px 4px; border: 1px solid #ccc; }
+.kkm-lbl { background: #000; color: #ff0; text-align: center; font-weight: bold; margin-bottom: -10px; }
+.kkm-v { border: 2px inset #ccc; background: #fff; font-size: 22px; text-align: center; }
+.kkm button { height: 38px; background: #f8f8f8; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; }
+.kkm .kkm-big { height: 40px; margin-top: 30px; font-size: 26px; font-weight: bold; color: #1f6fb2; border: 2px solid #4b7fc4; }
+.kkm .kkm-log { font-size: 18px; font-weight: bold; color: #4a78c8; }
+.kkm .kkm-close { width: 120px; height: 30px; margin-top: 10px; }
+.kkm .kk-done { width: 300px; font-size: 13px; }

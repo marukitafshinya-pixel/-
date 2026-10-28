@@ -17,7 +17,7 @@ const 日時 = (v: string | null) => (v ? v.slice(0, 19).replace(/-/g, "/") : ""
 export function KeikakuMenu() {
   const nav = useNavigate();
   const [info, setInfo] = useState<Rec | null>(null);
-  const [開始日, set開始日] = useState("");
+  const [開始日, set開始日] = useState(today());
   const [終了日, set終了日] = useState("");
   const [結果, set結果] = useState<Rec | null>(null);
 
@@ -49,32 +49,24 @@ export function KeikakuMenu() {
   }
 
   return (
-    <div className="kk">
-      <div className="kk-title">生産計画</div>
-      <div className="kk-box">
-        <div className="kk-row">
-          <Field kind="date" value={開始日} className="kk-date" onCommit={(v) => set開始日(v)} />
-          <span>～</span>
-          <Field kind="date" value={終了日} className="kk-date" onCommit={(v) => set終了日(v)} />
-          <button className="kk-big" onClick={取り込む}>生産計画インポート</button>
-        </div>
-        <div className="kk-row">
-          <span className="lbl">前回 計画変更日</span>
-          <span className="kk-v">{日時(info?.前回 ?? null)}</span>
-        </div>
-        {結果 && (
-          <div className="kk-done">
-            取り込みました（新規 {結果.件数.新規} 件・製造変更 {結果.件数.製造変更} 件・kg変更 {結果.件数.kg変更} 件・包装日変更 {結果.件数.包装日変更} 件）
-          </div>
-        )}
+    <div className="kkm">
+      <div className="kkm-dates">
+        <Field kind="date" value={開始日} className="kkm-date" onCommit={(v) => set開始日(v)} />
+        <Field kind="date" value={終了日} className="kkm-date" onCommit={(v) => set終了日(v)} />
       </div>
-      <div className="kk-btns">
-        <button onClick={() => nav("/keikaku/henko")}>変更内容確認</button>
-        <button onClick={() => nav("/keikaku/calendar")}>製造カレンダー確認</button>
-        <button disabled title="準備中です">繁盛生産計画出力</button>
-        <button onClick={() => nav("/keikaku/log")}>変更履歴表示</button>
-        <button onClick={() => nav("/")}>閉じる</button>
-      </div>
+      <div className="kkm-lbl">前回 計画変更日</div>
+      <div className="kkm-v">{日時(info?.前回 ?? null)}</div>
+      {結果 && (
+        <div className="kk-done">
+          取り込みました（新規 {結果.件数.新規} 件・製造変更 {結果.件数.製造変更} 件・kg変更 {結果.件数.kg変更} 件・包装日変更 {結果.件数.包装日変更} 件）
+        </div>
+      )}
+      <button className="kkm-big" onClick={取り込む}>生産計画インポート</button>
+      <button onClick={() => nav("/keikaku/henko")}>変更内容確認</button>
+      <button onClick={() => nav("/keikaku/calendar")}>製造カレンダー確認</button>
+      <button disabled title="準備中です">繁盛生産計画出力</button>
+      <button className="kkm-log" onClick={() => nav("/keikaku/log")}>変更履歴表示</button>
+      <button className="kkm-close" onClick={() => nav("/")}>閉じる</button>
     </div>
   );
 }
