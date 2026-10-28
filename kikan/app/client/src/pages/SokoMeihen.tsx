@@ -341,20 +341,20 @@ function FukuyamaPage(props: { m: Rec; rows: Rec[]; 備考: string; 差出人: R
   const t = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
   const 日 = (v: unknown) => (v ? String(v).slice(0, 10).replace(/-/g, "/") : "");
   return (
-    <div className="mf-page">
-      <div className="mf-top">
-        <div className="mf-no">{m.受注番号.map((x: string, k: number) => <div key={k}>{x}</div>)}</div>
-        <div className="mf-title">冷蔵貨物寄託者名義変更通知書</div>
+    <div className="fy-page">
+      <div className="fy-top">
+        <div className="fy-no">{m.受注番号.map((x: string, k: number) => <div key={k}>{x}</div>)}</div>
+        <div className="fy-title">冷蔵貨物寄託者名義変更通知書</div>
       </div>
-      <div className="mf-row">
-        <div className="mf-to">{m.保管庫 ?? ""} 御中</div>
-        <div className="mf-date">{年月日(t)}</div>
+      <div className="fy-row">
+        <div className="fy-to">{m.保管庫 ?? ""} 御中</div>
+        <div className="fy-date">{年月日(t)}</div>
       </div>
-      <div className="mf-mid">
-        <div className="mf-text">
+      <div className="fy-mid">
+        <div className="fy-text">
           下記の通り当事者間に於いて貨物の譲渡をしましたので<br />{年月日(m.変更日)} より当該を譲渡人の名義に変更して下さる<br />様、冷蔵庫寄託約款に基き連署をもってご通知致します。
         </div>
-        <table className="mf-who">
+        <table className="fy-who">
           <tbody>
             <tr><th>譲渡人</th><td className="k">住所:</td><td>{先.譲渡人住所 ?? ""}</td></tr>
             <tr><th /><td className="k">氏名:</td><td>{先.譲渡人名 ?? ""}</td></tr>
@@ -364,7 +364,7 @@ function FukuyamaPage(props: { m: Rec; rows: Rec[]; 備考: string; 差出人: R
           </tbody>
         </table>
       </div>
-      <table className="mf-t">
+      <table className="fy-t">
         <thead>
           <tr><th>入庫No</th><th>入庫年月日</th><th>品　名</th><th>賞味期限</th><th>出庫数</th><th>保管料<br /><small>譲渡人負担日</small></th><th>保管料<br /><small>譲受人負担日</small></th><th>備考</th></tr>
         </thead>
@@ -380,9 +380,9 @@ function FukuyamaPage(props: { m: Rec; rows: Rec[]; 備考: string; 差出人: R
         </tbody>
       </table>
       <div className="mt-biko">{props.備考}</div>
-      <div className="mf-foot">
+      <div className="fy-foot">
         <span>※　受信されましたら返信をお願いします。　※</span>
-        <span className="mf-from">{props.差出人.社名 ?? ""}</span>
+        <span className="fy-from">{props.差出人.社名 ?? ""}</span>
       </div>
     </div>
   );

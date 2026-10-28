@@ -246,16 +246,16 @@ function 積込み前点検表(props: { s: Rec }) {
     ["コンテナ清潔状態", 丸], ["冷凍機始動確認", 丸, true], ["", ""], ["", ""], ["結露防止対策", 丸], ["仕切り資材", 丸], ["点検表　異常の有無", ""],
   ];
   return (
-    <div className="pv-page tk">
-      <div className="tk-head">
-        <div className="tk-hl">運転手様　各位<br />下記項目について点検致します</div>
-        <div className="tk-title">積込み前点検表</div>
-        <div className="tk-sha">{s.社名}</div>
+    <div className="pv-page tn">
+      <div className="tn-head">
+        <div className="tn-hl">運転手様　各位<br />下記項目について点検致します</div>
+        <div className="tn-title">積込み前点検表</div>
+        <div className="tn-sha">{s.社名}</div>
       </div>
-      <div className="tk-two">
+      <div className="tn-two">
         <div>
-          <div className="tk-cap">ドライバーさん確認用</div>
-          <table className="tk-t">
+          <div className="tn-cap">ドライバーさん確認用</div>
+          <table className="tn-t">
             <tbody>
               <tr><th>点検日</th><td className="v">{月日曜(s.便.出荷日)}</td></tr>
               <tr><th>運送会社名</th><td className="v big">{s.便.運送会社名}</td></tr>
@@ -268,8 +268,8 @@ function 積込み前点検表(props: { s: Rec }) {
           </table>
         </div>
         <div>
-          <div className="tk-cap">丸北点検者　確認用</div>
-          <table className="tk-t">
+          <div className="tn-cap">丸北点検者　確認用</div>
+          <table className="tn-t">
             <tbody>
               <tr><th>天気</th><td className="c">☀　☁　☂　☃</td></tr>
               <tr><th>出荷場所</th><td className="v big">丸北北海道</td></tr>
@@ -282,17 +282,17 @@ function 積込み前点検表(props: { s: Rec }) {
           </table>
         </div>
       </div>
-      <div className="tk-sec">冷凍機コンテナ</div>
-      <div className="tk-helmet">ヘルメットの着用をお願い致します。<span>丸北<br />確認欄</span></div>
-      <div className="tk-two">
-        <table className="tk-t chk">
+      <div className="tn-sec">冷凍機コンテナ</div>
+      <div className="tn-helmet">ヘルメットの着用をお願い致します。<span>丸北<br />確認欄</span></div>
+      <div className="tn-two">
+        <table className="tn-t chk">
           <tbody>
             {左.map(([k, v, red], i) => (
               <tr key={i}><th className={red ? "red" : ""}>{k}</th><td className={v === 丸 ? "c" : "r"}>{v}</td><td className={i === 1 || i === 2 ? "slash" : "box"} /></tr>
             ))}
           </tbody>
         </table>
-        <table className="tk-t chk">
+        <table className="tn-t chk">
           <tbody>
             {右.map(([k, v, red], i) => (
               <tr key={i}><th className={red ? "red" : ""}>{k}</th><td className="c">{v}</td></tr>
@@ -301,10 +301,10 @@ function 積込み前点検表(props: { s: Rec }) {
           </tbody>
         </table>
       </div>
-      <div className="tk-note red">車両に異常がある場合、点検者に報告お願いします</div>
-      <div className="tk-sec">積込終了後</div>
-      <div className="tk-two">
-        <table className="tk-t">
+      <div className="tn-note red">車両に異常がある場合、点検者に報告お願いします</div>
+      <div className="tn-sec">積込終了後</div>
+      <div className="tn-two">
+        <table className="tn-t">
           <tbody>
             <tr><th className="small">ｼﾞｮﾙﾀﾞｰ、緩衝材等<br />梱材の積み忘れ確認</th><td /></tr>
             <tr><th>積込完了後　温度(℃)</th><td /></tr>
@@ -312,7 +312,7 @@ function 積込み前点検表(props: { s: Rec }) {
             <tr><th>ニチレイ大谷地着予想</th><td /></tr>
           </tbody>
         </table>
-        <table className="tk-t">
+        <table className="tn-t">
           <tbody>
             <tr><th>完了温度(℃)</th><td /></tr>
             <tr><th>完了湿度</th><td className="r">%</td></tr>
@@ -321,8 +321,8 @@ function 積込み前点検表(props: { s: Rec }) {
           </tbody>
         </table>
       </div>
-      <div className="tk-foot">※禁止事項：コンパネ使用禁止！。パレット輸送で緩衝材（最低22枚）の無いものは積込みできません。</div>
-      <div className="tk-foot">{s.社名}　作成　　作成日24．10．31</div>
+      <div className="tn-foot">※禁止事項：コンパネ使用禁止！。パレット輸送で緩衝材（最低22枚）の無いものは積込みできません。</div>
+      <div className="tn-foot">{s.社名}　作成　　作成日24．10．31</div>
     </div>
   );
 }
@@ -332,25 +332,25 @@ function 積込み個数確認書(props: { s: Rec }) {
   const s = props.s;
   let 前: unknown = null;
   return (
-    <div className="pv-page land kk">
-      <div className="kk-head">
+    <div className="pv-page land kko">
+      <div className="kko-head">
         <div className="date">{年月日曜日2(s.便.出荷日)}</div>
         <div className="title">{[..."積込み個数確認書"].join(" ")}</div>
         <div className="time">{s.印刷日時}</div>
       </div>
-      <div className="kk-sub">
+      <div className="kko-sub">
         <div>
           <div className="jikan">開始予定時間　{s.便.開始}　　終了予定時間　{s.便.終了}　頃</div>
           <div className="bin">{s.便.運送会社名}　{s.便.車番}</div>
         </div>
-        <div className="kk-notes">
+        <div className="kko-notes">
           <div>※　積込時、品名、製造ロットの確認お願いします。</div>
           <div>※　異常発見の場合は、すぐに積込担当者まで連絡お願い致します。</div>
           <div>※　都合により時間帯が変更になる事が ありますのでご了承願います。</div>
         </div>
       </div>
-      <div className="kk-sign"><span>運転手氏名</span><span>丸北積込責任者</span></div>
-      <table className="kk-grid">
+      <div className="kko-sign"><span>運転手氏名</span><span>丸北積込責任者</span></div>
+      <table className="kko-grid">
         <colgroup>
           <col style={{ width: "2.5%" }} /><col style={{ width: "14%" }} /><col style={{ width: "16%" }} /><col style={{ width: "5%" }} /><col style={{ width: "5.5%" }} />
           <col style={{ width: "6.5%" }} /><col style={{ width: "3.8%" }} /><col style={{ width: "23.5%" }} /><col style={{ width: "11.5%" }} /><col style={{ width: "4.2%" }} /><col style={{ width: "5%" }} />
@@ -377,8 +377,8 @@ function 積込み個数確認書(props: { s: Rec }) {
           })}
         </tbody>
       </table>
-      {s.注意事項 && <div className="kk-chui">{s.注意事項}</div>}
-      <div className="kk-foot">
+      {s.注意事項 && <div className="kko-chui">{s.注意事項}</div>}
+      <div className="kko-foot">
         <span>※ コンパネは、異物混入の恐れ（木片、木くず等）がある為、使用禁止です！</span>
         <table><tbody><tr><td>4方ざし</td><td>使用</td><td>残</td><td>2方ざし</td><td>使用</td><td>残</td></tr></tbody></table>
       </div>

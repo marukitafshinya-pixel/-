@@ -69,18 +69,18 @@ function 製造分割予定表(props: { x: Rec }) {
   const { x } = props;
   return (
     <div className="pv-page hz-bun">
-      <div className="hb-head"><div className="t">{月日曜(x.日)}製造分割予定表</div><div className="dt">{x.印刷日時}</div></div>
+      <div className="hzb-head"><div className="t">{月日曜(x.日)}製造分割予定表</div><div className="dt">{x.印刷日時}</div></div>
       {x.品.map((p: Rec, k: number) => {
         const 行数 = Math.max(p.行.length + 1, 3);
         return (
-          <div key={k} className="hb-block">
-            <div className="hb-top">
-              <div className="hb-l">
+          <div key={k} className="hzb-block">
+            <div className="hzb-top">
+              <div className="hzb-l">
                 <div className="hin"><span>品　　名</span>{p.商品名}</div>
                 <div className="sub"><span>予定開始時間</span><span className="colon">:</span><span className="kojo">{p.工場}</span><span>計量半端</span><span className="mai">枚</span></div>
                 <div className="kg">{数0(p.kg)}</div>
               </div>
-              <table className="hb-plan">
+              <table className="hzb-plan">
                 <tbody>
                   <tr><th>計画 総枚数</th><td>{数0(p.総枚数)}</td></tr>
                   <tr><th>確定 総枚数</th><td /></tr>
@@ -90,8 +90,8 @@ function 製造分割予定表(props: { x: Rec }) {
               </table>
               <div className="dan">段</div>
             </div>
-            <div className="hb-tables">
-              <table className="hb-t">
+            <div className="hzb-tables">
+              <table className="hzb-t">
                 <thead><tr><th>区分</th><th>希望kg</th><th>訂正kg</th><th>札色</th><th>ｶｰﾄﾞNo</th><th>計量枚数</th></tr></thead>
                 <tbody>
                   {Array.from({ length: 行数 }, (_, i) => {
@@ -100,7 +100,7 @@ function 製造分割予定表(props: { x: Rec }) {
                   })}
                 </tbody>
               </table>
-              <table className="hb-t">
+              <table className="hzb-t">
                 <thead><tr><th>個数</th><th>半端数</th><th>確認者</th><th>記入者</th><th>半端台車　No(枚数)</th></tr></thead>
                 <tbody>{Array.from({ length: 行数 }, (_, i) => <tr key={i}><td /><td /><td /><td /><td /></tr>)}</tbody>
               </table>

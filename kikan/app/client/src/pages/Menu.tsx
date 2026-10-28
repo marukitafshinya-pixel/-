@@ -85,14 +85,14 @@ export function JuchuMenu() {
     </button>
   );
   return (
-    <div className="jm">
-      <div className="jm-head">
-        <div className="jm-title">受注管理</div>
+    <div className="jkm">
+      <div className="jkm-head">
+        <div className="jkm-title">受注管理</div>
         <PageClose onClick={() => nav("/")} />
       </div>
-      <div className="jm-body">
-        <div className="jm-col">{左.map(ボタン)}</div>
-        <div className="jm-col right">{右.map(ボタン)}</div>
+      <div className="jkm-body">
+        <div className="jkm-col">{左.map(ボタン)}</div>
+        <div className="jkm-col right">{右.map(ボタン)}</div>
       </div>
     </div>
   );

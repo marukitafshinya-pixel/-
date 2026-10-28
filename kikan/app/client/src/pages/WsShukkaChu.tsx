@@ -365,7 +365,7 @@ function ShukkaPrint(props: {
   const 印刷日時 = `${今.getFullYear()}/${String(今.getMonth() + 1).padStart(2, "0")}/${String(今.getDate()).padStart(2, "0")} ${今.getHours()}:${String(今.getMinutes()).padStart(2, "0")}:${String(今.getSeconds()).padStart(2, "0")}`;
   const 全幅 = 列.reduce((s, x) => s + (x.幅 ?? 5), 0);
   return (
-    <div className={"sp sp-type" + props.タイプ}>
+    <div className={"sp-print sp-type" + props.タイプ}>
       <style>{"@page { size: A4 landscape; margin: 10mm; }"}</style>
       <div className="no-print sp-bar">
         <button onClick={() => window.print()}>印刷</button>

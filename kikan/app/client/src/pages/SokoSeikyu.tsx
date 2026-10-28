@@ -318,27 +318,27 @@ function ZaikoShomeiPrint(props: { rows: Rec[]; 差出人: Rec; onClose: () => v
       {頁.map(({ p, 通: g, i, n }, j) => {
         const 先 = g[0] ?? {};
         return (
-        <div key={j} className="zs-page">
-          <div className="zs-title">在庫　証明書</div>
-          <div className="zs-head">
-            <div className="zs-to">
+        <div key={j} className="zm-page">
+          <div className="zm-title">在庫　証明書</div>
+          <div className="zm-head">
+            <div className="zm-to">
               <div>{先.名義正式名 ?? ""}{先.名義正式名 ? "　御中" : ""}</div>
               <div>{先.倉庫正式名 ?? 先.倉庫名 ?? ""}</div>
             </div>
-            <div className="zs-date">{発行}</div>
-            <div className="zs-from">
+            <div className="zm-date">{発行}</div>
+            <div className="zm-from">
               <div>{差出人.住所}</div>
-              <div className="zs-co">{差出人.社名} {差出人.店舗}</div>
-              <div className="zs-tel">
+              <div className="zm-co">{差出人.社名} {差出人.店舗}</div>
+              <div className="zm-tel">
                 <div>
                   <div>TEL:{差出人.TEL}</div>
                   <div style={{ marginTop: "4mm" }}>FAX:{差出人.FAX}</div>
                 </div>
-                <table className="zs-in"><tbody><tr><th>担当者</th></tr><tr><td /></tr></tbody></table>
+                <table className="zm-in"><tbody><tr><th>担当者</th></tr><tr><td /></tr></tbody></table>
               </div>
             </div>
           </div>
-          <table className="zs-t">
+          <table className="zm-t">
             <thead><tr><th>入庫日</th><th>倉庫名</th><th>入庫No</th><th>商品名</th><th>重量</th><th>製造日</th><th>賞味期限</th><th>在庫数</th><th>在庫kg</th></tr></thead>
             <tbody>
               {p.map((r, k) => (
@@ -349,11 +349,11 @@ function ZaikoShomeiPrint(props: { rows: Rec[]; 差出人: Rec; onClose: () => v
               ))}
               {p.length === 0 && <tr><td /><td /><td /><td /><td /><td /><td /><td /><td /></tr>}
               {i === n - 1 && (
-                <tr className="zs-sum"><td colSpan={7} className="r">合計　　</td><td className="r">{num(計(g, "在庫ケース"))}</td><td className="r">{num(計(g, "在庫kg"))}</td></tr>
+                <tr className="zm-sum"><td colSpan={7} className="r">合計　　</td><td className="r">{num(計(g, "在庫ケース"))}</td><td className="r">{num(計(g, "在庫kg"))}</td></tr>
               )}
             </tbody>
           </table>
-          <div className="zs-page-no">{i + 1} / {n} ページ</div>
+          <div className="zm-page-no">{i + 1} / {n} ページ</div>
         </div>
         );
       })}

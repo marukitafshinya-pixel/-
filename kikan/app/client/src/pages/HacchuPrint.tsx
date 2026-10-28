@@ -167,7 +167,7 @@ function AtesakiEdit({ list, 発行元, onSaved }: { list: 宛先[]; 発行元: 
   const [h, setH] = useState(発行元);
   const keys: (keyof 宛先)[] = ["手配依頼先", "仕入先名", "仕入先コード", "納品指定時間", "返信コメント2", "返信コメント3"];
   return (
-    <div className="no-print atesaki">
+    <div className="no-print hc-atesaki">
       <p>
         発注書の宛先です。商品コード 0 がふだんの宛先、ほかは商品ごとの宛先です。担当者の名前（「○○ 様」）もここに入れてください。
       </p>
@@ -205,7 +205,7 @@ function AtesakiEdit({ list, 発行元, onSaved }: { list: 宛先[]; 発行元: 
         </tbody>
       </table>
       <p>発注書のいちばん下に出す、自社の名前・住所・電話番号です。</p>
-      <div className="hk">
+      <div className="hc-hk">
         {(["会社名", "住所", "TEL", "FAX"] as const).map((k) => (
           <label key={k}>
             {k}

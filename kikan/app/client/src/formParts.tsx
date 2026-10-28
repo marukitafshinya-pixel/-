@@ -374,7 +374,7 @@ export function FindDialog(props: { kind: "tokui" | "shohin" | "unso"; onPick: (
               {rows.map((r) => (
                 <tr key={r.コード} className={cur === r.コード ? "cur" : ""} onClick={() => setCur(r.コード)} onDoubleClick={() => pick(r.コード)}>
                   {head.map(([k]) => (
-                    <td key={k} className={k === "商品コード" || k === "短縮コード" || k === "運送会社ID" ? "num" : k === "ｶﾅ分類" || k === "カナ分類" ? "kn" : ""}>
+                    <td key={k} className={k === "商品コード" || k === "短縮コード" || k === "運送会社ID" ? "num" : k === "ｶﾅ分類" || k === "カナ分類" ? "find-kn" : ""}>
                       {値(r, k)}
                     </td>
                   ))}

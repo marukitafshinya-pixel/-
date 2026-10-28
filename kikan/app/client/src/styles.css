@@ -242,8 +242,8 @@ input, select { font: inherit; }
 .sheet-table th, .sheet-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
 .sheet-table th { background: #eee; width: 90px; }
 .sheet-foot { margin-top: 18px; }
-.atesaki { background: #fff; padding: 8px; margin-bottom: 10px; }
-.atesaki input { width: 160px; }
+.hc-atesaki { background: #fff; padding: 8px; margin-bottom: 10px; }
+.hc-atesaki input { width: 160px; }
 @media print { .no-print { display: none; } .print-page { background: #fff; padding: 0; } .sheet { margin: 0; } }
 /* 特定商品表示 */
 .tokutei { background: #dedcc4; min-height: 100vh; }
@@ -292,8 +292,8 @@ input, select { font: inherit; }
 .hc-table td.memo div { font-size: 15px; margin-left: 4px; }
 .hc-foot { position: absolute; left: 10mm; bottom: 34mm; font-size: 15px; line-height: 1.7; }
 .hc-from { position: absolute; left: 10mm; bottom: 8mm; line-height: 2.1; }
-.atesaki .hk { display: flex; gap: 10px; align-items: center; }
-.atesaki .hk label { display: flex; flex-direction: column; font-size: 12px; }
+.hc-atesaki .hc-hk { display: flex; gap: 10px; align-items: center; }
+.hc-atesaki .hc-hk label { display: flex; flex-direction: column; font-size: 12px; }
 @media print { .hc-sheet { margin: 0; width: auto; height: 190mm; } }
 .grid td.prt { background: #fff; } .grid td.prt button { font-size: 11px; padding: 0 4px; }
 /* 受注グループマスタ */
@@ -336,7 +336,7 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .find-list thead th { position: sticky; top: 0; background: #993333; color: #fff; font-weight: normal; padding: 2px 6px; cursor: pointer; }
 .find-list thead th.on { background: #f00; }
 .find-list tr.cur td { background: #ffe8b8; }
-.find-list td.kn { color: #666; width: 60px; }
+.find-list td.find-kn { color: #666; width: 60px; }
 .find-list .empty { padding: 8px; color: #777; }
 /* 共通のカレンダー（FSD_日付選択） */
 .cal { background: #ece9d8; width: 380px; padding: 4px; border: 1px solid #666; }
@@ -903,51 +903,51 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .pv-page .b { font-weight: bold; }
 .pv-page .kubun { font-size: 12pt; }
 /* 積込み前点検表 */
-.tk { font-size: 8pt; }
-.tk-head { display: flex; align-items: flex-end; }
-.tk-hl { width: 55mm; font-size: 7.5pt; }
-.tk-title { flex: 1; text-align: center; font-size: 13pt; }
-.tk-sha { width: 40mm; font-size: 8pt; }
-.tk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-.tk-cap { font-size: 7pt; margin-top: 3mm; border-bottom: 1px solid #000; }
-.tk-t { width: 100%; border: 1px solid #000; }
-.tk-t th, .tk-t td { border: 1px solid #000; height: 6.5mm; padding: 0 1.5mm; font-weight: normal; font-size: 7.5pt; text-align: left; }
-.tk-t th { width: 42%; }
-.tk-t th.red { color: #e00000; }
-.tk-t th.small { font-size: 6pt; }
-.tk-t td.v { font-size: 9pt; }
-.tk-t td.big { font-size: 10pt; }
-.tk-t td.c { text-align: center; }
-.tk-t td.r { text-align: right; }
-.tk-t.chk td.box { width: 7mm; }
-.tk-t.chk td.slash { width: 7mm; background: linear-gradient(to top right, transparent 49%, #000 50%, transparent 51%); }
-.tk-t td.biko { height: 40mm; vertical-align: top; text-align: center; }
-.tk-sec { text-align: center; font-size: 10pt; margin-top: 3mm; }
-.tk-helmet { font-size: 10pt; margin: 1mm 0 1mm 4mm; position: relative; }
-.tk-helmet span { position: absolute; left: 82mm; top: -3mm; color: #e00000; font-size: 5.5pt; text-align: center; }
-.tk-note { font-size: 7.5pt; margin: 1mm 0; }
-.tk-note.red { color: #e00000; }
-.tk-foot { font-size: 7.5pt; margin-top: 1mm; }
+.tn { font-size: 8pt; }
+.tn-head { display: flex; align-items: flex-end; }
+.tn-hl { width: 55mm; font-size: 7.5pt; }
+.tn-title { flex: 1; text-align: center; font-size: 13pt; }
+.tn-sha { width: 40mm; font-size: 8pt; }
+.tn-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.tn-cap { font-size: 7pt; margin-top: 3mm; border-bottom: 1px solid #000; }
+.tn-t { width: 100%; border: 1px solid #000; }
+.tn-t th, .tn-t td { border: 1px solid #000; height: 6.5mm; padding: 0 1.5mm; font-weight: normal; font-size: 7.5pt; text-align: left; }
+.tn-t th { width: 42%; }
+.tn-t th.red { color: #e00000; }
+.tn-t th.small { font-size: 6pt; }
+.tn-t td.v { font-size: 9pt; }
+.tn-t td.big { font-size: 10pt; }
+.tn-t td.c { text-align: center; }
+.tn-t td.r { text-align: right; }
+.tn-t.chk td.box { width: 7mm; }
+.tn-t.chk td.slash { width: 7mm; background: linear-gradient(to top right, transparent 49%, #000 50%, transparent 51%); }
+.tn-t td.biko { height: 40mm; vertical-align: top; text-align: center; }
+.tn-sec { text-align: center; font-size: 10pt; margin-top: 3mm; }
+.tn-helmet { font-size: 10pt; margin: 1mm 0 1mm 4mm; position: relative; }
+.tn-helmet span { position: absolute; left: 82mm; top: -3mm; color: #e00000; font-size: 5.5pt; text-align: center; }
+.tn-note { font-size: 7.5pt; margin: 1mm 0; }
+.tn-note.red { color: #e00000; }
+.tn-foot { font-size: 7.5pt; margin-top: 1mm; }
 /* 積込み個数確認書 */
-.kk-head { display: flex; align-items: flex-end; }
-.kk-head .date { width: 70mm; font-family: "MS PMincho", serif; font-size: 12pt; }
-.kk-head .title { flex: 1; text-align: center; font-family: "MS PMincho", serif; font-size: 20pt; }
-.kk-head .time { width: 45mm; font-size: 7pt; text-align: right; align-self: flex-start; }
-.kk-sub { display: flex; justify-content: space-between; margin-top: 1mm; }
-.kk-sub .jikan { font-size: 10pt; font-weight: bold; margin-left: 5mm; }
-.kk-sub .bin { font-size: 13pt; font-weight: bold; margin: 2mm 0 0 4mm; }
-.kk-notes { border: 1px solid #000; border-radius: 3mm; padding: 1mm 4mm; font-size: 8pt; margin-right: 15mm; }
-.kk-sign { display: flex; justify-content: space-between; margin: 2mm 3mm 2mm 4mm; }
-.kk-sign span { font-size: 11pt; font-weight: bold; border-bottom: 1px solid #000; width: 110mm; }
-.kk-sign span + span { width: 115mm; text-align: center; }
-.kk-grid { width: 100%; }
-.kk-grid th { border: 1px solid #000; font-size: 9pt; font-weight: normal; }
-.kk-grid td { border: 1px solid #000; height: 7.5mm; font-size: 8.5pt; padding: 0 1mm; }
-.kk-grid td.todoke { font-size: 7pt; font-weight: bold; text-align: center; }
-.kk-grid td.name { font-weight: bold; }
-.kk-chui { margin-top: 2mm; font-size: 9pt; font-weight: bold; }
-.kk-foot { position: absolute; bottom: 9mm; left: 9mm; right: 9mm; display: flex; justify-content: space-between; font-weight: bold; font-size: 10pt; }
-.kk-foot table td { border: 1px solid #000; font-size: 8.5pt; font-weight: normal; padding: 0 3mm; }
+.kko-head { display: flex; align-items: flex-end; }
+.kko-head .date { width: 70mm; font-family: "MS PMincho", serif; font-size: 12pt; }
+.kko-head .title { flex: 1; text-align: center; font-family: "MS PMincho", serif; font-size: 20pt; }
+.kko-head .time { width: 45mm; font-size: 7pt; text-align: right; align-self: flex-start; }
+.kko-sub { display: flex; justify-content: space-between; margin-top: 1mm; }
+.kko-sub .jikan { font-size: 10pt; font-weight: bold; margin-left: 5mm; }
+.kko-sub .bin { font-size: 13pt; font-weight: bold; margin: 2mm 0 0 4mm; }
+.kko-notes { border: 1px solid #000; border-radius: 3mm; padding: 1mm 4mm; font-size: 8pt; margin-right: 15mm; }
+.kko-sign { display: flex; justify-content: space-between; margin: 2mm 3mm 2mm 4mm; }
+.kko-sign span { font-size: 11pt; font-weight: bold; border-bottom: 1px solid #000; width: 110mm; }
+.kko-sign span + span { width: 115mm; text-align: center; }
+.kko-grid { width: 100%; }
+.kko-grid th { border: 1px solid #000; font-size: 9pt; font-weight: normal; }
+.kko-grid td { border: 1px solid #000; height: 7.5mm; font-size: 8.5pt; padding: 0 1mm; }
+.kko-grid td.todoke { font-size: 7pt; font-weight: bold; text-align: center; }
+.kko-grid td.name { font-weight: bold; }
+.kko-chui { margin-top: 2mm; font-size: 9pt; font-weight: bold; }
+.kko-foot { position: absolute; bottom: 9mm; left: 9mm; right: 9mm; display: flex; justify-content: space-between; font-weight: bold; font-size: 10pt; }
+.kko-foot table td { border: 1px solid #000; font-size: 8.5pt; font-weight: normal; padding: 0 3mm; }
 /* 集荷パレットチェックリスト */
 .ck-head { display: flex; align-items: flex-end; }
 .ck-head .title { flex: 1; text-align: center; font-size: 15pt; font-weight: bold; padding-left: 40mm; }
@@ -1271,7 +1271,7 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .mf input[readonly], .mf textarea[readonly] { background: #f4f4f4; }
 .tk2-grid td { vertical-align: top; }
 .tk2-grid td .short { color: #36c; text-align: center; font-size: 12px; }
-.tk2-grid td.kana { color: #36c; }
+.tk2-grid td.tk2-kana { color: #36c; }
 .tk2-grid td .chiku { background: #bbb; color: #ff0; }
 .tk2-grid td .gray { color: #888; }
 .tk2-grid td.addr { max-width: 240px; }
@@ -1522,7 +1522,7 @@ input.sc-in, input.sc-date { width: 128px; background: #cff; }
 .sc-foot button { font-weight: bold; }
 .sc-foot .green { color: #080; } .sc-foot .blue { color: #1f5fff; }
 /* 出荷抽出帳票の印刷 */
-.sp { background: #fff; padding: 10px; }
+.sp-print { background: #fff; padding: 10px; }
 .sp-bar { margin-bottom: 8px; display: flex; gap: 6px; }
 .sp-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px; }
 .sp-to { font-size: 16px; min-width: 200px; }
@@ -1906,53 +1906,53 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hs-grid tr.hs-subtotal td { border-left: none; border-right: none; border-bottom: none; border-top: 2px solid #000; }
 
 /* パレット在庫集計（予定在庫・パレット表示の［印刷］。Access の R_在庫表(パレット表示) の見本に合わせる） */
-.pz-print { font-family: "MS Gothic", "Noto Sans JP", sans-serif; color: #000; width: 182mm; min-height: 255mm; position: relative; padding-top: 2mm; }
-.pz-title { text-align: center; font-size: 14px; margin: 2mm 0 8mm; }
-.pz-soko { font-size: 17px; font-weight: bold; margin: 0 0 2mm 2mm; }
-.pz-block { position: relative; padding: 2mm 0 10mm; }
-.pz-when { position: absolute; left: 4mm; top: 6mm; font-size: 11px; }
-.pz-t { border-collapse: collapse; font-size: 16px; }
-.pz-t th { font-size: 10px; font-weight: normal; padding: 0 4px; }
-.pz-t td { border: 1px solid #000; text-align: right; width: 26mm; padding: 0 3px; }
-.pz-max { margin: 0 0 4mm 48mm; } .pz-now { margin-left: 20mm; }
-.pz-print hr { border: none; border-top: 1px solid #000; margin: 6mm 0; }
+.pk-print { font-family: "MS Gothic", "Noto Sans JP", sans-serif; color: #000; width: 182mm; min-height: 255mm; position: relative; padding-top: 2mm; }
+.pk-title { text-align: center; font-size: 14px; margin: 2mm 0 8mm; }
+.pk-soko { font-size: 17px; font-weight: bold; margin: 0 0 2mm 2mm; }
+.pk-block { position: relative; padding: 2mm 0 10mm; }
+.pk-when { position: absolute; left: 4mm; top: 6mm; font-size: 11px; }
+.pk-t { border-collapse: collapse; font-size: 16px; }
+.pk-t th { font-size: 10px; font-weight: normal; padding: 0 4px; }
+.pk-t td { border: 1px solid #000; text-align: right; width: 26mm; padding: 0 3px; }
+.pk-max { margin: 0 0 4mm 48mm; } .pk-now { margin-left: 20mm; }
+.pk-print hr { border: none; border-top: 1px solid #000; margin: 6mm 0; }
 
 /* ロット別在庫表（名義分在庫報告書）：A4 横、名義ごと・26 行ごとにページ */
-.lz-print { font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; }
-.lz-page { page-break-after: always; padding: 2mm 4mm; }
-.lz-page:last-child { page-break-after: auto; }
-.lz-head { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; margin-bottom: 2mm; }
-.lz-soko { font-size: 15px; font-weight: bold; padding-left: 20mm; }
-.lz-title { text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px; align-self: start; }
-.lz-right { font-size: 12px; text-align: left; padding-left: 20mm; }
-.lz-meigi { font-size: 14px; font-weight: bold; }
-.lz-t { width: 100%; border-collapse: collapse; font-size: 11.5px; font-weight: bold; }
-.lz-t th, .lz-t td { border: 1px solid #000; padding: 3px 4px; height: 6.2mm; white-space: nowrap; }
-.lz-t th { font-weight: bold; }
-.lz-t td.c { text-align: center; }
-.lz-t td.r { text-align: right; }
+.lb-print { font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; }
+.lb-page { page-break-after: always; padding: 2mm 4mm; }
+.lb-page:last-child { page-break-after: auto; }
+.lb-head { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; margin-bottom: 2mm; }
+.lb-soko { font-size: 15px; font-weight: bold; padding-left: 20mm; }
+.lb-title { text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px; align-self: start; }
+.lb-right { font-size: 12px; text-align: left; padding-left: 20mm; }
+.lb-meigi { font-size: 14px; font-weight: bold; }
+.lb-t { width: 100%; border-collapse: collapse; font-size: 11.5px; font-weight: bold; }
+.lb-t th, .lb-t td { border: 1px solid #000; padding: 3px 4px; height: 6.2mm; white-space: nowrap; }
+.lb-t th { font-weight: bold; }
+.lb-t td.c { text-align: center; }
+.lb-t td.r { text-align: right; }
 
 /* 在庫証明書（A4 横） */
-.zs-page { width: 277mm; min-height: 186mm; position: relative; font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 4mm 8mm; box-sizing: border-box; page-break-after: always; }
-.zs-page:last-child { page-break-after: auto; }
-.zs-title { text-align: center; font-size: 22px; font-weight: bold; text-decoration: underline; letter-spacing: 2px; }
-.zs-head { display: grid; grid-template-columns: 1fr 1fr 62mm; margin: 2mm 0 4mm; background: #fff; }
-.zs-page div, .zs-page table, .zs-page td, .zs-page th { background: #fff; }
-.zs-to { font-size: 14px; font-weight: bold; display: flex; flex-direction: column; gap: 9mm; padding-top: 2mm; }
-.zs-date { text-align: center; font-size: 12px; }
-.zs-from { font-size: 13px; font-weight: bold; line-height: 1.9; }
-.zs-co { font-size: 14px; }
-.zs-tel { display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; }
-.zs-in { border-collapse: collapse; width: 17mm; }
-.zs-in th { border: 1px solid #000; font-size: 10px; font-weight: normal; }
-.zs-in td { border: 1px solid #000; height: 11mm; }
-.zs-t { width: 100%; border-collapse: collapse; font-size: 12px; }
-.zs-t th { border: 1px solid #000; font-weight: normal; padding: 1px 4px; }
-.zs-t td { border: 1px solid #000; padding: 1px 4px; height: 5.5mm; }
-.zs-t td.c { text-align: center; }
-.zs-t td.r { text-align: right; }
-.zs-sum td { border-top: 2px solid #000; }
-.zs-page-no { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 13px; }
+.zm-page { width: 277mm; min-height: 186mm; position: relative; font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 4mm 8mm; box-sizing: border-box; page-break-after: always; }
+.zm-page:last-child { page-break-after: auto; }
+.zm-title { text-align: center; font-size: 22px; font-weight: bold; text-decoration: underline; letter-spacing: 2px; }
+.zm-head { display: grid; grid-template-columns: 1fr 1fr 62mm; margin: 2mm 0 4mm; background: #fff; }
+.zm-page div, .zm-page table, .zm-page td, .zm-page th { background: #fff; }
+.zm-to { font-size: 14px; font-weight: bold; display: flex; flex-direction: column; gap: 9mm; padding-top: 2mm; }
+.zm-date { text-align: center; font-size: 12px; }
+.zm-from { font-size: 13px; font-weight: bold; line-height: 1.9; }
+.zm-co { font-size: 14px; }
+.zm-tel { display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; }
+.zm-in { border-collapse: collapse; width: 17mm; }
+.zm-in th { border: 1px solid #000; font-size: 10px; font-weight: normal; }
+.zm-in td { border: 1px solid #000; height: 11mm; }
+.zm-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+.zm-t th { border: 1px solid #000; font-weight: normal; padding: 1px 4px; }
+.zm-t td { border: 1px solid #000; padding: 1px 4px; height: 5.5mm; }
+.zm-t td.c { text-align: center; }
+.zm-t td.r { text-align: right; }
+.zm-sum td { border-top: 2px solid #000; }
+.zm-page-no { position: absolute; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 13px; }
 
 /* 冷蔵貨物寄託者名義変更通知書（R_名義変更通知書_縦）A4 縦 */
 .mt-page { width: 190mm; min-height: 270mm; position: relative; font-family: "MS PGothic", "Noto Sans JP", sans-serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 6mm 8mm; box-sizing: border-box; page-break-after: always; }
@@ -1982,32 +1982,32 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 @media print { .mt-page { margin: 0; } }
 
 /* 福山冷凍用 名義変更通知書（R_名義変更通知書_福山冷凍）A4 横 */
-.mf-page { width: 277mm; min-height: 186mm; position: relative; font-family: "MS PMincho", "Noto Serif JP", serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 6mm 8mm; box-sizing: border-box; page-break-after: always; }
-.mf-page:last-child { page-break-after: auto; }
-.mf-page div, .mf-page table, .mf-page td, .mf-page th { background: #fff; }
-.mf-top { display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: end; }
-.mf-no { font-size: 12px; font-family: monospace; }
-.mf-title { text-align: center; font-size: 26px; letter-spacing: 1px; }
-.mf-row { display: flex; justify-content: space-between; align-items: center; margin: 3mm 0 8mm; }
-.mf-to { font-size: 15px; font-weight: bold; text-decoration: underline; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
-.mf-date { font-size: 14px; letter-spacing: 6px; }
-.mf-mid { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
-.mf-text { font-size: 13px; line-height: 2.2; padding-left: 3mm; }
-.mf-who { border-collapse: collapse; font-size: 14px; margin-right: 15mm; }
-.mf-who th { font-weight: normal; text-align: left; width: 22mm; padding: 3mm 0; }
-.mf-who td { padding: 3mm 2mm; }
-.mf-who tr.sp td { height: 6mm; padding: 0; }
-.mf-t { width: 100%; border-collapse: collapse; font-size: 13px; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
-.mf-t th { border: 1px solid #000; font-weight: normal; padding: 2px 4px; vertical-align: top; height: 13mm; }
-.mf-t th small { font-size: 10px; }
-.mf-t td { border: 1px solid #000; padding: 1px 4px; height: 6mm; }
-.mf-t td.c { text-align: center; }
-.mf-t td.r { text-align: right; }
-.mf-t td.sm { font-size: 10px; }
-.mf-t td.hin { font-size: 11px; }
-.mf-foot { position: absolute; bottom: 8mm; left: 8mm; right: 8mm; display: flex; justify-content: center; font-size: 14px; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
-.mf-from { position: absolute; right: 8mm; font-size: 12px; }
-@media print { .mf-page { margin: 0; } }
+.fy-page { width: 277mm; min-height: 186mm; position: relative; font-family: "MS PMincho", "Noto Serif JP", serif; color: #000; background: #fff; margin: 0 auto 6mm; padding: 6mm 8mm; box-sizing: border-box; page-break-after: always; }
+.fy-page:last-child { page-break-after: auto; }
+.fy-page div, .fy-page table, .fy-page td, .fy-page th { background: #fff; }
+.fy-top { display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: end; }
+.fy-no { font-size: 12px; font-family: monospace; }
+.fy-title { text-align: center; font-size: 26px; letter-spacing: 1px; }
+.fy-row { display: flex; justify-content: space-between; align-items: center; margin: 3mm 0 8mm; }
+.fy-to { font-size: 15px; font-weight: bold; text-decoration: underline; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.fy-date { font-size: 14px; letter-spacing: 6px; }
+.fy-mid { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.fy-text { font-size: 13px; line-height: 2.2; padding-left: 3mm; }
+.fy-who { border-collapse: collapse; font-size: 14px; margin-right: 15mm; }
+.fy-who th { font-weight: normal; text-align: left; width: 22mm; padding: 3mm 0; }
+.fy-who td { padding: 3mm 2mm; }
+.fy-who tr.sp td { height: 6mm; padding: 0; }
+.fy-t { width: 100%; border-collapse: collapse; font-size: 13px; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.fy-t th { border: 1px solid #000; font-weight: normal; padding: 2px 4px; vertical-align: top; height: 13mm; }
+.fy-t th small { font-size: 10px; }
+.fy-t td { border: 1px solid #000; padding: 1px 4px; height: 6mm; }
+.fy-t td.c { text-align: center; }
+.fy-t td.r { text-align: right; }
+.fy-t td.sm { font-size: 10px; }
+.fy-t td.hin { font-size: 11px; }
+.fy-foot { position: absolute; bottom: 8mm; left: 8mm; right: 8mm; display: flex; justify-content: center; font-size: 14px; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
+.fy-from { position: absolute; right: 8mm; font-size: 12px; }
+@media print { .fy-page { margin: 0; } }
 
 /* 倉庫管理の出庫依頼書（R_出庫依頼書）A4 横 */
 .si { padding: 8mm 12mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
@@ -2118,28 +2118,28 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hy-t tr.sum td.total { font-weight: bold; color: #d00; text-decoration: underline; text-align: center; }
 /* 製造分割予定表 A4 縦 */
 .hz-bun { padding: 8mm 10mm; }
-.hb-head { display: flex; justify-content: center; position: relative; margin-bottom: 3mm; }
-.hb-head .t { font-size: 20px; font-weight: bold; font-style: italic; }
-.hb-head .dt { position: absolute; right: 0; top: 4px; font-size: 10px; }
-.hb-block { margin-bottom: 5mm; break-inside: avoid; }
-.hb-top { display: grid; grid-template-columns: 1fr 37mm 14mm; align-items: start; }
-.hb-l .hin { font-size: 15px; font-weight: bold; }
-.hb-l .hin span { margin-right: 6mm; }
-.hb-l .sub { font-size: 12px; font-weight: bold; display: flex; gap: 6mm; margin-top: 1mm; }
-.hb-l .sub .colon { margin-left: 6mm; }
-.hb-l .sub .kojo { margin-left: 8mm; }
-.hb-l .sub .mai { margin-left: 10mm; }
-.hb-l .kg { font-size: 10px; padding-left: 20mm; }
-.hb-plan { border-collapse: collapse; font-size: 10px; }
-.hb-plan th { border: 1px solid #000; font-weight: normal; text-align: left; padding: 0 3px; white-space: nowrap; }
-.hb-plan td { border: 1px solid #000; width: 13mm; text-align: right; padding: 0 3px; }
-.hb-top .dan { font-size: 12px; font-weight: bold; padding: 4mm 0 0 4mm; }
-.hb-tables { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3mm; }
-.hb-t { border-collapse: collapse; width: 100%; font-size: 10px; }
-.hb-t th { border: 1px dashed #000; font-weight: normal; padding: 0 2px; }
-.hb-t td { border: 1px dashed #000; height: 8mm; vertical-align: top; }
-.hb-t td.kubun { font-size: 16px; text-align: center; vertical-align: middle; width: 8mm; }
-.hb-t td.kibo { font-size: 10px; }
+.hzb-head { display: flex; justify-content: center; position: relative; margin-bottom: 3mm; }
+.hzb-head .t { font-size: 20px; font-weight: bold; font-style: italic; }
+.hzb-head .dt { position: absolute; right: 0; top: 4px; font-size: 10px; }
+.hzb-block { margin-bottom: 5mm; break-inside: avoid; }
+.hzb-top { display: grid; grid-template-columns: 1fr 37mm 14mm; align-items: start; }
+.hzb-l .hin { font-size: 15px; font-weight: bold; }
+.hzb-l .hin span { margin-right: 6mm; }
+.hzb-l .sub { font-size: 12px; font-weight: bold; display: flex; gap: 6mm; margin-top: 1mm; }
+.hzb-l .sub .colon { margin-left: 6mm; }
+.hzb-l .sub .kojo { margin-left: 8mm; }
+.hzb-l .sub .mai { margin-left: 10mm; }
+.hzb-l .kg { font-size: 10px; padding-left: 20mm; }
+.hzb-plan { border-collapse: collapse; font-size: 10px; }
+.hzb-plan th { border: 1px solid #000; font-weight: normal; text-align: left; padding: 0 3px; white-space: nowrap; }
+.hzb-plan td { border: 1px solid #000; width: 13mm; text-align: right; padding: 0 3px; }
+.hzb-top .dan { font-size: 12px; font-weight: bold; padding: 4mm 0 0 4mm; }
+.hzb-tables { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3mm; }
+.hzb-t { border-collapse: collapse; width: 100%; font-size: 10px; }
+.hzb-t th { border: 1px dashed #000; font-weight: normal; padding: 0 2px; }
+.hzb-t td { border: 1px dashed #000; height: 8mm; vertical-align: top; }
+.hzb-t td.kubun { font-size: 16px; text-align: center; vertical-align: middle; width: 8mm; }
+.hzb-t td.kibo { font-size: 10px; }
 /* 包装日誌 A4 縦 */
 .hz-nisshi { padding: 6mm 9mm; font-size: 11px; }
 .hn-top { display: grid; grid-template-columns: 40mm 1fr 60mm; align-items: start; margin-bottom: 1mm; }
@@ -2278,21 +2278,21 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hl-t td.big { font-size: 15px; }
 .hl-t td.small { font-size: 9px; }
 /* パレット在庫集計の 2 枚目（商品ごとのパレット数と在庫数） */
-.pz-page2 { break-before: page; page-break-before: always; }
-.pz-two { display: grid; grid-template-columns: 1.55fr 1fr; gap: 6mm; margin-top: 14mm; }
-.pz-cap { text-align: center; font-size: 15px; margin-bottom: 2mm; }
-.pz-list { border-collapse: collapse; width: 100%; font-size: 11px; }
-.pz-list th { border: 1px solid #000; font-weight: normal; padding: 1px 3px; }
-.pz-list td { border: 1px solid #000; padding: 1px 4px; }
-.pz-list td.r { text-align: right; }
-.pz-list td.c { text-align: center; font-weight: bold; }
-.pz-list tr.tot td { font-weight: bold; }
+.pk-page2 { break-before: page; page-break-before: always; }
+.pk-two { display: grid; grid-template-columns: 1.55fr 1fr; gap: 6mm; margin-top: 14mm; }
+.pk-cap { text-align: center; font-size: 15px; margin-bottom: 2mm; }
+.pk-list { border-collapse: collapse; width: 100%; font-size: 11px; }
+.pk-list th { border: 1px solid #000; font-weight: normal; padding: 1px 3px; }
+.pk-list td { border: 1px solid #000; padding: 1px 4px; }
+.pk-list td.r { text-align: right; }
+.pk-list td.c { text-align: center; font-weight: bold; }
+.pk-list tr.tot td { font-weight: bold; }
 /* パレット在庫集計は A4 縦（ほかの帳票の @page 横に引っぱられないよう名前付きのページにする） */
-.pz-print { page: pz; }
-@page pz { size: A4 portrait; margin: 8mm; }
-@media print { .sz.sko:has(.pz-print) { background: #fff; } }
-.pz-list td { height: 5.2mm; white-space: nowrap; }
-.pz-list td.nm { max-width: 62mm; overflow: hidden; text-overflow: clip; font-size: 10px; }
+.pk-print { page: pk; }
+@page pk { size: A4 portrait; margin: 8mm; }
+@media print { .sz.sko:has(.pk-print) { background: #fff; } }
+.pk-list td { height: 5.2mm; white-space: nowrap; }
+.pk-list td.nm { max-width: 62mm; overflow: hidden; text-overflow: clip; font-size: 10px; }
 
 /* 出荷明細票（倉庫管理 R_出荷予定明細票）A4 横 */
 .sm-p { padding: 8mm 10mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; }
@@ -2349,17 +2349,17 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 /* メインメニュー（12 個のボタン）。白いボタンは Web 版にまだ入れていない */
 .top-grid { display: grid; grid-template-columns: repeat(4, minmax(140px, 228px)); gap: 40px 34px; padding: 40px 40px 24px; }
 .top-grid button { height: 56px; font-size: 20px; font-family: serif; color: #333; border: 1px solid #8fa8d8; border-radius: 2px; background: linear-gradient(#e8eefa, #b9cdee); cursor: pointer; }
-.top-grid button.mada, .jm button.mada, .wm button.mada { background: #fff; color: #555; cursor: default; }
+.top-grid button.mada, .jkm button.mada, .wm button.mada { background: #fff; color: #555; cursor: default; }
 .top-other { padding: 0 40px 24px; font-size: 13px; color: #555; }
 @media (max-width: 760px) { .top-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px; } }
 /* 受注管理のメニュー */
-.jm { background: #fbefef; min-height: 100vh; padding: 12px; }
-.jm-head { display: flex; justify-content: space-between; align-items: center; max-width: 520px; }
-.jm-title { font-size: 18px; font-weight: bold; }
-.jm-body { display: flex; gap: 20px; max-width: 520px; margin-top: 16px; }
-.jm-col { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.jm-col button { height: 36px; background: #f2f2f2; border: 1px solid #aaa; font-size: 14px; }
-.jm-col.right button { color: #1f6fa8; font-weight: bold; }
+.jkm { background: #fbefef; min-height: 100vh; padding: 12px; }
+.jkm-head { display: flex; justify-content: space-between; align-items: center; max-width: 520px; }
+.jkm-title { font-size: 18px; font-weight: bold; }
+.jkm-body { display: flex; gap: 20px; max-width: 520px; margin-top: 16px; }
+.jkm-col { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.jkm-col button { height: 36px; background: #f2f2f2; border: 1px solid #aaa; font-size: 14px; }
+.jkm-col.right button { color: #1f6fa8; font-weight: bold; }
 /* 丸北管理（WorkStation）のメニュー */
 .wm { background: #c5d9a0; min-height: 100vh; padding: 10px; }
 .wm-head { border: 1px solid #fff; padding: 8px; max-width: 560px; display: grid; grid-template-columns: 1fr auto; gap: 6px; }
@@ -2375,7 +2375,7 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .wm-page button { background: #fff; border: 1px solid #ccc; border-radius: 4px; height: 42px; }
 .wm-page button.on { border-color: #333; font-weight: bold; }
 .wm-foot { border: 1px solid #fff; margin-top: 8px; max-width: 560px; display: flex; justify-content: flex-end; padding: 8px; }
-.jm-col button.mada { color: #999; }
+.jkm-col button.mada { color: #999; }
 /* 製造計画のメニュー（Access の FM_メインメニュー の見た目） */
 .kkm { background: #e3ead6; min-height: 100vh; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
 .kkm > * { width: 290px; }
@@ -2474,3 +2474,5 @@ button.page-close { width: auto !important; min-width: 84px !important; height: 
 button.page-close:hover { background: #2e5597 !important; }
 /* 閉じるボタンの下に他のボタンが隠れないよう、閉じるボタンのある画面は上に帯の分だけ空ける（2026/10/28） */
 @media screen { body:has(.page-close) #root { padding-top: 38px; } }
+/* 帳票の印刷画面（.pv）は画面いっぱいに固定で重ねているので、上の空きが効かない。閉じるボタンの帯の分だけ下げる */
+@media screen { body:has(.page-close) .pv { top: 38px; } }

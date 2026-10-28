@@ -357,7 +357,7 @@ function YusoPrint(props: { 列: string[]; rows: Rec[]; 題: string; 頭名: str
   const 期間 = `${props.c.開始?.replace(/-/g, "/") ?? ""}　～　${props.c.終了?.replace(/-/g, "/") ?? ""}`;
   const 分ける = props.足名 && props.足名 !== props.頭名;
   return (
-    <div className="sp">
+    <div className="sp-print">
       <style>{"@page { size: A4 landscape; margin: 10mm; }"}</style>
       <div className="no-print sp-bar">
         <button onClick={() => window.print()}>印刷</button>

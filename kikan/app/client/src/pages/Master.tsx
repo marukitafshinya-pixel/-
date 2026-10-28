@@ -370,7 +370,7 @@ export function TokuiList() {
             <tr key={`${r.短縮コード}-${r.得意先名}`} className={r.使用不可フラグ ? "off" : ""}>
               <td className="c"><button className="teisei" onClick={() => 訂正(r.短縮コード)}>訂<br />正</button></td>
               <td><div className="r code">{r.短縮コード}</div><div>{r.得意先コード}</div></td>
-              <td className="c kana">{r.ｶﾅ分類}</td>
+              <td className="c tk2-kana">{r.ｶﾅ分類}</td>
               <td><div className="b">{r.得意先名}</div><div className="short">{r.短縮名}</div></td>
               <td className="c"><div>{r.郵便番号}</div><div className="chiku">{r.地区コード}</div>{r.住所 && <button className="map" title="地図を開く" onClick={() => 地図(r.住所)}>地図</button>}</td>
               <td className="addr">{r.住所}</td>
