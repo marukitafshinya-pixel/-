@@ -312,8 +312,7 @@ export function HousouMenu() {
       <div className="hgm-low">
         <div className="hgm-col">
           {ボタン("包装札　印刷設定", `/housou/junbi?date=${日}`, "navy")}
-          {ボタン("包装時間　登録", undefined, "navy")}
-          {ボタン("週間予定表作成(補佐用)", undefined, "navy")}
+          {ボタン("包装時間　登録", "/housou/jikan", "navy")}
           {ボタン("Oxpa取込み(パレタイザー)", undefined, "navy")}
         </div>
         <div className="hgm-col">

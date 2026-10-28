@@ -2450,3 +2450,5 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .kh-grid tr.on td.d { background: #ff0; font-weight: bold; }
 .kh-part.mae .kh-grid td { color: #e00; }
 .kh-grid td.r { text-align: right; }
+.hj-note { margin: 2px 0 6px; color: #555; }
+.hj-grid td { white-space: nowrap; }

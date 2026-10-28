@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { PoolClient } from "pg";
-import { q, t } from "./db.js";
+import { q, t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で } from "./ws.js";
 
@@ -11,9 +11,16 @@ const 出荷 = t("ws", "TD_出荷");
 const ロボット設定 = t("housou", "TD_ロボットPrgNo_製造別");
 const 積み付けマスタ = t("housou", "TM_ロボット積み付けマスタ");
 const 商品マスタ = t("kyotsu", "TM_商品マスタ");
+const 包装時間 = t("housou_fe", "TM_包装時間");
 
 type Rec = Record<string, any>;
 const n = (v: unknown) => Number(v ?? 0) || 0;
+/** 整数に丸める（.5 は偶数へ。Access の CLng と同じ） */
+const 偶数丸め = (v: number) => {
+  const f = Math.floor(v);
+  const d = v - f;
+  return d > 0.5 + 1e-9 ? f + 1 : d < 0.5 - 1e-9 ? f : f % 2 === 0 ? f : f + 1;
+};
 /** Access の My小数点計算（2：小数があれば繰り上げ） */
 const 繰り上げ = (v: number) => (Number.isInteger(v) ? v : Math.trunc(v) + (v > 0 ? 1 : 0));
 /** パレット輸送（ニチレイ大谷地・十勝）の届け先 */
@@ -79,6 +86,81 @@ async function パレット枚数を出し直す(c: PoolClient, 入庫日: strin
 
 export function housouRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
+
+  // ---- 包装時間登録（FM_包装時間登録：TM_包装時間 を 1 行ずつ入れる。Access に合言葉は無い） ----
+  // 時刻は Access と同じく 1899/12/30 の日付付きで持つ。画面には HH:MM で出す
+  const 時刻 = (v: unknown) => (v instanceof Date ? v.getTime() : Date.parse(String(v).replace(" ", "T")));
+  const 時間の列 = (k: string) => `to_char("${k}", 'HH24:MI') AS "${k}"`;
+  app.get<{ Querystring: { code?: string } }>("/api/housou/jikan", async (req) => {
+    const code = Number(req.query.code) || 0;
+    return {
+      rows: await q(
+        `SELECT "ID", "製造日"::date::text AS "製造日", "商品コード", "品名", "台数", "段数", "1台あたり（秒）", "包装個数", "実働時間分", "人員", "備品",
+                "不凍結A", "不凍結B", "不凍結C", "不凍結D", "備考", "ケース_秒", ${時間の列("開始時間")}, ${時間の列("終了時間")}
+         FROM ${包装時間} WHERE ($1::int = 0 OR "商品コード" = $1) ORDER BY "製造日" DESC NULLS LAST, "ID" DESC`,
+        [code],
+      ),
+      商品: await q(`SELECT "商品コード" AS id, MAX("品名") AS name, COUNT(*)::int AS 件数 FROM ${包装時間} WHERE "商品コード" IS NOT NULL GROUP BY "商品コード" ORDER BY "商品コード"`),
+    };
+  });
+
+  // 1 つの項目を直す。Access と同じ計算：商品コード → 品名（商品マスタ）、終了時間 → 実働時間分（開始からの分）、
+  // 実働時間分 → ケース_秒（実働 ÷ 包装個数 × 60。整数）・1台あたり（秒）（実働 ÷ 台数 × 60。小数 1 けた）
+  app.post<{ Body: { ID: number; 項目: string; 値: unknown } }>("/api/housou/jikan/save", async (req, reply) => {
+    const 項目 = req.body.項目;
+    const 数 = ["商品コード", "台数", "段数", "1台あたり（秒）", "包装個数", "実働時間分", "人員", "不凍結A", "不凍結B", "不凍結C", "不凍結D", "ケース_秒"];
+    const 文字 = ["品名", "備品", "備考"];
+    if (![...数, ...文字, "製造日", "開始時間", "終了時間"].includes(項目)) return reply.code(400).send({ error: "この項目は直せません" });
+    let 値: unknown = req.body.値 === "" || req.body.値 === undefined ? null : req.body.値;
+    if (値 !== null && 数.includes(項目)) {
+      値 = Number(String(値).replace(/,/g, ""));
+      if (!Number.isFinite(値 as number)) return reply.code(400).send({ error: "数を入れてください" });
+    }
+    if (値 !== null && 項目 === "製造日") {
+      const d = String(値).replace(/\//g, "-");
+      if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)) return reply.code(400).send({ error: "日付を入れてください（例 2026/10/28）" });
+      値 = d;
+    }
+    if (値 !== null && (項目 === "開始時間" || 項目 === "終了時間")) {
+      const m = String(値).replace(/：/g, ":").match(/^(\d{1,2}):?(\d{2})$/);
+      if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return reply.code(400).send({ error: "時刻を 10:20 のように入れてください" });
+      値 = `1899-12-30 ${m[1].padStart(2, "0")}:${m[2]}:00`;
+    }
+    return 一連で(async (c) => {
+      const r = (await c.query(`SELECT * FROM ${包装時間} WHERE "ID" = $1 FOR UPDATE`, [n(req.body.ID)])).rows[0];
+      if (!r) return reply.code(404).send({ error: "この行はありません" });
+      const v: Rec = { [項目]: 値 };
+      if (項目 === "商品コード") v.品名 = 値 === null ? r.品名 : ((await c.query(`SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [値])).rows[0]?.商品名 ?? r.品名);
+      if (項目 === "終了時間" && 値 !== null && r.開始時間) v.実働時間分 = Math.round((時刻(値) - 時刻(r.開始時間)) / 60000);
+      if (項目 === "実働時間分" && 値 !== null) {
+        const 実働 = Number(値);
+        // ケース秒は Access の欄が整数のため、小数 1 けたにしたあと整数に丸めて入る（.5 は偶数へ。Access の型変換と同じ）
+        if (n(r.包装個数) !== 0) v.ケース_秒 = 偶数丸め(Math.round((実働 / n(r.包装個数)) * 60 * 10) / 10);
+        if (n(r.台数) !== 0) v["1台あたり（秒）"] = Math.round((実働 / n(r.台数)) * 60 * 10) / 10;
+      }
+      const k = Object.keys(v);
+      await c.query(`UPDATE ${包装時間} SET ${k.map((x, i) => `"${x}" = $${i + 2}`).join(", ")} WHERE "ID" = $1`, [r.ID, ...k.map((x) => v[x])]);
+      return { ok: true };
+    });
+  });
+
+  // 新しい行（ID は今までの一番大きい番号の次。製造日は今日）
+  app.post<{ Body: { 商品コード?: number } }>("/api/housou/jikan/new", async (req) =>
+    一連で(async (c) => {
+      await c.query(`SELECT pg_advisory_xact_lock(hashtext('TM_包装時間.ID'))`);
+      const id = n((await c.query(`SELECT COALESCE(MAX("ID"), 0) + 1 AS m FROM ${包装時間}`)).rows[0].m);
+      const code = Number(req.body?.商品コード) || null;
+      const 品名 = code ? (await c.query(`SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [code])).rows[0]?.商品名 ?? null : null;
+      await c.query(`INSERT INTO ${包装時間} ("ID", "製造日", "商品コード", "品名", "不凍結A", "不凍結B", "不凍結C", "不凍結D") VALUES ($1, $2::date, $3, $4, 0, 0, 0, 0)`, [id, 日本の今().日付, code, 品名]);
+      return { ID: id };
+    }),
+  );
+
+  app.post<{ Body: { ID: number } }>("/api/housou/jikan/delete", async (req, reply) => {
+    const r = await q(`DELETE FROM ${包装時間} WHERE "ID" = $1 RETURNING 1`, [n(req.body.ID)]);
+    if (!r.length) return reply.code(404).send({ error: "この行はありません" });
+    return { ok: true };
+  });
 
   // 包装場管理のメニューの「生産登録状況」（Access の FS_出来高入力状況：製造日がその日の工場〈倉庫 11〉の入庫。商品 746 は除く。包装順）。
   // Access は今日に決まっていたが、Web 版はメニューの日付で出す
