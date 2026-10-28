@@ -166,7 +166,9 @@ for i, (code, name, name2, kana, chiku, soko, moto, uke) in enumerate(得意先,
 for i, (code, short, name, kikaku, irisu, bunrui, pal) in enumerate(商品, 1):
     ins("kyotsu.TM_商品マスタ", ID=i, 商品コード=code, グループ商品コード=code, 分類ID=bunrui, **{"ｶﾅ分類": "ｿ" if bunrui == 1 else "ﾍ"},
         短縮名=short, 商品名=name, 規格=kikaku, 入数=irisu, 品質保持期間=2, 賞味期限日付差=-1, パレット単位1=pal, パレット単位2=pal, 製造場所ID=11,
-        製造場所="丸北　北海道", 使用可能chk=True, 本社コード=f"D{code:04d}")
+        製造場所="丸北　北海道", 使用可能chk=True, 本社コード=f"D{code:04d}",
+        # 商品マスタ登録の［登録］で要る項目（Access と同じ確かめ）。規格の「×」の後ろを枚数、入数 ÷ 枚数 を kg にする
+        規格枚数=int("".join(ch for ch in kikaku.split("×")[1] if ch.isdigit())), 規格kg=round(irisu / int("".join(ch for ch in kikaku.split("×")[1] if ch.isdigit())), 2), 原料コード=1)
 商品名 = {c: (n, k, i) for c, _, n, k, i, _, _ in 商品}
 名前 = {c: n for c, n, *_ in 得意先}
 
