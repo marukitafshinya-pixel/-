@@ -9,7 +9,7 @@ const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : Stri
 /**
  * 包装時間登録（Access の 包装場管理System の FM_包装時間登録。TM_包装時間）。
  * 商品ごとの包装の時間（台数・段数・包装個数・開始／終了時刻・実働時間・人員など）を 1 行ずつ入れる。
- * Access と同じ計算：商品コードを入れると品名、終了時間を入れると実働時間（分）、実働時間を入れるとケース秒・1台あたり秒。
+ * 計算：商品コードを入れると品名、開始・終了時間を入れると実働時間（分）・ケース秒・1台あたり秒（2026/10/28 利用者の依頼で時刻からも計算）。
  */
 export default function HousouJikan() {
   const nav = useNavigate();
@@ -63,7 +63,7 @@ export default function HousouJikan() {
         <span className="small">{d ? `${d.rows.length} 件` : ""}</span>
         <PageClose fallback="/housou" />
       </div>
-      <div className="small hj-note">時刻は 10:20 のように入れます。終了時間を入れると実働時間（分）が入り、実働時間を入れるとケース秒（整数）・1台あたり秒が入ります（Access と同じ）。</div>
+      <div className="small hj-note">時刻は 10:20 のように入れます。開始時間と終了時間を入れると実働時間（分）・ケース秒（整数）・1台あたり秒が入ります。実働時間・包装個数・台数を直したときも出し直します。</div>
       <table className="sz-grid hj-grid">
         <thead>
           <tr>

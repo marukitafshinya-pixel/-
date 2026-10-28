@@ -105,7 +105,7 @@ export function housouRoutes(app: FastifyInstance) {
     };
   });
 
-  // 1 つの項目を直す。Access と同じ計算：商品コード → 品名（商品マスタ）、終了時間 → 実働時間分（開始からの分）、
+  // 1 つの項目を直す。商品コード → 品名（商品マスタ）、開始・終了時間 → 実働時間分（開始から終了までの分）、
   // 実働時間分 → ケース_秒（実働 ÷ 包装個数 × 60。整数）・1台あたり（秒）（実働 ÷ 台数 × 60。小数 1 けた）
   app.post<{ Body: { ID: number; 項目: string; 値: unknown } }>("/api/housou/jikan/save", async (req, reply) => {
     const 項目 = req.body.項目;
@@ -132,12 +132,21 @@ export function housouRoutes(app: FastifyInstance) {
       if (!r) return reply.code(404).send({ error: "この行はありません" });
       const v: Rec = { [項目]: 値 };
       if (項目 === "商品コード") v.品名 = 値 === null ? r.品名 : ((await c.query(`SELECT "商品名" FROM ${商品マスタ} WHERE "商品コード" = $1 LIMIT 1`, [値])).rows[0]?.商品名 ?? r.品名);
-      if (項目 === "終了時間" && 値 !== null && r.開始時間) v.実働時間分 = Math.round((時刻(値) - 時刻(r.開始時間)) / 60000);
-      if (項目 === "実働時間分" && 値 !== null) {
-        const 実働 = Number(値);
-        // ケース秒は Access の欄が整数のため、小数 1 けたにしたあと整数に丸めて入る（.5 は偶数へ。Access の型変換と同じ）
-        if (n(r.包装個数) !== 0) v.ケース_秒 = 偶数丸め(Math.round((実働 / n(r.包装個数)) * 60 * 10) / 10);
-        if (n(r.台数) !== 0) v["1台あたり（秒）"] = Math.round((実働 / n(r.台数)) * 60 * 10) / 10;
+      // 開始・終了のどちらを直しても、両方あれば実働時間分を出す（Access は終了時間のときだけ）
+      const 開始 = 項目 === "開始時間" ? 値 : r.開始時間;
+      const 終了 = 項目 === "終了時間" ? 値 : r.終了時間;
+      if ((項目 === "開始時間" || 項目 === "終了時間") && 開始 && 終了) v.実働時間分 = Math.round((時刻(終了) - 時刻(開始)) / 60000);
+      // 実働時間分・包装個数・台数のどれかが変わったら、ケース秒・1台あたり（秒）も出し直す
+      // （2026/10/28 利用者の依頼：開始・終了の時刻からも計算する。Access は実働時間を直接入れたときだけ）
+      if (["実働時間分", "開始時間", "終了時間", "包装個数", "台数"].includes(項目)) {
+        const 実働 = v.実働時間分 !== undefined ? v.実働時間分 : r.実働時間分;
+        const 個数 = n(項目 === "包装個数" ? 値 : r.包装個数);
+        const 台数 = n(項目 === "台数" ? 値 : r.台数);
+        if (実働 !== null && 実働 !== undefined) {
+          // ケース秒は Access の欄が整数のため、小数 1 けたにしたあと整数に丸めて入る（.5 は偶数へ。Access の型変換と同じ）
+          if (個数 !== 0) v.ケース_秒 = 偶数丸め(Math.round((Number(実働) / 個数) * 60 * 10) / 10);
+          if (台数 !== 0) v["1台あたり（秒）"] = Math.round((Number(実働) / 台数) * 60 * 10) / 10;
+        }
       }
       const k = Object.keys(v);
       await c.query(`UPDATE ${包装時間} SET ${k.map((x, i) => `"${x}" = $${i + 2}`).join(", ")} WHERE "ID" = $1`, [r.ID, ...k.map((x) => v[x])]);
