@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field, FindDialog } from "../formParts";
+import { Field, FindDialog, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type Opt = { id: number | string; name: string };
@@ -263,7 +263,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
           {s.合言葉 && <button onClick={修正} className={ro ? "" : "on"}>{ro ? "修正" : "修正中"}</button>}
           <button onClick={足す} disabled={ro || (s.kind === "pallet" && !絞る)}>新しい行</button>
           <button onClick={() => 読む()}>出し直す</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose />
         </div>
       </div>
       <div className="kn-list">

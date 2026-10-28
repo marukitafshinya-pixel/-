@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, parseDate, today } from "../formParts";
+import { Field, parseDate, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null };
@@ -65,7 +65,7 @@ export function SokoKensaku() {
         <日の欄 value={開始} set={set開始} />
         <span>〜</span>
         <日の欄 value={終了} set={set終了} />
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-top">
         <span>地区</span>
@@ -181,7 +181,7 @@ export function SokoJoho() {
         <button onClick={() => 移る(i + 1)}>▶</button>
         <button onClick={() => 移る(d.一覧.length - 1)}>▶|</button>
         <b>{k?.得意先名 ?? "（営業冷蔵庫ではありません）"}</b>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       {k && (
         <div className="sko-pad small">
@@ -364,7 +364,7 @@ export function SokoShohinbetsu() {
         <日の欄 value={日} set={set日} />
         <button className="navy" onClick={印刷} disabled={!rows.length}>印刷</button>
         <button className="green" onClick={Excel}>Excel</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-gridwrap no-print">
         <table className="sz-grid sko-grid">
@@ -416,7 +416,7 @@ export function SokoShukkoList() {
           {倉庫.map((o) => <option key={o.id} value={o.id}>{o.id} {o.name}</option>)}
         </select>
         <button disabled title="印刷の見本をいただいてから作ります">週間表</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-gridwrap">
         {soko ? <ShukkoTable rows={rows} /> : <p className="sko-pad">倉庫を選んでください。</p>}
@@ -597,7 +597,7 @@ export function SokoYotei() {
         <button className="blue" onClick={集計}>集計</button>
         <button className="navy" onClick={印刷する}>印刷</button>
         <button onClick={在庫表印刷} title="集計した在庫のロット別の一覧（名義分在庫報告書）を印刷します">在庫表印刷</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-gridwrap no-print">
         {rows === null ? (

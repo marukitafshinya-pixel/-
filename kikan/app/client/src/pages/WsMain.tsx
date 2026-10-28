@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { CalendarDialog, Field, parseDate } from "../formParts";
+import { CalendarDialog, Field, parseDate, PageClose } from "../formParts";
 import { KibouDialog, type 希望在庫 } from "./WsKibou";
 import { 輸送依頼書印刷, 出荷予定明細票印刷 } from "./Chohyo";
 import { ZaikoSentaku } from "./WsZaikoSelect";
@@ -352,7 +352,7 @@ export default function WsMain() {
               <button className="red" onClick={削除} disabled={!輸送ID} title="この便を消し、明細を便からはずす">割付解除</button>
               <button disabled={!輸送ID} onClick={() => nav(`/ws/yomikomi?id=${輸送ID}`)} title="受注読込（FSD_受注選択）">配車割付</button>
               <button className="blue" onClick={() => set予定({ 開始: date, 終了: date, 便だけ: false })} title="出荷予定明細票（R_出荷予定明細票）">輸送印刷</button>
-              <button onClick={() => nav("/")}>閉じる</button>
+              <PageClose fallback="/maruhoku" />
             </div>
           </div>
           <div className="ws-row">

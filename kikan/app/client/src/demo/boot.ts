@@ -156,6 +156,8 @@ async function main() {
   const banner = document.getElementById("demo-banner")!;
   banner.textContent = "見本版：作り物のデータで動いています。直した内容はページを閉じると消えます。合言葉（パスワード）は demo です。";
   banner.style.cssText = "background:#fff3b0;color:#333;padding:4px 10px;font-size:13px;border-bottom:1px solid #c9b25a";
+  // 閉じるボタン（右上に固定）を、見本版の帯の下に出す
+  document.documentElement.style.setProperty("--page-close-top", "34px");
   await import("../main");
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const 和暦 = (s: string | null | undefined) =>
@@ -36,7 +36,7 @@ export function WsImportMenu() {
             <tr><td>{和暦(plan?.出荷計画日)}</td><td>{plan?.運送会社名}</td><td>{plan?.車番}</td></tr>
           </tbody>
         </table>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/ws" />
       </div>
       <div className="wsi-msg">上記に出力する方法を選択してください。</div>
       <div className="wsi-group">
@@ -69,10 +69,18 @@ export function WsImportSelect() {
   const [rows, setRows] = useState<Rec[]>([]);
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [err, setErr] = useState("");
+  const [便なし, set便なし] = useState(false);
 
   useEffect(() => {
     // 開いたときは、その便の出荷日の分を出す
-    api.get<any>(`/api/ws/plan/${id}`).then((r) => setDate(String(r.plan.出荷計画日).slice(0, 10)));
+    api
+      .get<any>(`/api/ws/plan/${id}`)
+      .then((r) => setDate(String(r.plan.出荷計画日).slice(0, 10)))
+      .catch(() => {
+        // 便が無い（出荷明細票からではなく直接開いた）ときは今日の分を出す
+        set便なし(true);
+        setDate(new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10));
+      });
   }, [id]);
   useEffect(() => {
     if (!date) return;
@@ -126,6 +134,7 @@ export function WsImportSelect() {
         <button onClick={() => nav(-1)}>キャンセル</button>
         <span className="note">{sel.size} 件を選択中</span>
       </div>
+      {便なし && <p className="wsi-err">便が選ばれていません。出荷明細票の［インポート処理］から開いてください。</p>}
       {err && <p className="wsi-err">{err}</p>}
       <table className="ws-grid">
         <thead>

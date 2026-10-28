@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -30,7 +30,7 @@ export function SokoFuitchi() {
     return (
       <div className="sz sko">
         <p className="sko-pad">不一致データはありません</p>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
     );
   return (
@@ -38,7 +38,7 @@ export function SokoFuitchi() {
       <div className="kk-head">
         <div className="kk-title">入庫訂正データ</div>
         <span className="small">{rows ? `${rows.length} 件` : ""}　黄色の欄（もとの入庫データ）を直せます。</span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-gridwrap">
         <table className="sz-grid sko-grid">

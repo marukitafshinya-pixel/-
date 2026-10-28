@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, 処理中 } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 日 = { date: string; label: string; inMonth: boolean; holiday: string; color: string; underline: boolean };
@@ -95,7 +95,7 @@ export function TehaiCalendar() {
           <Field kind="date" value={終了日} className="tc-d" onCommit={(v) => set終了日(日付に(v))} />
           <button className="navy" onClick={出力}>ニチレイ出荷詳細データ出力</button>
         </span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose />
       </div>
       <div className="tc-cal">
         {["日", "月", "火", "水", "木", "金", "土"].map((w) => <div key={w} className="tc-w">{w}</div>)}

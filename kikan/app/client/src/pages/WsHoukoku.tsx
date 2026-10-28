@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { CalendarDialog } from "../formParts";
+import { CalendarDialog, PageClose } from "../formParts";
 import { 帳票印刷, 積込確認書印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
@@ -211,7 +211,7 @@ export default function WsHoukoku() {
         <div className="box">
           <button onClick={() => { setYuso(null); setKind(0); }}>条件クリア</button>
           <button onClick={印刷表示}>印刷表示</button>
-          <button onClick={閉じる}>閉じる</button>
+          <PageClose onClick={閉じる} />
         </div>
       </div>
       {印刷 && <帳票印刷 pages={印刷.pages} 名前={印刷.名前} onClose={() => set印刷(null)} />}

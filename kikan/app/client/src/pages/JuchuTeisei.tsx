@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Combo, Field, Opt, parseDate, showDate } from "../formParts";
+import { Combo, Field, Opt, parseDate, showDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 
@@ -132,7 +132,7 @@ export default function JuchuTeisei() {
           <div className="jf-btns">
             <button onClick={del} disabled={busy}>削除</button>
             <button className="blue" onClick={() => nav("/juchu/search")}>検索</button>
-            <button onClick={訂正して閉じる} disabled={busy} title="右の値で訂正して閉じます">閉じる</button>
+            <PageClose onClick={訂正して閉じる} disabled={busy} title="右の値で訂正して閉じます" />
             <button onClick={() => nav(-1)} title="訂正しないで閉じます">やめる</button>
           </div>
         </div>

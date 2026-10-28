@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload, 処理中 } from "../api";
-import { Field, parseDate, today } from "../formParts";
+import { Field, parseDate, today, PageClose } from "../formParts";
 import { 入力用の文字 } from "./webHojoScript";
 
 type Rec = Record<string, any>;
@@ -93,7 +93,7 @@ export function WebLantec() {
     <div className="sz sko">
       <div className="kk-head">
         <div className="kk-title">ランテック輸送手配</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad">
         出荷計画日 <button onClick={() => 端("最初")}>最初</button> <button onClick={() => set日付(日を足す(日付, -1))}>◀</button>{" "}

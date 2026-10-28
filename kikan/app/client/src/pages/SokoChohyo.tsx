@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../api";
 import { 送品案内書 } from "./Chohyo";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const 曜 = "日月火水木金土";
@@ -349,7 +350,7 @@ export function SokoHoukoku() {
         <button className={出?.種類 === "nichiyo" ? "on" : ""} onClick={() => 出す("nichiyo")}>日洋 出荷通知書</button>
         <span className="sp" />
         <button onClick={() => window.print()} disabled={!枚}>印刷</button>
-        <button onClick={() => history.back()}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="pv-pages">
         {!出 && <div className="pv-none">出荷日を選んで、帳票のボタンを押してください。倉庫は出荷明細票、担当者・備考は日洋 出荷通知書に使います。</div>}

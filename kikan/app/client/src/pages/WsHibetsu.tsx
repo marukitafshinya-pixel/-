@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -65,7 +66,7 @@ export default function WsHibetsu() {
         <button disabled={!d?.次の日} onClick={() => 読む(d?.次の日)}>次の日 ▶</button>
         <span className="day">{日の表示(d?.日付)}</span>
         <button className="right" onClick={作り直す} disabled={作り直し中}>{作り直し中 ? "計算中…" : "過去の日を作り直す"}</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/maruhoku" />
       </div>
       <div className="hb-note">
         {d?.最初 ? `控えのある日：${d.最初} 〜 ${d.最後}` : "まだ控えがありません。在庫更新の［日時更新］か［登録］を押すと、その日の在庫が控えられます。"}

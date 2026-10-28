@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null };
@@ -122,7 +122,7 @@ export function SokoChinritsu() {
         )}
         <button className={ro ? "red" : "red on"} onClick={修正}>{ro ? "修正" : "修正中"}</button>
         {!ro && <button onClick={足す}>行を足す</button>}
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-gridwrap">
         <table className="sz-grid sko-grid">

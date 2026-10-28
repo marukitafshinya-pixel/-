@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
+import { PageClose, useBack } from "../formParts";
 
 // マスタ管理（Access の「Accessマスタ管理」：F_マスタ一覧・FM_商品マスタ・FM_商品登録・FM_得意先マスタ・FM_得意先登録）
 type Rec = Record<string, any>;
@@ -56,7 +57,7 @@ export function MasterMenu() {
       <button onClick={() => nav("/master/misettei")}>ユーザーマスタ未設定登録</button>
       <button onClick={() => nav("/master/calendar")}>カレンダー設定</button>
       <button onClick={() => nav("/master/sakujo")}>古いデータを消す</button>
-      <button className="close" onClick={() => nav("/")}>閉じる</button>
+      <PageClose onClick={() => nav("/")} />
     </div>
   );
 }
@@ -100,7 +101,7 @@ export function ShohinList() {
           <button onClick={新規登録}>新規登録</button>
           <button onClick={コードで探す}>検索</button>
           <button onClick={() => window.print()}>印刷</button>
-          <button onClick={() => nav("/master")}>閉じる</button>
+          <PageClose fallback="/master" />
         </div>
       </div>
       <table className="ms-grid">
@@ -208,6 +209,7 @@ const ロット印字 = [{ id: 0, name: "製造日 賞味期限" }, { id: 1, nam
 export function ShohinForm() {
   const { code } = useParams();
   const nav = useNavigate();
+  const 戻る = useBack("/master/shohin");
   const loc = useLocation();
   const st = (loc.state ?? {}) as { pass?: string; 元?: number };
   const 新規 = code === "new";
@@ -239,14 +241,14 @@ export function ShohinForm() {
     if (!confirm("登録します。よろしいですか")) return alert("登録をキャンセルしました。");
     try {
       await api.post("/api/mst/shohin/save", { pass, 元コード: 新規 ? undefined : n(code), 値: v });
-      nav("/master/shohin");
+      戻る();
     } catch (e) {
       エラー(e);
     }
   }
   function キャンセル() {
     if (変えた && !confirm("保存しないで閉じますがよろしいですか？")) return;
-    nav("/master/shohin");
+    戻る();
   }
   const 計 = useMemo(() => (n(v.規格kg) * n(v.規格枚数)) || "", [v.規格kg, v.規格枚数]);
   const P = { v, set, ro };
@@ -356,7 +358,7 @@ export function TokuiList() {
         <div className="ms-btns">
           <button onClick={() => nav("/master/tokui/new")}>新規追加</button>
           <button onClick={() => window.print()}>印刷</button>
-          <button onClick={() => nav("/master")}>閉じる</button>
+          <PageClose fallback="/master" />
         </div>
       </div>
       <table className="ms-grid tk2-grid">
@@ -397,6 +399,7 @@ export function TokuiList() {
 export function TokuiForm() {
   const { code } = useParams();
   const nav = useNavigate();
+  const 戻る = useBack("/master/tokui");
   const loc = useLocation();
   const 新規 = code === "new";
   const [pass] = useState<string | null>(((loc.state ?? {}) as { pass?: string }).pass ?? null);
@@ -422,7 +425,7 @@ export function TokuiForm() {
     if (!confirm("登録します。よろしいですか")) return alert("登録をキャンセルしました。");
     try {
       await api.post("/api/mst/tokui/save", { pass, 元コード: 新規 ? undefined : n(code), 値: v });
-      nav("/master/tokui");
+      戻る();
     } catch (e) {
       エラー(e);
     }
@@ -437,7 +440,7 @@ export function TokuiForm() {
         <div className="mf-btns">
           <button onClick={登録} disabled={ro}>登録</button>
           {!新規 && <button onClick={() => nav(`/soko/chinritsu?code=${v.短縮コード}`)} title="倉庫管理の「倉庫賃率・入庫設定」をこの冷蔵庫で開きます">入庫条件詳細設定</button>}
-          <button onClick={() => nav("/master/tokui")}>閉じる</button>
+          <PageClose fallback="/master/tokui" />
         </div>
       </div>
       <div className="tf-grid">
@@ -521,7 +524,7 @@ export function UnsoList() {
           <button onClick={() => nav("/master/unso/new")}>新規登録</button>
           <button onClick={探す}>検索</button>
           <button onClick={() => window.print()}>印刷</button>
-          <button onClick={() => nav("/master")}>閉じる</button>
+          <PageClose fallback="/master" />
         </div>
       </div>
       <table className="ms-grid">
@@ -559,6 +562,7 @@ export function UnsoList() {
 export function UnsoForm() {
   const { id } = useParams();
   const nav = useNavigate();
+  const 戻る = useBack("/master/unso");
   const loc = useLocation();
   const 新規 = id === "new";
   const [pass] = useState<string | null>(((loc.state ?? {}) as { pass?: string }).pass ?? null);
@@ -574,7 +578,7 @@ export function UnsoForm() {
     if (!confirm("登録します。よろしいですか")) return alert("登録をキャンセルしました。");
     try {
       await api.post("/api/mst/unso/save", { pass, ID: 新規 ? undefined : n(id), 値: v });
-      nav("/master/unso");
+      戻る();
     } catch (e) {
       エラー(e);
     }
@@ -590,7 +594,7 @@ export function UnsoForm() {
         <div className="tf-name">運送会社マスタ登録</div>
         <div className="mf-btns">
           <button onClick={登録} disabled={ro}>登録</button>
-          <button onClick={() => nav("/master/unso")}>閉じる</button>
+          <PageClose fallback="/master/unso" />
         </div>
         {ro && <span className="mf-ro">見るだけです。一覧の［訂正］から開くと直せます。</span>}
       </div>
@@ -706,7 +710,7 @@ export function UserList() {
         <div className="ms-box"><span>件数</span><b>{rows.length}</b></div>
         <div className="ms-btns">
           <button onClick={() => set開く("new")}>新規登録</button>
-          <button onClick={() => nav("/master")}>閉じる</button>
+          <PageClose fallback="/master" />
         </div>
       </div>
       <table className="ms-grid">
@@ -847,7 +851,7 @@ export function CalendarPage() {
         {["予定全体", "休日設定", "製造", "資材"].map((x, i) => (
           <button key={x} className={種類 === i ? "on" : ""} onClick={() => set種類(i)}>{x}</button>
         ))}
-        <button className="close" onClick={() => nav("/master")}>閉じる</button>
+        <PageClose fallback="/master" />
       </div>
       <div className="mc-grid">
         {曜日名.map((w, i) => <div key={w} className={`mc-w ${i === 0 ? "sun" : i === 6 ? "sat" : ""}`}>{w}</div>)}
@@ -918,7 +922,7 @@ export function MisetteiList() {
         <div className="ms-name">ユーザーマスタ未設定登録</div>
         <button onClick={インポート}>未設定インポート</button>
         <div className="ms-box"><span>件数</span><b>{rows.length}</b></div>
-        <div className="ms-btns"><button onClick={() => nav("/master")}>閉じる</button></div>
+        <div className="ms-btns"><PageClose fallback="/master" /></div>
       </div>
       <div className="hb-note">
         直近 40 日の出荷（WorkStation・倉庫管理）で、ユーザーマスタにない 集荷場所・商品・届け先 の組み合わせを、開くたびに自動で取り込みます（1 時間ごとにも取り込みます）。
@@ -1041,7 +1045,7 @@ export function SakujoPage() {
             {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y} 年</option>)}
           </select>
         </label>
-        <div className="ms-btns"><button onClick={() => nav("/master")}>閉じる</button></div>
+        <div className="ms-btns"><PageClose fallback="/master" /></div>
       </div>
       <div className="hb-note">
         {d?.消す日 ? `${d.消す日.replace(/-/g, "/")} より前のデータを消します。` : ""}

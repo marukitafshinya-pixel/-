@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { FurikaeDialog } from "./WsZaikoHyo";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -57,7 +58,7 @@ export default function WsTeishi() {
         </div>
         <div className="ts-title">出荷停止在庫一覧</div>
         <div className="ts-btns">
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <table className="ts-grid">

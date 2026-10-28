@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null };
@@ -131,7 +131,7 @@ export function SokoKeihi() {
           {opts?.名義.map((m) => <option key={m.id} value={m.id}>{m.id} {m.name}</option>)}
         </select>
         <label><input type="checkbox" checked={詳細} onChange={(e) => set詳細(e.target.checked)} /> 詳細</label>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-body">
         <div className="sko-bins">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -122,7 +123,7 @@ export default function WsHaichi() {
           <button onClick={() => window.print()}>印刷</button>
           <button onClick={自動}>自動</button>
           <button onClick={リセット}>リセット</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <style>{"@media print { @page { size: A4 landscape; margin: 10mm; } }"}</style>

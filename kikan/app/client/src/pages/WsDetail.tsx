@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 import { ZaikoSentaku } from "./WsZaikoSelect";
 
 type Rec = Record<string, any>;
@@ -138,7 +138,7 @@ export default function WsDetail() {
           }}>
             削除
           </button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/ws" />
         </div>
       </div>
       {登録済み && <div className="wd-note">登録済み（積込確認済み）の明細です。直すときは［訂正］を押してから、直す欄を押してください。</div>}

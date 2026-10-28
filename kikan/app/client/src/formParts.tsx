@@ -1,5 +1,26 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api";
+
+/**
+ * 画面を閉じて戻る（2026/10/28 利用者：閉じるボタンをそろえる）。来た画面があればそこへ戻り、
+ * この画面を直接開いたとき（戻る先がないとき）は fallback（ふつうはメニュー）へ。
+ */
+export function useBack(fallback = "/") {
+  const nav = useNavigate();
+  const loc = useLocation();
+  return () => (loc.key && loc.key !== "default" ? nav(-1) : nav(fallback));
+}
+
+/** 画面の閉じるボタン。どの画面でも右上の同じ場所・同じ見た目に出す（styles.css の .page-close） */
+export function PageClose(props: { onClick?: () => void; label?: string; fallback?: string; disabled?: boolean; title?: string }) {
+  const back = useBack(props.fallback);
+  return (
+    <button type="button" className="page-close" onClick={props.onClick ?? back} disabled={props.disabled} title={props.title}>
+      {props.label ?? "閉じる"}
+    </button>
+  );
+}
 
 export type Opt = { code: number | string; name: string };
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null; 規格?: string | null };
@@ -249,7 +249,7 @@ export function SokoHokan() {
           <button className={"red" + (ro ? "" : " on")} onClick={修正}>{ro ? "修正" : "修正中"}</button>
           {!ro && <button onClick={行を足す}>行を足す</button>}
           <button className="green" onClick={出力}>出力</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/soko" />
         </div>
       </div>
       {詳細 !== null && <HokanShosai 在庫ID={詳細} onClose={() => { set詳細(null); load(); }} />}

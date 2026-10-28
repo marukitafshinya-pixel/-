@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload, 処理中 } from "../api";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -40,7 +41,7 @@ export function WebElixxi() {
     <div className="sz sko">
       <div className="kk-head">
         <div className="kk-title">elixxi 入庫予定の照合</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad">
         <b>入庫依頼一覧を取り込む</b>　elixxi の「入庫依頼一覧」で拠点ごとに検索してダウンロードしたファイルを選んでください（いくつでもまとめて選べます。前に取り込んだものは消えます）。

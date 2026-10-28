@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type Opt = { id: number; name: string };
@@ -111,7 +112,7 @@ export default function WsZaikoChu(props: { 系?: "ws" | "soko" }) {
           <div className="zc-note">輸送在庫は届け先の在庫とします</div>
           <div className="zc-btns">
             <button onClick={() => window.print()} className="navy">伝票印刷</button>
-            <button onClick={() => nav(-1)}>閉じる</button>
+            <PageClose fallback="/maruhoku" />
             <button onClick={() => set条件({ nyuko: 条件.nyuko })} className="red">クリア</button>
             <button onClick={Excel} className="green">Excelに出力</button>
           </div>

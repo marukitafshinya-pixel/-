@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 import { ZaikoSentaku } from "./WsZaikoSelect";
 import { 出庫の印刷, ニチレイ便 } from "./SokoChohyo";
 
@@ -286,7 +286,7 @@ export function SokoShukko() {
         <span className="sko-wa">{和の日(date)}</span>
         {data && data.通知 > 0 && <span className="sko-notice" title="計画変更の印が付いた出庫があります">通知 {data.通知}</span>}
         <span className="sko-sp" />
-        <button onClick={() => nav("/soko")}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-body">
         <div className="sko-bins">

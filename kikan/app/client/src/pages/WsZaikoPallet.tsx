@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field } from "../formParts";
+import { Field, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -52,7 +52,7 @@ export default function WsZaikoPallet() {
         <div className="kn-btns">
           <button onClick={読む}>出し直す</button>
           <button onClick={() => window.print()}>印刷</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <PalletPrint rows={出す} />

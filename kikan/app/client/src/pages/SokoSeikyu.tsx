@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, parseDate, today } from "../formParts";
+import { Field, parseDate, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null };
@@ -119,7 +119,7 @@ export function SokoSeikyu() {
         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
           <button key={m} className={開始 === `${年度}-${String(m).padStart(2, "0")}-01` ? "on blue" : ""} onClick={() => 月を選ぶ(年度, m)}>{m}月</button>
         ))}
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-top">
         <span>期間</span>{日の欄(開始, set開始)}<span>〜</span>{日の欄(終了, set終了)}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import { today } from "../formParts";
+import { today, PageClose } from "../formParts";
 import type { User } from "../main";
 
 // 基幹システムのメインメニュー（2026/10/28 利用者：いただいた画面のボタン 12 個を仮のメインにする）。
@@ -88,7 +88,7 @@ export function JuchuMenu() {
     <div className="jm">
       <div className="jm-head">
         <div className="jm-title">受注管理</div>
-        <button onClick={() => nav("/")}>閉じる</button>
+        <PageClose onClick={() => nav("/")} />
       </div>
       <div className="jm-body">
         <div className="jm-col">{左.map(ボタン)}</div>
@@ -227,9 +227,7 @@ export function WsMenu() {
           </div>
         </div>
       </div>
-      <div className="wm-foot">
-        <button className="sz-exit" onClick={() => nav("/")}>終　了</button>
-      </div>
+      <PageClose onClick={() => nav("/")} label="終　了" />
     </div>
   );
 }
@@ -275,7 +273,7 @@ export function HousouMenu() {
         <button onClick={() => set日(日を足す(日, -1))}>◀</button>
         <span>{`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${曜[d.getDay()]})`}</span>
         <button onClick={() => set日(日を足す(日, 1))}>▶</button>
-        <button className="hgm-close" onClick={() => nav("/")}>閉じる</button>
+        <PageClose onClick={() => nav("/")} />
       </div>
       <div className="hgm-up">
         <div className="hgm-list">

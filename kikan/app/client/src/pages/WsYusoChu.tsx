@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, FindDialog, parseDate } from "../formParts";
+import { Field, FindDialog, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type Opt = { id: number; name: string };
@@ -183,7 +183,7 @@ export default function WsYusoChu() {
           <button className="green" onClick={Excel}>Exel 出力</button>
           <button className="blue" onClick={クリア}>条件クリア</button>
           <button onClick={() => 印刷表示()}>印刷表示</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
         <button onClick={() => 印刷表示(true)}>届け先別印刷</button>
       </div>

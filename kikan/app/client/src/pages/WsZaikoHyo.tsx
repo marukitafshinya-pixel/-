@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, parseDate } from "../formParts";
+import { Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type 選択肢 = { id: number; name: string | null };
@@ -73,7 +73,7 @@ export function WsZaikoHyo() {
           <div className="box">
             <button className="green" disabled title="帳票（④）で作ります">Exellに出力</button>
             <button className="blue" disabled title="帳票（④）で作ります">伝票印刷</button>
-            <button onClick={() => nav("/")}>閉じる</button>
+            <PageClose fallback="/maruhoku" />
           </div>
         </div>
       </div>
@@ -290,7 +290,7 @@ export function WsHokan() {
         <div className="box">
           <button className={"red" + (ro ? "" : " on")} onClick={修正}>{ro ? "修正" : "修正中"}</button>
           <button className="green" disabled title="帳票（④）で作ります">Exel出力</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       {振替 !== null && (

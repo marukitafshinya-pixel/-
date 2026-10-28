@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field } from "../formParts";
+import { Field, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -61,7 +61,7 @@ export default function HousouJikan() {
         </label>
         <button onClick={足す}>新しい行</button>
         <span className="small">{d ? `${d.rows.length} 件` : ""}</span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/housou" />
       </div>
       <div className="small hj-note">時刻は 10:20 のように入れます。終了時間を入れると実働時間（分）が入り、実働時間を入れるとケース秒（整数）・1台あたり秒が入ります（Access と同じ）。</div>
       <table className="sz-grid hj-grid">

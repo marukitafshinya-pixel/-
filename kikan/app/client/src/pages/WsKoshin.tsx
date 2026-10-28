@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -158,7 +159,7 @@ export default function WsKoshin() {
       <div className="ko-top">
         <div className="title">在庫更新処理</div>
         <div className="msg">データを選択し登録ボタンを押してください。</div>
-        <button className="close" onClick={閉じる}>閉じる</button>
+        <PageClose onClick={閉じる} />
       </div>
       <div className="ko-body">
         <div className="ko-left">

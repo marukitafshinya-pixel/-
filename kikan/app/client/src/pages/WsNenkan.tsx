@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { FindDialog } from "../formParts";
+import { FindDialog, PageClose } from "../formParts";
 import { KibouDialog } from "./WsKibou";
 
 type Rec = Record<string, any>;
@@ -185,7 +185,7 @@ export default function WsNenkan() {
         </div>
         <div className="nk-btns">
           <button onClick={編集} className={編集中 ? "on" : ""}>編集</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
         <div className="nk-id">
           <div>{data ? `${年月}-${商品}` : ""}</div>

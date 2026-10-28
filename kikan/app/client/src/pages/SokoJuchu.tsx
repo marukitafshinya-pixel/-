@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { CalendarDialog, Field, parseDate } from "../formParts";
+import { CalendarDialog, Field, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type ボタン = { id: number; name: string | null };
@@ -271,7 +271,7 @@ export function SokoJuchu() {
         <div className="wj-right">
           <button onClick={() => 最新()}>更新</button>
           <button className="blue" onClick={() => { set方法(0); クリア(); }}>検索条件クリア</button>
-          <button onClick={閉じる}>閉じる</button>
+          <PageClose onClick={閉じる} />
         </div>
       </div>
       <div className="wj-list">

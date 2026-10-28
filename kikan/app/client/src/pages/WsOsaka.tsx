@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, FindDialog } from "../formParts";
+import { Field, FindDialog, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -114,7 +114,7 @@ export default function WsOsaka() {
             <button onClick={() => 読む()}>最新情報に更新</button>
             <button onClick={条件クリア} className="blue">検索条件クリア</button>
             <button onClick={追加の許可} className={ro ? "" : "on"}>{ro ? "追加の許可" : "編集中"}</button>
-            <button onClick={() => nav(-1)}>閉じる</button>
+            <PageClose fallback="/maruhoku" />
           </div>
           <div className="os-msg">{案内}</div>
         </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -66,7 +66,7 @@ export function KeikakuMenu() {
       <button onClick={() => nav("/keikaku/calendar")}>製造カレンダー確認</button>
       <button disabled title="準備中です">繁盛生産計画出力</button>
       <button className="kkm-log" onClick={() => nav("/keikaku/log")}>変更履歴表示</button>
-      <button className="kkm-close" onClick={() => nav("/")}>閉じる</button>
+      <PageClose onClick={() => nav("/")} />
     </div>
   );
 }
@@ -114,7 +114,7 @@ export function KeikakuHenko() {
     <div className="kh">
       <div className="kh-bar">
         <b>製造変更案内</b>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/keikaku" />
       </div>
       {d && (
         <div className="kh-body">
@@ -139,7 +139,7 @@ export function KeikakuLog() {
       <div className="kk-head no-print">
         <div className="kk-title">計画変更ログ</div>
         <button onClick={() => window.print()}>印刷</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/keikaku" />
       </div>
       <h2 className="print-only">計画変更ログ</h2>
       <table className="kk-grid kk-log">
@@ -217,7 +217,7 @@ export function KeikakuCalendar() {
             <button key={k.id} className={倉庫 === k.id ? "on" : ""} onClick={() => set倉庫(k.id)}>{k.name}</button>
           ))}
         </span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/keikaku" />
       </div>
       <div className="kk-cal">
         {["日", "月", "火", "水", "木", "金", "土"].map((w) => <div key={w} className="kk-w">{w}</div>)}
@@ -314,7 +314,7 @@ export function KeikakuDay() {
         <span className="kk-v">{月日曜(日)}</span>
         <button onClick={() => 読む()}>再表示</button>
         <button className="blue" onClick={足す}>新しい行</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/keikaku" />
       </div>
       <table className="kk-grid kk-edit">
         <thead>

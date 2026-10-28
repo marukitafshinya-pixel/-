@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
-import { Combo, Field, parseDate } from "../formParts";
+import { Combo, Field, parseDate, PageClose } from "../formParts";
 
 type Choice = { コード: string | number; 名前: string; 自社コード: number };
 
@@ -81,7 +81,7 @@ export default function HacchuForm() {
           <button className="blue" onClick={() => 印刷()}>
             印刷
           </button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/juchu" />
         </div>
       </div>
       <div className="jf-body hc-body">

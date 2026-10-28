@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field } from "../formParts";
+import { Field, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -28,7 +28,7 @@ export function WebMenu() {
     <div className="sz sko">
       <div className="kk-head">
         <div className="kk-title">WEB連携</div>
-        <button onClick={() => nav("/")}>閉じる</button>
+        <PageClose onClick={() => nav("/")} />
       </div>
       <table className="sz-grid">
         <tbody>
@@ -91,7 +91,7 @@ export function WebSettei() {
       <div className="kk-head">
         <div className="kk-title">相手先サイトの設定</div>
         <button className={ro ? "red" : "red on"} onClick={修正}>{ro ? "修正" : "修正中"}</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       {!d.鍵 && <p className="sko-pad red">暗号の鍵（WEB_RENKEI_KEY）がサーバーに設定されていないため、パスワードを保存できません。</p>}
       <p className="sko-pad small">パスワードは暗号にして保存し、画面には出しません。変えるときだけ入れてください。Access に書かれていた ID・パスワードは写していません。</p>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -126,7 +126,7 @@ export function SokoMenu() {
         <button className="skm-imp" onClick={() => nav("/soko/nyuko")} title="WorkStation から入庫データを取り込む画面を開きます">インポート</button>
         <button className="skm-out mada" disabled title="Web 版にはまだ入れていません">データ出力</button>
         <span className="skm-ver">オンライン</span>
-        <button className="sz-exit" onClick={() => nav("/")}>終　了</button>
+        <PageClose onClick={() => nav("/")} label="終　了" />
       </div>
       <div className="skm-cats">
         {ボタンの並び.map((k) => (
@@ -201,7 +201,7 @@ export function SokoNyuko() {
         <button className="blue" onClick={取り込む}>インポート</button>
         <span className="small">最後に読み込んだ日時：{最終読込日 ?? "―"}</span>
         <button className="navy" onClick={登録}>登録</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sz-list">
         <table className="sz-grid">
@@ -282,7 +282,7 @@ export function SokoIdou() {
       <div className="kk-head">
         <div className="kk-title">入庫登録(出庫時)</div>
         <button className="navy" onClick={登録}>登録</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <table className="sz-grid">
         <thead>
@@ -365,7 +365,7 @@ export function SokoNyukoKakunin() {
         <span>入庫日</span>
         <日付の欄 日={日} set日={set日} />
         <span className="small">{選んだ ? (印.size ? "グループ化するレコードにチェックを入れてください。" : "入庫Noを登録して下さい。") : "確認する冷蔵庫を選択して下さい。"}</span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-body">
         <div className="sko-bins">
@@ -436,7 +436,7 @@ export function SokoShukkoKakunin() {
         <span>出荷日</span>
         <日付の欄 日={日} set日={set日} />
         <span className="small">{選んだ ? "" : "確認する冷蔵庫を選択して下さい。"}</span>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-body">
         <div className="sko-bins">

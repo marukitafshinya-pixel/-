@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, FindDialog, parseDate } from "../formParts";
+import { Field, FindDialog, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type Opt = { id: number; name: string };
@@ -117,7 +117,7 @@ export function WsKensa() {
         </div>
         <div className="kn-btns">
           <button onClick={修正} className={ro ? "" : "on"}>{ro ? "修正" : "修正中"}</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <div className="kn-list">
@@ -218,7 +218,7 @@ export function WsSample() {
         <div className="kn-title">サンプル登録</div>
         <div className="kn-btns">
           <button onClick={新しい行}>新しい行</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <div className="kn-list">
@@ -326,7 +326,7 @@ export function WsKensaMachi() {
         <div className="kn-btns">
           <button onClick={読む} title="直した結果で出し直す">出し直す</button>
           <button onClick={修正} className={ro ? "" : "on"}>{ro ? "修正" : "修正中"}</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/maruhoku" />
         </div>
       </div>
       <div className="kn-list">

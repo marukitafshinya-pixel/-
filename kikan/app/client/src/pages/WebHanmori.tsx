@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, parseDate, today } from "../formParts";
+import { Field, parseDate, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -53,7 +53,7 @@ export function WebHanmoriIdou() {
     <div className="sz sko">
       <div className="kk-head no-print">
         <div className="kk-title">販盛 在庫移動</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad no-print">
         <日付の行 日付={日付} set日付={set日付} />
@@ -152,7 +152,7 @@ export function WebHanmoriShiire() {
     <div className="sz sko">
       <div className="kk-head no-print">
         <div className="kk-title">販盛 仕入入力（ふらの工場）</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad no-print">
         <日付の行 日付={日付} set日付={set日付} />

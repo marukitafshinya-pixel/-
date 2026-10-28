@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { パレット積込印刷 } from "./Chohyo";
+import { PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -114,7 +115,7 @@ export default function WsPallet() {
             <div className="btns">
               <button className="red" onClick={クリア} disabled={!輸送ID}>データクリア</button>
               <button className="blue" onClick={印刷表示} disabled={!輸送ID}>印刷</button>
-              <button onClick={() => nav(-1)}>閉じる</button>
+              <PageClose fallback="/maruhoku" />
             </div>
           </div>
           <div className="pl-id">{輸送ID || ""}</div>

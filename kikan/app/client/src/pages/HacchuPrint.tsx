@@ -22,12 +22,18 @@ export default function HacchuPrint() {
   const [data, setData] = useState<{ rows: Row[]; 宛先: 宛先[]; 発行元: 発行元 } | null>(null);
   const [edit, setEdit] = useState(false);
 
-  const load = () => api.get<any>("/api/hacchu/report", Object.fromEntries(sp.entries())).then(setData);
+  const [err, setErr] = useState("");
+  const load = () =>
+    api
+      .get<any>("/api/hacchu/report", Object.fromEntries(sp.entries()))
+      .then(setData)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (err) return <div className="sko-pad">{err}</div>;
   if (!data) return null;
   if (data.rows.length === 0)
     return <div className="notyet">対象のデータがありません。参照が正しいか確認してください。</div>;

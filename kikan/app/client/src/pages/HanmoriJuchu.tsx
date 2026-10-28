@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, upload } from "../api";
-import { Field } from "../formParts";
+import { Field, PageClose } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -109,7 +109,7 @@ export default function HanmoriJuchu() {
           />
         </div>
         <div className="hm-right">
-          <button onClick={() => nav("/")}>閉じる</button>
+          <PageClose fallback="/juchu" />
           <label className="hm-only">
             <input type="checkbox" checked={only} onChange={(e) => (setOnly(e.target.checked), load(e.target.checked))} />
             結びついていないものだけ

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, mdw, num, upload } from "../api";
+import { PageClose } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -86,7 +87,7 @@ export default function HanmoriUriage() {
           />
         </div>
         <div className="hm-right">
-          <button onClick={() => nav("/")}>閉じる</button>
+          <PageClose fallback="/juchu" />
           <label className="hm-only">
             <input type="checkbox" checked={only} onChange={(e) => (setOnly(e.target.checked), load(e.target.checked))} />
             売上番号がまだのものだけ

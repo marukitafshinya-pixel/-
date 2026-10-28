@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, mdw, num, ymd } from "../api";
-import { Combo } from "../formParts";
+import { Combo, PageClose } from "../formParts";
 
 type MotoBtn = { 並び: number; 表示名: string; 値: number; 要確認: boolean };
 type SakiBtn = { 受注先ID: number; 表示名: string };
@@ -174,7 +174,7 @@ export default function JuchuSearch() {
           >
             クリア
           </button>
-          <button onClick={() => nav("/")}>閉じる</button>
+          <PageClose fallback="/juchu" />
         </div>
       </div>
       <div className="search-head2">

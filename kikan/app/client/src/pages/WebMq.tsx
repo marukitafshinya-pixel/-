@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload, 処理中 } from "../api";
-import { Field, parseDate, today } from "../formParts";
+import { Field, parseDate, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -63,7 +63,7 @@ export function WebMq() {
     <div className="sz sko">
       <div className="kk-head">
         <div className="kk-title">MerQurius 納入日程</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad">
         <b>1. 納入日程 CSV を取り込む</b>　MerQurius の納入日程一覧から出した CSV を選んでください。

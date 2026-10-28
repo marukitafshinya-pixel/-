@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload } from "../api";
-import { showDate } from "../formParts";
+import { showDate, PageClose } from "../formParts";
 
 type Row = Record<string, any>;
 type 結果 = { 行数: number; 成功: number; 済み: number; 止まった?: string };
@@ -77,7 +77,7 @@ export default function SbImport() {
           />
         </div>
         <div className="hm-right">
-          <button onClick={() => nav("/")}>閉じる</button>
+          <PageClose fallback="/juchu" />
         </div>
       </div>
       <table className="hm-grid">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, upload } from "../api";
-import { parseDate, showDate } from "../formParts";
+import { parseDate, showDate, PageClose } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -85,7 +85,7 @@ export default function HanmoriTanka() {
           <div className="hm-fname">単価マスタの更新：{取得日 ?? "（まだありません）"}</div>
         </div>
         <div className="hm-right">
-          <button onClick={() => nav("/")}>閉じる</button>
+          <PageClose fallback="/juchu" />
           <button className="all" onClick={() => (setDay(null), load(null))}>
             全部の日を表示
           </button>

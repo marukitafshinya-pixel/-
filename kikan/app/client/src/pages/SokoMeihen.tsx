@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -146,7 +146,7 @@ export function SokoMeihen() {
             <option key={w.id} value={w.id}>{w.id} {w.name}</option>
           ))}
         </select>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/soko" />
       </div>
       <div className="sko-top">
         <span>検索：冷蔵庫</span>

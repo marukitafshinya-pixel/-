@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { today } from "../formParts";
+import { today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const 曜 = "日月火水木金土";
@@ -430,7 +430,7 @@ export function HousouChohyo() {
         )}
         <span className="sp" />
         <button onClick={() => window.print()} disabled={!件数}>印刷</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/housou" />
       </div>
       <div className="pv-pages">
         {!選んだ.length && <div className="pv-none">上の帳票を選んでください</div>}

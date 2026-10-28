@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ブックマーク } from "./webHojoScript";
+import { PageClose } from "../formParts";
 
 /**
  * elixxi 入力の補助の使い方（ブックマークの登録のしかた）。
@@ -17,7 +18,7 @@ export function WebHojo() {
     <div className="sz sko">
       <div className="kk-head">
         <div className="kk-title">相手先サイトへの入力の補助（使い方）</div>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/web" />
       </div>
       <div className="sko-pad" style={{ lineHeight: 1.9, maxWidth: 900 }}>
         <b>はじめに 1 回だけ：ブックマークを登録する</b>

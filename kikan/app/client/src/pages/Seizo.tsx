@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 type Opt = { id: number | string; name: string };
@@ -116,7 +116,7 @@ export function SeizoMenu() {
       </div>
       <div className="sz-menu-foot">
         <span>Copyright 2020 marukita Ltd. All rights reserved.</span>
-        <button className="sz-exit" onClick={() => nav("/")}>終　了</button>
+        <PageClose onClick={() => nav("/")} label="終　了" />
       </div>
     </div>
   );
@@ -235,7 +235,7 @@ export function SeizoHoso() {
         <日付の欄 題="入庫日" value={日} onChange={set日} />
         <工場選択 list={他 ? 他工場 : [{ id: 11, name: "丸北" }]} value={倉庫} onChange={set倉庫} />
         <div className="sz-top-btns">
-          <button onClick={閉じる}>閉じる</button>
+          <PageClose onClick={閉じる} />
           <button className="blue" onClick={登録}>登録</button>
           <button className="orange" onClick={async () => set未包装(await api.get<Rec[]>("/api/seizo/mihoso").catch((e) => (エラー(e), null)))}>未包装読込</button>
         </div>
@@ -341,7 +341,7 @@ export function SeizoTako() {
         <日付の欄 題="入庫日" value={日} onChange={set日} />
         <工場選択 list={他工場} value={倉庫} onChange={set倉庫} />
         <div className="sz-top-btns">
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/seizo" />
         </div>
       </div>
       <div className="sz-list">
@@ -625,7 +625,7 @@ export function SeizoYotei() {
         <日付の欄 題="製造日" value={日} onChange={set日} />
         <span className="sz-btns">
           <button onClick={async () => { await api.post("/api/seizo/yotei/new", { 製造日: 日 }).catch(エラー); 読む(); }}>新しい行</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/seizo" />
         </span>
       </div>
       <div className="sz-list">
@@ -733,7 +733,7 @@ export function SeizoKensaku() {
           <button className="navy" onClick={async () => setRows(await api.get<Rec[]>("/api/seizo/kensaku", 条件()).catch((e) => (エラー(e), null)))}>表示</button>
           <button onClick={() => Excelを受け取る("/api/seizo/kensaku?" + new URLSearchParams({ ...条件(), excel: "1" }).toString(), "履歴.xlsx").catch(エラー)}>出力</button>
           <button onClick={() => (setC({ f: "", t: "", s1: "", s2: "" }), setRows(null))}>クリア</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/seizo" />
         </span>
       </div>
       <div className="sz-cond">
@@ -786,7 +786,7 @@ export function SeizoJikan() {
         <span className="sz-btns">
           <button className="navy" onClick={表示}>表示</button>
           <button onClick={() => Excelを受け取る("/api/seizo/jikan?" + new URLSearchParams({ ...c, excel: "1" }).toString(), "包装時間の集計.xlsx").catch(エラー)}>出力</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/seizo" />
         </span>
       </div>
       <div className="sz-cond">

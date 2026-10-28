@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
-import { Field } from "../formParts";
+import { Field, PageClose } from "../formParts";
 
 type Row = Record<string, any>;
 
@@ -85,7 +85,7 @@ export default function Tokutei() {
         <button onClick={編集} disabled={can}>
           編集
         </button>
-        <button onClick={() => nav("/")}>閉じる</button>
+        <PageClose fallback="/juchu" />
         {can && <span className="note">修正できます。欄を直してほかへ移ると保存されます。一番下の行に書くと足せます。</span>}
       </div>
       <table className="tk-grid">

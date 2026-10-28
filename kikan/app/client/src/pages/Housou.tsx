@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { Field, today } from "../formParts";
+import { Field, today, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -72,7 +72,7 @@ export function HousouJunbi() {
           <button onClick={async () => { await api.post("/api/housou/junbi/recalc", { date: 日 }).catch(エラー); 読む(); }}>パレット枚数の再計算</button>
           <button onClick={() => nav(`/housou/chohyo?date=${日}&k=robot`)} title="ロボットパレット引き出し確認表">印刷</button>
           <button onClick={() => nav(`/housou/chohyo?date=${日}&k=fuda`)} title="パレット票・区分表示・仕掛原料管理札・ロボットパレット引き出し確認表・包装連絡表">包装札印刷</button>
-          <button onClick={() => nav(-1)}>閉じる</button>
+          <PageClose fallback="/housou" />
         </div>
       </div>
       <div className="sz-list">

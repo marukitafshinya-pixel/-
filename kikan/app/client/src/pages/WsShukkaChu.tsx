@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, num, 処理中 } from "../api";
-import { Field, FindDialog, parseDate } from "../formParts";
+import { Field, FindDialog, parseDate, PageClose } from "../formParts";
 
 type Rec = Record<string, any>;
 const エラー = (e: unknown) => alert(e instanceof ApiError ? e.message : String(e));
@@ -297,7 +297,7 @@ export default function WsShukkaChu(props: { 系?: "ws" | "soko" }) {
         <button className="green" onClick={実行出力}>実行･出力</button>
         <button className="blue" onClick={条件クリア}>条件クリア</button>
         <button onClick={印刷表示}>印刷表示</button>
-        <button onClick={() => nav(-1)}>閉じる</button>
+        <PageClose fallback="/maruhoku" />
       </div>
       {探す && (
         <FindDialog
