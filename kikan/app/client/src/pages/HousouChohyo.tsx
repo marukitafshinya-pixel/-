@@ -400,7 +400,7 @@ export function HousouChohyo() {
       }
       set中身(out);
     })();
-    setSp({ date: 日, ...(選んだ.length === 1 ? { k: 選んだ[0] } : {}) }, { replace: true });
+    setSp({ date: 日, ...(選んだ.length ? { k: 選んだ.join(",") } : {}) }, { replace: true });
   }, [日, 選んだ.join(","), 作業場]);
   const 日を足す = (k: number) => {
     const x = new Date(Date.parse(日 + "T00:00:00Z") + k * 86400000).toISOString().slice(0, 10);

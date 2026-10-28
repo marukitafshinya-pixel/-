@@ -83,7 +83,7 @@ export function housouRoutes(app: FastifyInstance) {
   // 包装場管理のメニューの「生産登録状況」（Access の FS_出来高入力状況：製造日がその日の工場〈倉庫 11〉の入庫。商品 746 は除く。包装順）。
   // Access は今日に決まっていたが、Web 版はメニューの日付で出す
   app.get<{ Querystring: { date: string } }>("/api/housou/menu", async (req) =>
-    q(
+    !/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date ?? "")) ? [] : q(
       `SELECT "入庫ID", "包装順", "商品名", "タグ", "ケース", "ロボットPrgNo" FROM ${入庫}
        WHERE "製造日" = $1::date AND "倉庫ID" = 11 AND "商品コード" <> 746 ORDER BY "包装順", "入庫ID"`,
       [req.query.date],
