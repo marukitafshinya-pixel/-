@@ -14,7 +14,7 @@ const ボタン: { label: string; to?: string }[] = [
   { label: "製造管理", to: "/seizo" },
   { label: "丸北管理", to: "/maruhoku" },
   { label: "原料管理" },
-  { label: "商品推移" },
+  { label: "商品推移", to: "/suii" },
   { label: "包装場管理", to: "/housou" },
   { label: "仕掛管理" },
   { label: "WEB連携", to: "/web" },

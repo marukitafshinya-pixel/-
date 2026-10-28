@@ -2476,3 +2476,40 @@ button.page-close:hover { background: #2e5597 !important; }
 @media screen { body:has(.page-close) #root { padding-top: 38px; } }
 /* 帳票の印刷画面（.pv）は画面いっぱいに固定で重ねているので、上の空きが効かない。閉じるボタンの帯の分だけ下げる */
 @media screen { body:has(.page-close) .pv { top: 38px; } }
+/* 商品推移（F_出荷推移ver4） */
+.ssi { background: #e6ecf2; min-height: 100vh; padding: 8px 12px; font-size: 13px; }
+.ssi-head { display: flex; align-items: flex-end; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.ssi-title { font-size: 20px; font-weight: bold; color: #1f3864; margin-right: 8px; }
+.ssi-f { display: flex; flex-direction: column; gap: 2px; }
+.ssi-f > span:first-child { font-size: 12px; font-weight: bold; color: #1f3864; }
+label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ssi-code { width: 70px; text-align: right; }
+.ssi-name { font-weight: bold; min-width: 160px; }
+.ssi-year { width: 70px; }
+.ssi-unit { flex-direction: row; align-items: center; gap: 4px; }
+.ssi-unit button.on { background: #1f3864; color: #fff; }
+.ssi-sum { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.ssi-sum > div { background: #fff; border: 1px solid #9ab; padding: 4px 10px; display: flex; flex-direction: column; min-width: 110px; }
+.ssi-sum > div.wide { min-width: 240px; max-width: 420px; }
+.ssi-sum span { font-size: 11px; color: #456; }
+.ssi-sum b { font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+.ssi-sum b.txt { font-size: 12px; text-align: left; font-weight: normal; }
+.ssi-sum small { font-size: 10px; color: #678; }
+.ssi-h { font-size: 14px; margin: 10px 0 4px; color: #1f3864; }
+.ssi-scroll { overflow: auto; max-width: 100%; }
+.ssi-grid { border-collapse: collapse; background: #fff; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ssi-grid th { background: #33528a; color: #fff; border: 1px solid #556; padding: 2px 6px; white-space: nowrap; font-weight: normal; position: sticky; top: 0; }
+.ssi-grid td { border: 1px solid #bcc; padding: 1px 6px; white-space: nowrap; }
+.ssi-grid td.r { text-align: right; }
+.ssi-grid td.b { font-weight: bold; }
+.ssi-grid td.dbl { cursor: pointer; }
+.ssi-grid td.dbl:hover { background: #fff6cc; }
+.ssi-grid td.minus { color: #c00; }
+.ssi-grid tr.soko td { background: #f2f6ea; }
+.ssi-grid tfoot td { font-weight: bold; border-top: 2px solid #334; background: #eef; }
+.ssi-yotei { width: 64px; text-align: right; background: #ffffe0; }
+.ssi-note { font-size: 12px; color: #456; margin-top: 8px; }
+.ssi-none { color: #666; padding: 8px; }
+.ssi-dlg { background: #fff; border: 2px solid #1f3864; width: min(1100px, 96vw); max-height: 86vh; display: flex; flex-direction: column; }
+.ssi-dlg-h { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #33528a; color: #fff; font-weight: bold; }
+.ssi-dlg-b { overflow: auto; padding: 6px; }

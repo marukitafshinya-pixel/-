@@ -354,6 +354,21 @@ for sid, yid, d, todoke, code, cs, zid, jun, chk, jid, moto in 出荷:
         v.update(計画変更chk=True, 変更通知="製造日が変わりました（見本）")
     ins("ws.TD_出荷", **v)
 
+# 商品推移の見本：前の月までに出して在庫更新で登録した出荷（工場から。インポート場所 1）
+for i, (d, todoke, code, cs, zid, moto) in enumerate([
+    (-20, 812, 91, 30, 70003, 360), (-27, 824, 55, 20, 70002, 360), (-35, 343, 91, 60, 70003, 11), (-41, 812, 91, 25, 70003, 360),
+    (-48, 826, 91, 40, 70003, 360), (-55, 343, 55, 30, 70001, 11), (-62, 812, 91, 35, 70003, 360), (-70, 824, 55, 25, 70002, 360),
+    (-78, 343, 91, 50, 70003, 11), (-86, 826, 91, 45, 70003, 360), (-95, 812, 91, 20, 70003, 360), (-103, 343, 55, 40, 70001, 11),
+]):
+    name, kikaku, irisu = 商品名[code]
+    z = next(x for x in 在庫 if x[0] == zid)
+    v = dict(既定)
+    v.update(出庫ID=5101 + i, 輸送ID=0, 出荷日=day(d), 届け先コード=todoke, 届け先=名前[todoke], 商品コード=code, 商品名=name, 規格=kikaku, 入数=irisu,
+             ケース=cs, 商品kg=cs * irisu, 製造日=day(z[3] - 1), 賞味期限=day(z[3] - 2 + 730), 納品日=day(d + 2), 入庫日=day(z[3]), タグ=z[4],
+             在庫ID=zid, 認識ID=str(zid), 通知="確認OK!", 商品積込順=0, chk=True, 積込確認=True, 受注ID=0, 取引元ID=moto, 取引元=名前[moto],
+             入庫後名義ID=11 if todoke == 343 else todoke, 届け先区分=3 if todoke == 343 else 0, 商品区分=1, インポート場所ID=1, パレット使用枚数=-(-cs // 40))
+    ins("ws.TD_出荷", **v)
+
 # ---------------- 年間受注割振りの月の表（作り物）：見本版を開いた月と、その前の月 ----------------
 月初 = Raw("date_trunc('month', demo_day(0))")
 月末 = Raw("(date_trunc('month', demo_day(0)) + interval '1 month' - interval '1 day')")
