@@ -14,12 +14,8 @@ const 和の日付 = (v: string) => (v ? `${v.slice(0, 4)}年${v.slice(5, 7)}月
 const 短い日 = (v: string | null) => (v ? `${v.slice(2, 4)}/${v.slice(5, 7)}/${v.slice(8, 10)}` : "");
 const 曜日付き = (v: string) => (v ? `${v.replace(/-/g, "/")}（${"日月火水木金土"[new Date(v + "T00:00:00").getDay()]}）` : "");
 const n = (v: unknown) => Number(v ?? 0) || 0;
-/** 他工場（Access の工場選択のトグル） */
-const 他工場 = [
-  { id: 1187, name: "えんゆう" },
-  { id: 191, name: "ふらの" },
-  { id: 1271, name: "遠軽食品" },
-];
+/** 他工場（Access の工場選択のトグル）。2026/10/28 利用者の依頼で、計量日誌・包装日誌の他工場はふらの工場だけにする（えんゆう・遠軽食品は省く） */
+const 他工場 = [{ id: 191, name: "ふらの" }];
 
 async function Excelを受け取る(url: string, 既定の名前: string) {
   await 処理中(async () => {
@@ -179,7 +175,7 @@ export function SeizoHoso() {
   const [sp] = useSearchParams();
   const 他 = Number(sp.get("soko") ?? 11) !== 11;
   const [日, set日] = useState(sp.get("date") ?? today());
-  const [倉庫, set倉庫] = useState(Number(sp.get("soko") ?? 11));
+  const [倉庫, set倉庫] = useState(他 ? 191 : 11);
   const [rows, setRows] = useState<Rec[]>([]);
   const [opts, setOpts] = useState<Opts>(空の選択肢);
   const [未包装, set未包装] = useState<Rec[] | null>(null);
@@ -298,7 +294,7 @@ export function SeizoHoso() {
 }
 
 /**
- * 他工場 計量日誌登録（Access の FM_計量数登録）。製造日と工場（えんゆう・ふらの・遠軽食品）で絞った入庫に、袋総枚数などを入れる。
+ * 他工場 計量日誌登録（Access の FM_計量数登録）。製造日とふらの工場で絞った入庫に、袋総枚数などを入れる。
  * 袋総枚数からケース・kg・箱詰枚数・半端枚数を出し、ケースが変わったら出荷に「数量訂正」を知らせる。
  */
 export function SeizoTako() {
