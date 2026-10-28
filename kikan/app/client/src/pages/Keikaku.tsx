@@ -71,38 +71,39 @@ export function KeikakuMenu() {
   );
 }
 
-function 変更の表({ rows, 題 }: { rows: Rec[]; 題: string }) {
+/** 製造変更案内の日付（11月10日(火)。日は 2 けた） */
+const 月日曜2 = (d: string | null) => (d ? `${Number(d.slice(5, 7))}月${d.slice(8, 10)}日(${曜日(d)})` : "");
+
+function 変更の表({ rows, 題, 前 }: { rows: Rec[]; 題: string; 前?: boolean }) {
+  const [選, set選] = useState(0);
   return (
-    <div className="kk-part">
-      <div className="kk-sub">{題}（{rows.length} 件）</div>
-      <table className="kk-grid">
-        <thead>
-          <tr>
-            <th>通知</th><th>製造日</th><th>包装日</th><th>作業場</th><th>コード</th><th>商品名</th><th>ケース</th><th>商品kg</th><th>原料</th><th>変更記録</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className={"kk-" + (r.通知 ?? "")}>
-              <td className="c">{r.通知}</td>
-              <td>{月日曜(r.製造日)}</td>
-              <td>{月日曜(r.入庫日)}</td>
-              <td className="c">{r.作業場}</td>
-              <td className="r">{r.商品コード}</td>
-              <td>{r.商品名}</td>
-              <td className="r">{num(r.ケース)}</td>
-              <td className="r">{num(r.商品kg)}</td>
-              <td>{r.自社原料}</td>
-              <td>{r.変更記録}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className={"kh-part" + (前 ? " mae" : "")}>
+      <div className="kh-ttl">{題}</div>
+      <div className="kh-scroll">
+        <table className="kh-grid">
+          <thead>
+            <tr><th>製造日</th><th>工場</th><th>コード</th><th>商品名</th><th>ケース</th><th>商品kg</th><th>案内</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={!前 && i === 選 ? "on" : ""} onClick={() => set選(i)}>
+                <td className="d">{月日曜2(r.製造日)}</td>
+                <td>{r.作業場}</td>
+                <td className="r">{r.商品コード}</td>
+                <td className="n">{r.商品名}</td>
+                <td className="r">{num(r.ケース)}</td>
+                <td className="r">{num(r.商品kg)}</td>
+                <td>{r.通知}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-/** 変更内容確認（Access の F_製造変更案内）：上が新しい計画、下が前回の計画 */
+/** 変更内容確認（Access の F_製造変更案内）：左が変更後（新しい計画）、右が変更前（前回の計画）。いただいた画面と同じ並び */
 export function KeikakuHenko() {
   const nav = useNavigate();
   const [d, setD] = useState<{ 新規: Rec[]; 前回: Rec[] } | null>(null);
@@ -110,16 +111,16 @@ export function KeikakuHenko() {
     api.get<{ 新規: Rec[]; 前回: Rec[] }>("/api/keikaku/henko").then(setD).catch(エラー);
   }, []);
   return (
-    <div className="kk">
-      <div className="kk-head">
-        <div className="kk-title">製造変更案内</div>
+    <div className="kh">
+      <div className="kh-bar">
+        <b>製造変更案内</b>
         <button onClick={() => nav(-1)}>閉じる</button>
       </div>
       {d && (
-        <>
-          <変更の表 rows={d.新規} 題="新しい計画（新規・変更後）" />
-          <変更の表 rows={d.前回} 題="前回の計画（変更前）" />
-        </>
+        <div className="kh-body">
+          <変更の表 rows={d.新規} 題="変更後" />
+          <変更の表 rows={d.前回} 題="変更前" 前 />
+        </div>
       )}
     </div>
   );

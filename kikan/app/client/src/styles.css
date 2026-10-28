@@ -2433,3 +2433,20 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .hgm-low { display: grid; grid-template-columns: 206px 206px 206px; gap: 24px; padding: 18px 0 0 34px; }
 .hgm-col { display: flex; flex-direction: column; gap: 8px; }
 .hgm-other { margin-top: 24px; font-size: 13px; color: #555; display: flex; gap: 8px; align-items: center; }
+/* 製造変更案内（Access の F_製造変更案内 の見た目） */
+.kh { background: #5b82b5; min-height: 100vh; padding: 4px 10px 20px; }
+.kh-bar { display: flex; justify-content: space-between; align-items: center; color: #fff; margin-bottom: 2px; }
+.kh-body { display: flex; gap: 4px; align-items: stretch; }
+.kh-part { flex: 1; background: #fff; min-width: 0; }
+.kh-part.mae { background: #aebfd9; }
+.kh-ttl { background: #fff; text-align: center; font-size: 20px; letter-spacing: 6px; color: #e0c000; line-height: 1.1; }
+.kh-part.mae .kh-ttl { color: #e020c0; }
+.kh-scroll { height: 600px; overflow-y: auto; }
+.kh-grid { border-collapse: collapse; width: 100%; font-family: "MS Mincho", serif; font-size: 13px; background: #fff; }
+.kh-grid th { position: sticky; top: 0; background: #33339a; color: #ff0; font-weight: normal; border: 1px solid #ccc; padding: 2px 4px; }
+.kh-grid td { border: 1px solid #ccc; padding: 2px 3px; white-space: nowrap; height: 21px; }
+.kh-grid td.d { font-size: 11px; }
+.kh-grid td.n { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+.kh-grid tr.on td.d { background: #ff0; font-weight: bold; }
+.kh-part.mae .kh-grid td { color: #e00; }
+.kh-grid td.r { text-align: right; }
