@@ -103,7 +103,9 @@ export function SokoMenu() {
       if (s.日時更新がまだ) await 処理中(() => api.post("/api/soko/nichiji", {}));
       s = await api.get<Rec>("/api/soko/status");
       setSt(s);
-      if (s.入庫待ち && confirm(`入庫未登録データ(インポート)が ${s.入庫待ち} 件あります。入庫登録の画面を開きますか？`)) nav("/soko/nyuko");
+      // 見本版は確認がいつも OK になるので、メニューを開いたまま件数だけ知らせる
+      if (s.入庫待ち && import.meta.env.VITE_DEMO) alert(`入庫未登録データ(インポート)が ${s.入庫待ち} 件あります。［インポート］から入庫登録の画面を開けます。`);
+      else if (s.入庫待ち && confirm(`入庫未登録データ(インポート)が ${s.入庫待ち} 件あります。入庫登録の画面を開きますか？`)) nav("/soko/nyuko");
     })().catch(エラー);
   }, []);
   async function 締める() {

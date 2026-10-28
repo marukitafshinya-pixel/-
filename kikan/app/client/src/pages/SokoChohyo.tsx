@@ -272,10 +272,10 @@ function 日洋出荷通知書ページ(props: { p: Rec }) {
   const { p } = props;
   const 空き = Math.max(0, 3 - p.行.length);
   return (
-    <div className="pv-page ny">
-      <div className="ny-time">{p.印刷日時}</div>
-      <div className="ny-title">出　　荷　　通　　知　　書</div>
-      <div className="ny-head">
+    <div className="pv-page nyo">
+      <div className="nyo-time">{p.印刷日時}</div>
+      <div className="nyo-title">出　　荷　　通　　知　　書</div>
+      <div className="nyo-head">
         <div>
           <div className="ate">{p.宛先}　御中</div>
           {p.担当者 && <div className="tanto">{p.担当者}</div>}
@@ -287,15 +287,15 @@ function 日洋出荷通知書ページ(props: { p: Rec }) {
           <div>FAX：{p.差出人.FAX}</div>
         </div>
       </div>
-      <div className="ny-msg">下記の通り、当工場より製品を出庫いたしました。</div>
-      <div className="ny-to"><span>{p.届け先} 様 納入分</span><table className="ny-in"><tbody><tr><th>記入者</th></tr><tr><td /></tr></tbody></table></div>
-      <table className="ny-box">
+      <div className="nyo-msg">下記の通り、当工場より製品を出庫いたしました。</div>
+      <div className="nyo-to"><span>{p.届け先} 様 納入分</span><table className="nyo-in"><tbody><tr><th>記入者</th></tr><tr><td /></tr></tbody></table></div>
+      <table className="nyo-box">
         <tbody>
           <tr><th>入庫日</th><td className="big">{年月日曜日(p.入庫日)}</td><th>発送日</th><td>{年月日括弧(p.発送日)}</td></tr>
           <tr><th>運送会社</th><td className="big">{p.運送会社名}　車番{p.車番}</td><th>区分</th><td className="big c">{p.区分}</td></tr>
         </tbody>
       </table>
-      <table className="ny-t">
+      <table className="nyo-t">
         <colgroup><col style={{ width: "9%" }} /><col style={{ width: "34%" }} /><col style={{ width: "5%" }} /><col style={{ width: "9%" }} /><col style={{ width: "7%" }} /><col style={{ width: "8%" }} /><col style={{ width: "10%" }} /><col /></colgroup>
         <thead><tr><th>商品コード</th><th>製品名</th><th>区分</th><th>規格</th><th>ケース</th><th>kg</th><th>賞味期限</th><th className="tiny">発注No</th></tr></thead>
         <tbody>
@@ -306,8 +306,8 @@ function 日洋出荷通知書ページ(props: { p: Rec }) {
           <tr className="sum"><td /><td colSpan={3} className="c">合 計 数 量</td><td colSpan={2} className="r">{数(p.行.reduce((a: number, r: Rec) => a + r.ケース, 0))}  C/S</td><td colSpan={2} className="c">{数(Math.round(p.行.reduce((a: number, r: Rec) => a + r.kg, 0)))}Kg</td></tr>
         </tbody>
       </table>
-      {p.備考 && <div className="ny-biko">{p.備考}</div>}
-      <div className="ny-renraku">その他不明事項は{p.本社.社名} TEL{p.本社.TEL} までご連絡下さい。</div>
+      {p.備考 && <div className="nyo-biko">{p.備考}</div>}
+      <div className="nyo-renraku">その他不明事項は{p.本社.社名} TEL{p.本社.TEL} までご連絡下さい。</div>
     </div>
   );
 }

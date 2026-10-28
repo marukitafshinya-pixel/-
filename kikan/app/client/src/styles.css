@@ -1055,8 +1055,8 @@ input.kyotsu[readonly] { background: #f3e2c0; }
 .pi-col .slot.tate { height: 19mm; }
 .pi-col .slot .no { width: 4mm; border-right: 1px solid #000; font-weight: bold; font-size: 7pt; }
 .pi-col .slot .t { font-size: 6pt; line-height: 1.3; padding: 0.5mm; }
-.pi-col .slot .lot { color: #1e5bb8; }
-.pi-col .slot .ko { color: #a0522d; }
+.pi-col .slot .pi-lot { color: #1e5bb8; }
+.pi-col .slot .pi-ko { color: #a0522d; }
 .pi-right { flex: 1; }
 .pi-right .title { font-size: 13pt; font-weight: bold; margin: 2mm 0 0 30mm; }
 .pi-right .info { display: flex; gap: 4mm; align-items: flex-start; margin-top: 2mm; font-size: 7.5pt; font-weight: bold; }
@@ -2315,34 +2315,34 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 .sm-t td.renraku { font-size: 9px; overflow: hidden; max-height: 8mm; line-height: 1.2; }
 .sm-foot { font-size: 12px; font-weight: bold; margin-top: 1mm; }
 /* 日洋 出荷通知書（R_日洋専用出荷通知書）A4 縦 */
-.ny { padding: 8mm 10mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; font-weight: bold; }
-.ny-time { font-size: 9px; font-weight: normal; }
-.ny-title { text-align: center; font-size: 20px; font-family: "MS PMincho", "Noto Serif JP", serif; border-bottom: 2px dashed #000; width: 120mm; margin: -2mm auto 2mm; }
-.ny-head { display: flex; justify-content: space-between; align-items: flex-start; }
-.ny-head .ate { font-size: 15px; }
-.ny-head .tanto { font-size: 12px; }
-.ny-head .from { font-size: 10px; line-height: 1.8; margin-right: 6mm; }
-.ny-head .from .sha { font-size: 14px; text-decoration: underline; letter-spacing: 4px; margin-bottom: 3mm; }
-.ny-msg { font-size: 10px; margin-top: 2mm; }
-.ny-to { display: flex; justify-content: space-between; align-items: flex-start; font-size: 16px; font-weight: normal; margin-top: 1mm; padding-left: 6mm; }
-.ny-in { border-collapse: collapse; }
-.ny-in th { border: 1px solid #000; font-size: 8px; font-weight: normal; width: 22mm; }
-.ny-in td { border: 1px solid #000; height: 10mm; }
-.ny-box { border-collapse: collapse; width: 82%; margin: -6mm 0 3mm 6mm; font-size: 11px; }
-.ny-box th { border: 1px solid #000; padding: 1px 6px; width: 18mm; }
-.ny-box td { border: 1px solid #000; padding: 1px 6px; font-weight: normal; font-size: 10px; }
-.ny-box td.big { font-size: 13px; font-weight: bold; }
-.ny-box td.c { text-align: center; }
-.ny-t { width: 100%; border-collapse: collapse; font-size: 10px; }
-.ny-t th { border: 1px solid #000; padding: 1px; }
-.ny-t th.tiny { font-size: 7px; font-weight: normal; }
-.ny-t td { border: 1px solid #000; padding: 1px 3px; height: 4.5mm; font-weight: normal; }
-.ny-t td.c { text-align: center; }
-.ny-t td.r { text-align: right; }
-.ny-t td.sm { font-size: 8px; }
-.ny-t tr.sum td { font-weight: bold; font-size: 11px; }
-.ny-biko { font-size: 11px; margin-top: 2mm; }
-.ny-renraku { font-size: 9px; margin-top: 6mm; }
+.nyo { padding: 8mm 10mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; font-weight: bold; }
+.nyo-time { font-size: 9px; font-weight: normal; }
+.nyo-title { text-align: center; font-size: 20px; font-family: "MS PMincho", "Noto Serif JP", serif; border-bottom: 2px dashed #000; width: 120mm; margin: -2mm auto 2mm; }
+.nyo-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.nyo-head .ate { font-size: 15px; }
+.nyo-head .tanto { font-size: 12px; }
+.nyo-head .from { font-size: 10px; line-height: 1.8; margin-right: 6mm; }
+.nyo-head .from .sha { font-size: 14px; text-decoration: underline; letter-spacing: 4px; margin-bottom: 3mm; }
+.nyo-msg { font-size: 10px; margin-top: 2mm; }
+.nyo-to { display: flex; justify-content: space-between; align-items: flex-start; font-size: 16px; font-weight: normal; margin-top: 1mm; padding-left: 6mm; }
+.nyo-in { border-collapse: collapse; }
+.nyo-in th { border: 1px solid #000; font-size: 8px; font-weight: normal; width: 22mm; }
+.nyo-in td { border: 1px solid #000; height: 10mm; }
+.nyo-box { border-collapse: collapse; width: 82%; margin: -6mm 0 3mm 6mm; font-size: 11px; }
+.nyo-box th { border: 1px solid #000; padding: 1px 6px; width: 18mm; }
+.nyo-box td { border: 1px solid #000; padding: 1px 6px; font-weight: normal; font-size: 10px; }
+.nyo-box td.big { font-size: 13px; font-weight: bold; }
+.nyo-box td.c { text-align: center; }
+.nyo-t { width: 100%; border-collapse: collapse; font-size: 10px; }
+.nyo-t th { border: 1px solid #000; padding: 1px; }
+.nyo-t th.tiny { font-size: 7px; font-weight: normal; }
+.nyo-t td { border: 1px solid #000; padding: 1px 3px; height: 4.5mm; font-weight: normal; }
+.nyo-t td.c { text-align: center; }
+.nyo-t td.r { text-align: right; }
+.nyo-t td.sm { font-size: 8px; }
+.nyo-t tr.sum td { font-weight: bold; font-size: 11px; }
+.nyo-biko { font-size: 11px; margin-top: 2mm; }
+.nyo-renraku { font-size: 9px; margin-top: 6mm; }
 .sm-t td.renraku div { max-height: 2.4em; overflow: hidden; }
 .sm-t td { height: 6mm; }
 
@@ -2472,3 +2472,5 @@ input.dk-plan { background: #1f3864; color: #ffff66; text-align: right; font-siz
 /* 画面ごとのボタンの決まり（幅・高さ・余白・色）に左右されないように、閉じるボタンの形を固定する */
 button.page-close { width: auto !important; min-width: 84px !important; height: auto !important; margin: 0 !important; padding: 4px 18px !important; font-size: 14px !important; font-weight: bold !important; font-family: inherit !important; color: #fff !important; background: #1f3864 !important; border: 1px solid #0d1f40 !important; border-radius: 4px !important; text-align: center !important; }
 button.page-close:hover { background: #2e5597 !important; }
+/* 閉じるボタンの下に他のボタンが隠れないよう、閉じるボタンのある画面は上に帯の分だけ空ける（2026/10/28） */
+@media screen { body:has(.page-close) #root { padding-top: 38px; } }

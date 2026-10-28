@@ -627,8 +627,8 @@ function 枠の文字(props: { v: string }) {
   return (
     <>
       <div>{名前}</div>
-      {ロット !== undefined && <div className="lot">{ロット}</div>}
-      {個数 !== undefined && <div className="ko">{個数}</div>}
+      {ロット !== undefined && <div className="pi-lot">{ロット}</div>}
+      {個数 !== undefined && <div className="pi-ko">{個数}</div>}
     </>
   );
 }
