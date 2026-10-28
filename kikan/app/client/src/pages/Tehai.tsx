@@ -12,7 +12,7 @@ const 日付に = (v: string) => (v ? v.replace(/\//g, "-") : "");
  * 配送予定カレンダー（Access の 手配出力用カレンダー F_配送予定カレンダー）。
  * 自社手配（630）の貸切便（配達区分 4）を月のカレンダーで見る。［道外］［道内］は LN 帳合（139）の便だけ。
  * 日の右上は工場の保管庫の予想トン数（36t を超えると桃色、38t を超えると赤、40t 以上は日も赤）。
- * 便を押すと、その便の出荷明細票（WorkStation）を開く。
+ * 便をダブルクリックすると、その便の出荷明細票（WorkStation の FM_出荷明細票）を開く（2026/10/28 利用者。Access には無かった動き）。
  * ［ニチレイ出荷詳細データ出力］で、開始日〜終了日の手配表を Excel にする（Access は共有フォルダに保存するが、Web 版はダウンロード）。
  */
 export function TehaiCalendar() {
@@ -114,7 +114,7 @@ export function TehaiCalendar() {
               <table className="tc-list">
                 <tbody>
                   {便.filter((b) => b.出荷計画日 === d.date).map((b) => (
-                    <tr key={b.輸送ID} onClick={() => nav(`/ws?date=${d.date}&id=${b.輸送ID}`)} title="押すとこの便の出荷明細票を開きます">
+                    <tr key={b.輸送ID} onDoubleClick={() => nav(`/ws?date=${d.date}&id=${b.輸送ID}`)} title="ダブルクリックでこの便の出荷明細票（FM_出荷明細票）を開きます">
                       <td className="u">{b.運送会社名}</td><td>{b.丸北指定時間}</td><td className="u">{b.着}</td><td className="r">{b.t数}</td><td className="u">{b.発}</td>
                     </tr>
                   ))}
