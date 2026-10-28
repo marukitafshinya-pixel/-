@@ -161,7 +161,7 @@ const WSタブ: { k: string; 名: string; ボタン: WsBtn[] }[] = [
         一覧: [
           { label: "相手先科目マスタ", to: "/ws/aite" },
           { label: "相手先届け先", to: "/ws/aite-todoke" },
-          { label: "集荷先パレット設定", to: "/ws/shuka-pallet" },
+          // 集荷先パレット設定はメニューから外す（2026/10/28 利用者の依頼。画面と設定のデータは残す）
         ],
       },
       { label: "名義運賃振分設定", to: "/master/user" },

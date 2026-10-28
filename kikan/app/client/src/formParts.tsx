@@ -81,6 +81,17 @@ export function 統一受注ID(納品日: string | null, 商品コード: unknow
  * kyotsu="tokui"（得意先の短縮コード）・kyotsu="shohin"（商品コード）を付けると、色を変え、
  * ダブルクリックでそのマスタを探す画面を出す（選ぶと onCommit にそのコードが入る）。
  */
+/**
+ * 数の欄：ブラウザでは日本語入力を切れないので、全角の数字（１２３）は半角にし、数字・小数点・マイナス以外は入らないようにする
+ * （2026/10/28 利用者の依頼：数の欄は数値型・変換オフ）
+ */
+export function 数字だけ(v: string): string {
+  return v
+    .replace(/[０-９．－]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[ー−‐]/g, "-")
+    .replace(/[^0-9.\-]/g, "");
+}
+
 export function Field(props: {
   value: any;
   onCommit?: (v: string) => void;
@@ -111,7 +122,9 @@ export function Field(props: {
         tabIndex={props.readOnly ? -1 : undefined}
         list={props.list}
         title={kyotsu ? `共通コード（ダブルクリックで${props.kyotsu === "shohin" ? "商品" : props.kyotsu === "unso" ? "運送会社" : "得意先"}を探せます）` : props.kind === "date" && !props.readOnly ? "ダブルクリックでカレンダーから選べます" : undefined}
-        onChange={(e) => setDraft(e.target.value)}
+        inputMode={props.kind === "num" ? "decimal" : undefined}
+        onChange={(e) => setDraft(props.kind === "num" && !(e.nativeEvent as InputEvent).isComposing ? 数字だけ(e.target.value) : e.target.value)}
+        onCompositionEnd={props.kind === "num" ? (e) => setDraft(数字だけ(e.currentTarget.value)) : undefined}
         onBlur={commit}
         onDoubleClick={
           kyotsu ? () => setFinding(true) : props.kind === "date" && !props.readOnly && !props.onDoubleClick ? () => setCalendar(true) : props.onDoubleClick
