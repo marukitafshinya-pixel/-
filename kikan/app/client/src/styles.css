@@ -2549,3 +2549,26 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .hk-card.oy .tag { font-size: 150px; }
 .hk-card.oy .name { font-size: 40px; font-family: "MS Gothic", "Noto Sans JP", sans-serif; margin-top: 2mm; }
 .hk-card.oy .date { font-size: 64px; margin-top: 22mm; }
+/* 製品 在庫確認表（R_在庫チェック表）・品質管理サンプル在庫表（R_サンプル在庫チェック表） */
+.hz-zc { font-family: "MS Mincho", "Noto Serif JP", serif; position: relative; padding: 10mm 12mm 14mm; }
+.hz-zc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3mm; }
+.hz-zc-head .dt { font-size: 7pt; margin-left: 4mm; }
+.hz-zc-head .t { font-size: 15pt; letter-spacing: 1px; }
+.hz-zc-head table.sign { border-collapse: collapse; }
+.hz-zc-head table.sign th { border: 1px solid #000; font-size: 6.5pt; width: 15mm; padding: 0.5mm; }
+.hz-zc-head table.sign td { border: 1px solid #000; height: 11mm; }
+.hz-zc-grid { width: 100%; border-collapse: collapse; }
+.hz-zc-grid td { border: 1px solid #888; height: 5.9mm; padding: 0 1mm; font-size: 7.5pt; vertical-align: middle; }
+.hz-zc-grid td.c { text-align: center; } .hz-zc-grid td.r { text-align: right; }
+.hz-zc-grid td.name { font-size: 8pt; }
+.hz-zc-grid td.date { font-size: 6.5pt; }
+.hz-zc-grid td.date .low { display: block; margin-top: 2.5mm; }
+.hz-zc-grid td.kikaku { font-size: 9pt; }
+.hz-zc-grid td.num { font-size: 11pt; }
+.hz-zc-grid td.tag { font-size: 11pt; }
+.hz-zc-grid td.biko { font-size: 5.5pt; white-space: pre-line; line-height: 1.15; }
+.hz-zc-grid.smp td { height: 6.2mm; }
+.hz-zc-grid.smp td.name { font-size: 6.5pt; }
+.hz-zc-foot { position: absolute; bottom: 7mm; left: 0; right: 0; text-align: center; font-size: 8pt; }
+.hz-sc-dt { text-align: right; font-size: 6.5pt; margin-right: 10mm; }
+.hz-sc-t { font-size: 13pt; margin: 2mm 0 3mm 35mm; }

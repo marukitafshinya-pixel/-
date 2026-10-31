@@ -315,6 +315,36 @@ async function 区分表示(c: PoolClient, 日: string) {
 }
 
 /**
+ * 製品 在庫確認表（R_在庫チェック表）。工場（倉庫 11）の在庫ケースがある行（商品 697 のサンプルを除く）。
+ * コード・商品名・製造日・規格・在庫ケース・区分（タグ）・備考（管理備考・備考在庫）。並びは在庫の登録順（見本 2026/10/31 に近い順）。
+ */
+async function 在庫確認表(c: PoolClient, 日: string) {
+  const rows = (
+    await c.query(
+      `SELECT "商品コード", "商品名", "製造日"::date::text AS "製造日", "賞味期限"::date::text AS "賞味期限", "規格", "在庫ケース", "タグ", "管理備考", "備考在庫"
+       FROM ${在庫} WHERE "倉庫ID" = 11 AND "商品コード" <> 697 AND "在庫ケース" <> 0 ORDER BY "在庫ID"`,
+    )
+  ).rows as Rec[];
+  return {
+    日,
+    行: rows.map((r) => ({
+      コード: r.商品コード, 品名: r.商品名, 製造日: r.製造日, 賞味期限: r.賞味期限, 規格: r.規格 ?? "", ケース: n(r.在庫ケース), 区分: r.タグ ?? "",
+      備考: [r.管理備考, r.備考在庫].filter((x) => String(x ?? "").trim()).join("\n"),
+    })),
+  };
+}
+
+/** 品質管理サンプル在庫表（R_サンプル在庫チェック表）。商品 697（サンプル）の在庫ケースがある行：商品名・規格・ケース・kg */
+async function サンプル在庫表(c: PoolClient, 日: string) {
+  const rows = (
+    await c.query(
+      `SELECT "商品名", "規格", "在庫ケース", "在庫kg" FROM ${在庫} WHERE "商品コード" = 697 AND "在庫ケース" <> 0 ORDER BY "倉庫ID", "商品コード", "製造日", "在庫ID"`,
+    )
+  ).rows as Rec[];
+  return { 日, 行: rows.map((r) => ({ 品名: r.商品名, 規格: r.規格 ?? "", ケース: n(r.在庫ケース), kg: Number(r.在庫kg ?? 0) })) };
+}
+
+/**
  * 大谷地回送用積み込み札（R_大谷地回送用積み込み札）。その日のパレットのうち、使用パレットが (N)（ニチレイ大谷地へ回送）のものに 1 枚ずつ。
  * 区分（タグ）・品名・製造日（区分表示と同じ形。2026/10/31 いただいた見本）。Access は (N) のパレットがあるときだけ出す。
  */
@@ -357,6 +387,8 @@ export function housouChohyoRoutes(app: FastifyInstance) {
     pallet: (c, d) => パレット票(c, d),
     kubun: (c, d) => 区分表示(c, d),
     oyachi: (c, d) => 大谷地札(c, d),
+    zaiko: (c, d) => 在庫確認表(c, d),
+    sample: (c, d) => サンプル在庫表(c, d),
     shikake: (c, d, q) => 仕掛札(c, d, q.sagyo || undefined),
     robot: (c, d) => ロボット確認表(c, d),
     renraku: (c, d) => 包装連絡表(c, d),

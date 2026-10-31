@@ -345,12 +345,80 @@ function 包装連絡表(props: { x: Rec }) {
   );
 }
 
+// ---------------- 製品 在庫確認表（R_在庫チェック表）。A4 縦、1 ページ 37 行 ----------------
+function 在庫確認表(props: { x: Rec }) {
+  const { x } = props;
+  const 行: Rec[] = x.行;
+  const pages: Rec[][] = [];
+  for (let i = 0; i < 行.length; i += 37) pages.push(行.slice(i, i + 37));
+  if (!pages.length) pages.push([]);
+  return (
+    <>
+      {pages.map((p, i) => (
+        <div key={i} className="pv-page hz-zc">
+          <div className="hz-zc-head">
+            <div>
+              <div className="dt">{年月日(x.日)}</div>
+              <div className="t">製品　在庫確認表</div>
+            </div>
+            <table className="sign"><tbody><tr><th>入力者</th><th>記入者</th><th>立会者</th><th>理論確認者</th></tr><tr><td /><td /><td /><td /></tr></tbody></table>
+          </div>
+          <table className="hz-zc-grid">
+            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "33%" }} /><col style={{ width: "9%" }} /><col style={{ width: "9%" }} /><col style={{ width: "8%" }} /><col style={{ width: "5%" }} /><col style={{ width: "30%" }} /></colgroup>
+            <tbody>
+              {p.map((r, j) => (
+                <tr key={j}>
+                  <td className="c">{r.コード}</td>
+                  <td className="name">{r.品名}</td>
+                  <td className="c date">{r.製造日 ? 点(r.製造日) : <span className="low">{点(r.賞味期限)}</span>}</td>
+                  <td className="c kikaku">{r.規格}</td>
+                  <td className="r num">{r.ケース}</td>
+                  <td className="c tag">{r.区分}</td>
+                  <td className="biko">{r.備考}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="hz-zc-foot">{i + 1} / {pages.length}</div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ---------------- 品質管理サンプル在庫表（R_サンプル在庫チェック表）。A4 縦 ----------------
+function サンプル在庫表(props: { x: Rec }) {
+  const { x } = props;
+  return (
+    <div className="pv-page hz-zc">
+      <div className="hz-sc-dt">{年月日(x.日)}</div>
+      <div className="hz-sc-t">品質管理サンプル在庫表</div>
+      <table className="hz-zc-grid smp">
+        <colgroup><col style={{ width: "50%" }} /><col style={{ width: "10%" }} /><col style={{ width: "10%" }} /><col style={{ width: "8%" }} /><col style={{ width: "7%" }} /><col style={{ width: "15%" }} /></colgroup>
+        <tbody>
+          {(x.行 as Rec[]).map((r, j) => (
+            <tr key={j}>
+              <td className="name">{r.品名}</td>
+              <td />
+              <td className="c kikaku">{r.規格}</td>
+              <td className="c num">{r.ケース}</td>
+              <td className="c num">{Number(r.kg.toFixed(2)).toLocaleString("ja-JP")}</td>
+              <td />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** 帳票の一覧（Access の F_包装管理日誌・F_包装札作成 のボタン） */
 const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "yotei", 名: "包装予定表", 組: "包装管理日誌" },
   { k: "bunkatsu", 名: "製造分割予定表", 組: "包装管理日誌" },
   { k: "nisshi", 名: "包装日誌", 組: "包装管理日誌" },
   { k: "check", 名: "数量チェック表", 組: "包装管理日誌" },
+  { k: "zaiko,sample", 名: "製品在庫表", 組: "包装管理日誌" },
   { k: "renraku", 名: "包装連絡表", 組: "包装札作成" },
   { k: "robot", 名: "ロボットパレット引き出し確認表", 組: "包装札作成" },
   { k: "pallet", 名: "パレット票（包装札）", 組: "包装札作成" },
@@ -379,6 +447,8 @@ function ページたち(props: { k: string; x: Rec }) {
   if (k === "oyachi") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-kubun"><区分表示 r={r} 大谷地 /><区分表示 r={r} 大谷地 /></div>)}</>;
   if (k === "shikake") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-shikake">{[0, 1, 2, 3].map((j) => <仕掛札 key={j} r={r} />)}</div>)}</>;
   if (k === "robot") return <ロボット確認表 x={x} />;
+  if (k === "zaiko") return <在庫確認表 x={x} />;
+  if (k === "sample") return <サンプル在庫表 x={x} />;
   if (k === "renraku") return <包装連絡表 x={x} />;
   return null;
 }
@@ -422,7 +492,7 @@ export function HousouChohyo() {
           <Fragment key={g}>
             <span className="grp">{g}</span>
             {帳票.filter((x) => x.組 === g).map((x) => (
-              <button key={x.k} className={選んだ.length === 1 && 選んだ[0] === x.k ? "on" : ""} onClick={() => set選んだ([x.k])}>{x.名}</button>
+              <button key={x.k} className={選んだ.join(",") === x.k ? "on" : ""} onClick={() => set選んだ(x.k.split(","))}>{x.名}</button>
             ))}
           </Fragment>
         ))}
