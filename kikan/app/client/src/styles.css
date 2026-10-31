@@ -2545,3 +2545,7 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .nkr-grid td.c { text-align: center; } .nkr-grid td.r { text-align: right; }
 .nkr-grid td.name { font-size: 7pt; line-height: 1.1; }
 .hr-grid td.hr-comment input { width: 220px; font-size: 12px; }
+/* 大谷地回送用積み込み札（見本 2026/10/31：区分の丸数字と品名を大きく） */
+.hk-card.oy .tag { font-size: 150px; }
+.hk-card.oy .name { font-size: 40px; font-family: "MS Gothic", "Noto Sans JP", sans-serif; margin-top: 2mm; }
+.hk-card.oy .date { font-size: 64px; margin-top: 22mm; }

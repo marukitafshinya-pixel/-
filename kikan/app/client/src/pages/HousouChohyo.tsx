@@ -227,12 +227,13 @@ function パレット票(props: { r: Rec }) {
   );
 }
 
-// ---------------- 区分表示（R_包装札(在庫)） ----------------
-function 区分表示(props: { r: Rec }) {
+// ---------------- 区分表示（R_包装札(在庫)）・大谷地回送用積み込み札 ----------------
+function 区分表示(props: { r: Rec; 大谷地?: boolean }) {
   return (
-    <div className="hk-card">
+    <div className={"hk-card" + (props.大谷地 ? " oy" : "")}>
       <div className="tag">{props.r.区分}</div>
-      <div className="name">{props.r.品名}</div>
+      {/* 大谷地回送用の札は見本と同じく品名を全角で大きく出す */}
+      <div className="name">{props.大谷地 ? String(props.r.品名 ?? "").normalize("NFKC") : props.r.品名}</div>
       <div className="date">{点(props.r.製造日)}</div>
     </div>
   );
@@ -355,9 +356,10 @@ const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "pallet", 名: "パレット票（包装札）", 組: "包装札作成" },
   { k: "kubun", 名: "区分表示（在庫）", 組: "包装札作成" },
   { k: "shikake", 名: "仕掛原料管理札", 組: "包装札作成" },
+  { k: "oyachi", 名: "大谷地回送用積み込み札", 組: "包装札作成" },
 ];
 /** 包装札作成の［印刷］でまとめて出すもの（Access の cmd_印刷 の順） */
-const 札のまとめ = ["pallet", "kubun", "shikake", "robot", "renraku"];
+const 札のまとめ = ["pallet", "kubun", "shikake", "robot", "renraku", "oyachi"];
 
 function ページたち(props: { k: string; x: Rec }) {
   const { k, x } = props;
@@ -373,6 +375,8 @@ function ページたち(props: { k: string; x: Rec }) {
   if (k === "pallet") return <>{二つずつ(x.票, (r, i) => <パレット票 key={i} r={r} />, 2, "hz-pallet")}</>;
   // 区分表示は 1 枚に同じものを 2 つ、仕掛札は 4 つ（見本と同じ）
   if (k === "kubun") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-kubun"><区分表示 r={r} /><区分表示 r={r} /></div>)}</>;
+  // 大谷地回送用積み込み札：区分表示と同じ札を 1 枚に 2 つ（(N) のパレットがないときは何も出ない）
+  if (k === "oyachi") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-kubun"><区分表示 r={r} 大谷地 /><区分表示 r={r} 大谷地 /></div>)}</>;
   if (k === "shikake") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-shikake">{[0, 1, 2, 3].map((j) => <仕掛札 key={j} r={r} />)}</div>)}</>;
   if (k === "robot") return <ロボット確認表 x={x} />;
   if (k === "renraku") return <包装連絡表 x={x} />;
@@ -422,7 +426,7 @@ export function HousouChohyo() {
             ))}
           </Fragment>
         ))}
-        <button className={選んだ.length > 1 ? "on" : ""} onClick={() => set選んだ(札のまとめ)} title="パレット票・区分表示・仕掛原料管理札・ロボットパレット引き出し確認表・包装連絡表（Access の包装札作成の［印刷］）">包装札一式</button>
+        <button className={選んだ.length > 1 ? "on" : ""} onClick={() => set選んだ(札のまとめ)} title="パレット票・区分表示・仕掛原料管理札・ロボットパレット引き出し確認表・包装連絡表・大谷地回送用積み込み札（Access の包装札作成の［印刷］）">包装札一式</button>
         {選んだ.includes("shikake") && (
           <select value={作業場} onChange={(e) => set作業場(e.target.value)} title="仕掛原料管理札の工場">
             <option value="">仕掛札：全部</option><option value="1工場">仕掛札：ソテー（1工場）</option><option value="2工場">仕掛札：ペースト（2工場）</option>

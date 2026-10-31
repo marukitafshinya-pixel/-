@@ -315,6 +315,15 @@ async function 区分表示(c: PoolClient, 日: string) {
 }
 
 /**
+ * 大谷地回送用積み込み札（R_大谷地回送用積み込み札）。その日のパレットのうち、使用パレットが (N)（ニチレイ大谷地へ回送）のものに 1 枚ずつ。
+ * 区分（タグ）・品名・製造日（区分表示と同じ形。2026/10/31 いただいた見本）。Access は (N) のパレットがあるときだけ出す。
+ */
+async function 大谷地札(c: PoolClient, 日: string) {
+  const p = (await パレットたち(c, 日)).filter(({ 入庫: r }) => r.使用パレット === "(N)");
+  return { 日, 札: p.map(({ 入庫: r }) => ({ 区分: r.タグ ?? "", 品名: r.商品名, 製造日: r.製造日 })) };
+}
+
+/**
  * 仕掛原料管理札（R_仕掛原料管理札新Ver）。包装日の工場の入庫を 商品・製造日・作業場 ごとに 1 枚（4 枚ずつ同じものを並べる）。
  * コード・作業場（1工場＝そてー工場、2工場＝ペースト工場）・原料・商品名・製造日、残数・区分・記載者は手書き。
  */
@@ -347,6 +356,7 @@ export function housouChohyoRoutes(app: FastifyInstance) {
     check: (c, d) => 数量チェック表(c, d),
     pallet: (c, d) => パレット票(c, d),
     kubun: (c, d) => 区分表示(c, d),
+    oyachi: (c, d) => 大谷地札(c, d),
     shikake: (c, d, q) => 仕掛札(c, d, q.sagyo || undefined),
     robot: (c, d) => ロボット確認表(c, d),
     renraku: (c, d) => 包装連絡表(c, d),
