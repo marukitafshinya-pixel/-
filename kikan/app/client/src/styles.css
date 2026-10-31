@@ -2544,3 +2544,4 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .nkr-grid tbody tr:last-child td { border-bottom: 1px solid #000; }
 .nkr-grid td.c { text-align: center; } .nkr-grid td.r { text-align: right; }
 .nkr-grid td.name { font-size: 7pt; line-height: 1.1; }
+.hr-grid td.hr-comment input { width: 220px; font-size: 12px; }

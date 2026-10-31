@@ -127,6 +127,7 @@ function 入庫依頼書(props: { p: Rec; 枚: number; 全: number }) {
         <div key={t} className="ny-info pre">{t}</div>
       ))}
       {p.備考欄 && <div className="ny-info">{p.備考欄}</div>}
+      {p.コメント && <div className="ny-info pre">{p.コメント}</div>}
       <div className="pv-foot">{props.枚} / {props.全}</div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
-import { CalendarDialog, PageClose } from "../formParts";
+import { CalendarDialog, Field, PageClose } from "../formParts";
 import { 帳票印刷, 積込確認書印刷 } from "./Chohyo";
 
 type Rec = Record<string, any>;
@@ -52,6 +52,9 @@ export default function WsHoukoku() {
   const [差出人, set差出人] = useState<Rec[] | null>(null);
   const [積込, set積込] = useState<Rec | null>(null);
   const [設定, set設定] = useState<Rec[]>([]);
+  // 入庫依頼書コメントを備考欄から選ぶ（Access の FM_入庫依頼書 の［挿入］）
+  const [コメント選ぶ, setコメント選ぶ] = useState<Rec | null>(null);
+  const [備考欄, set備考欄] = useState<Rec[] | null>(null);
 
   // 開いたとき：表を作り直す
   useEffect(() => {
@@ -80,6 +83,25 @@ export default function WsHoukoku() {
     } catch (e) {
       エラー(e);
     }
+  }
+
+  async function コメントを直す(r: Rec, 値: string) {
+    try {
+      await api.post("/api/ws/houkoku/comment", { ID: r.ID, 値 });
+      setRows((rs) => rs.map((x) => (x.ID === r.ID ? { ...x, 入庫依頼書コメント: 値.trim() || null } : x)));
+    } catch (e) {
+      エラー(e);
+    }
+  }
+  async function 備考欄から(r: Rec) {
+    if (!備考欄) {
+      try {
+        set備考欄((await api.get<any>("/api/ws/detail-choices")).備考欄 ?? []);
+      } catch (e) {
+        return エラー(e);
+      }
+    }
+    setコメント選ぶ(r);
   }
 
   // 印刷表示：選んだ行の帳票（Access の cmd表示_Click）
@@ -185,6 +207,7 @@ export default function WsHoukoku() {
                 <th key={x.k} className={x.red ? "red" : ""}>{x.name}</th>
               ))}
               <th>積込</th>
+              <th title="入庫依頼書に載せる一言。ダブルクリックで備考欄から選べます">入庫依頼書コメント</th>
             </tr>
           </thead>
           <tbody>
@@ -201,6 +224,9 @@ export default function WsHoukoku() {
                   <td key={x.k} className="c"><input type="checkbox" checked={!!r[x.k]} onChange={(e) => 印を付ける(r, x.k, e.target.checked)} /></td>
                 ))}
                 <td className={`seki ${r.積込完了chk ? "" : "mi"}`}>{r.積込完了chk ? "済" : "未"}</td>
+                <td className="hr-comment">
+                  <Field value={r.入庫依頼書コメント ?? ""} onCommit={(v) => コメントを直す(r, v)} onDoubleClick={() => 備考欄から(r)} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -216,6 +242,26 @@ export default function WsHoukoku() {
       </div>
       {印刷 && <帳票印刷 pages={印刷.pages} 名前={印刷.名前} onClose={() => set印刷(null)} />}
       {積込 && <積込確認書印刷 s={積込} onClose={() => set積込(null)} />}
+      {コメント選ぶ && (
+        <div className="modal" onClick={() => setコメント選ぶ(null)}>
+          <div className="find" onClick={(e) => e.stopPropagation()}>
+            <div className="find-head">備考欄選択（押すと入庫依頼書コメントにします）<button onClick={() => setコメント選ぶ(null)}>やめる</button></div>
+            <div className="find-list">
+              <table>
+                <tbody>
+                  {(備考欄 ?? []).map((o: Rec) => (
+                    <tr key={o.id} onClick={() => { const r = コメント選ぶ; setコメント選ぶ(null); コメントを直す(r, o.name); }}>
+                      <td className="sub">{o.分類}</td>
+                      <td className="sub">{o.作業分類}</td>
+                      <td>{o.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       {差出人 && (
         <div className="modal" onClick={() => set差出人(null)}>
           <div className="nt" onClick={(e) => e.stopPropagation()}>

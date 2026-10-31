@@ -179,6 +179,15 @@ export function wsHoukokuRoutes(app: FastifyInstance) {
     ).rows;
   });
 
+  // 入庫依頼書コメント（Access の FM_入庫依頼書 の 入庫依頼書コメント。［挿入］で備考欄から選べる）。入庫依頼書の印刷に載る（R_入庫依頼書_確認）
+  app.post<{ Body: { ID: number; 値: string | null } }>("/api/ws/houkoku/comment", async (req, reply) => {
+    const v = String(req.body.値 ?? "").trim();
+    if (v.length > 255) return reply.code(400).send({ error: "コメントは 255 文字までにしてください。" });
+    const r = await pool.query(`UPDATE ${確認用} SET "入庫依頼書コメント" = $2 WHERE "ID" = $1 RETURNING "ID"`, [n(req.body.ID), v || null]);
+    if (!r.rowCount) return reply.code(404).send({ error: "この行はありません。" });
+    return { ok: true };
+  });
+
   // 印を付け外す。選択は、入庫依頼書・出荷案内書のときは積込完了していないと付けられない（Access の 抽出区分_Click）
   app.post<{ Body: { ID: number; 項目: string; 値: boolean; kind?: number } }>("/api/ws/houkoku/chk", async (req, reply) => {
     const { ID, 項目, 値 } = req.body;
