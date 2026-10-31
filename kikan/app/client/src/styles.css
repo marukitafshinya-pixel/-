@@ -2633,3 +2633,13 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .hz-ts-grid td.c { text-align: center; } .hz-ts-grid td.r { text-align: right; font-size: 12pt; }
 .hz-ts-grid td.tag { font-size: 13pt; } .hz-ts-grid td.biko { font-size: 7pt; vertical-align: top; white-space: pre-line; }
 .hz-ts-foot { position: absolute; bottom: 8mm; right: 20mm; border: 1px solid #000; padding: 0 3mm; min-width: 45mm; font-size: 9pt; }
+/* 全体在庫（FM_現在在庫表示）と在庫不足・少量在庫リスト */
+.ssi-zentai { align-self: flex-end; }
+.zz-list { max-height: calc(100vh - 150px); }
+.zz-pr { padding: 10mm 10mm; }
+.zz-pr-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2mm; font-size: 8pt; }
+.zz-pr-head .t { font-size: 14pt; font-weight: bold; }
+.zz-pr-grid { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+.zz-pr-grid th { border: 1px solid #000; font-weight: normal; padding: 0.5mm; }
+.zz-pr-grid td { border: 1px solid #000; height: 5.6mm; padding: 0 1mm; }
+.zz-pr-grid td.r { text-align: right; }

@@ -59,6 +59,7 @@ import { masterRoutes } from "./master.js";
 import { sakujoRoutes } from "./sakujo.js";
 import { shohinSuiiRoutes } from "./shohinSuii.js";
 import { wsNyukoListRoutes } from "./wsNyukoList.js";
+import { zentaiZaikoRoutes } from "./zentaiZaiko.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -120,6 +121,7 @@ await app.register(async (a) => masterRoutes(a));
 await app.register(async (a) => sakujoRoutes(a));
 await app.register(async (a) => shohinSuiiRoutes(a));
 await app.register(async (a) => wsNyukoListRoutes(a));
+await app.register(async (a) => zentaiZaikoRoutes(a));
 
 // 画面（vite build の結果）を配る
 const dist = join(here, "..", "dist");

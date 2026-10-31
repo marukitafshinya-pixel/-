@@ -15,7 +15,7 @@ const 入庫 = t("seizo", "TD_入庫");
 const 名変 = t("soko", "TD_在庫変更");
 
 /** UQ_出荷レコード（グループ商品コード付き） */
-const 出荷レコード = `(
+export const 出荷レコード = `(
   SELECT s."出荷日"::date AS "出荷日", s."納品日"::date AS "納品日", s."取引元ID", s."取引元", s."倉庫ID", s."倉庫名", s."商品コード", s."商品名", s."ケース", s."商品kg",
          s."届け先コード", s."届け先", m."グループ商品コード", s."製造日"::date AS "製造日", s."賞味期限"::date AS "賞味期限", COALESCE(s."chk", false) AS "chk",
          s."受注ID", s."輸送ID", s."運賃振分区分", s."入庫後名義ID", 'WorkStation' AS "場所"

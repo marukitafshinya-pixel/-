@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { PageClose } from "../formParts";
 
@@ -24,7 +25,10 @@ export default function ShohinSuii() {
   const [取引元一覧, set取引元一覧] = useState<Rec[]>([]);
   const [商品一覧, set商品一覧] = useState<Rec[]>([]);
   const [取引元, set取引元] = useState(0);
-  const [商品, set商品] = useState("");
+  const nav = useNavigate();
+  const [sp] = useSearchParams();
+  // 全体在庫から商品コードをダブルクリックしたとき（?code=）はその商品を開く
+  const [商品, set商品] = useState(sp.get("code") ?? "");
   const [kg, setKg] = useState(true);
   const [集計日, set集計日] = useState(今日());
   const [年度, set年度] = useState(0);
@@ -121,6 +125,7 @@ export default function ShohinSuii() {
           <span>年度</span>
           <input className="ssi-year" type="number" value={年度 || ""} onChange={(e) => set年度(Number(e.target.value) || 0)} title="7 月始まりの年（例 2026 は 2026/7〜2027/6）" />
         </label>
+        <button className="ssi-zentai" onClick={() => nav("/suii/zaiko")} title="全体在庫（現在在庫表示）">全体在庫</button>
         <PageClose fallback="/" />
       </div>
 
