@@ -63,6 +63,7 @@ import { HousouChohyo } from "./pages/HousouChohyo";
 import { SokoHoukoku } from "./pages/SokoChohyo";
 import HousouJikan from "./pages/HousouJikan";
 import ShohinSuii from "./pages/ShohinSuii";
+import WsNyukoList from "./pages/WsNyukoList";
 import NotYet from "./pages/NotYet";
 import "./styles.css";
 
@@ -188,6 +189,7 @@ function App() {
       <Route path="/soko/houkoku" element={<SokoHoukoku />} />
       <Route path="/housou/jikan" element={<HousouJikan />} />
       <Route path="/suii" element={<ShohinSuii />} />
+      <Route path="/ws/nyuko-list" element={<WsNyukoList />} />
       <Route path="/form/:name" element={<NotYet />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

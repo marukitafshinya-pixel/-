@@ -124,7 +124,7 @@ const WSタブ: { k: string; 名: string; ボタン: WsBtn[] }[] = [
       },
       { label: "回送積込確認書作成", to: "/ws/pallet" },
       { label: "検索", 一覧: [{ label: "出荷抽出帳票", to: "/ws/shukkachu" }, { label: "輸送抽出帳票", to: "/ws/yusochu" }] },
-      { label: "ニチレイ入庫リスト" },
+      { label: "ニチレイ入庫リスト", to: "/ws/nyuko-list" },
     ],
   },
   {

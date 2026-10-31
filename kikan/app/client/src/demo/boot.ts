@@ -45,7 +45,7 @@ async function main() {
   await db.exec(`CREATE FUNCTION demo_day(int) RETURNS timestamp LANGUAGE sql AS $$ SELECT (DATE '${今日}' + $1)::timestamp $$;`);
   await db.exec(data);
 
-  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoChohyo, housouChohyo, sokoHokan, sokoKeihi, sokoKensaku, sokoChinritsu, sokoSeikyu, sokoFuitchi, webRenkei, webMq, webLantec, webElixxi, webElixxiNyuko, webElixxiShukko, webHanmoriRpa, master, sakujo, shohinSuii] = await Promise.all([
+  const [{ authRoutes }, juchu, juchuForm, hanmori, sb, hacchu, juchuMaster, find, ws, wsZaiko, wsJuchu, wsHokan, wsNenkan, wsHoukoku, wsChohyo, wsSekisai, wsPallet, wsKoshin, wsHibetsu, wsYotei, wsTeishi, wsKensa, wsZaikoPallet, wsHaichi, wsMasters, wsOsaka, wsChushutsu, keikaku, seizo, housou, tehai, soko, sokoShukko, sokoJuchu, sokoMeihen, sokoChohyo, housouChohyo, sokoHokan, sokoKeihi, sokoKensaku, sokoChinritsu, sokoSeikyu, sokoFuitchi, webRenkei, webMq, webLantec, webElixxi, webElixxiNyuko, webElixxiShukko, webHanmoriRpa, master, sakujo, shohinSuii, wsNyukoList] = await Promise.all([
     import("../../../server/auth"),
     import("../../../server/juchu"),
     import("../../../server/juchuForm"),
@@ -99,6 +99,7 @@ async function main() {
     import("../../../server/master"),
     import("../../../server/sakujo"),
     import("../../../server/shohinSuii"),
+    import("../../../server/wsNyukoList"),
   ]);
   authRoutes(fakeApp);
   juchu.juchuRoutes(fakeApp);
@@ -153,6 +154,7 @@ async function main() {
   master.masterRoutes(fakeApp);
   sakujo.sakujoRoutes(fakeApp);
   shohinSuii.shohinSuiiRoutes(fakeApp);
+  wsNyukoList.wsNyukoListRoutes(fakeApp);
   fetchを回す();
 
   const banner = document.getElementById("demo-banner")!;

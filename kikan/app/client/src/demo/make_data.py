@@ -152,7 +152,8 @@ for k, name in [(1, "選果場"), (2, "冷蔵倉庫"), (3, "食品メーカー")
 for i, (code, name, name2, kana, chiku, soko, moto, uke) in enumerate(得意先, 1):
     ins("kyotsu.TM_得意先マスタ", ID=i, 短縮コード=code, 得意先名=name, 短縮名=name, 短縮名2=name2, **{"ｶﾅ分類": kana}, 地区コード=chiku,
         住所=f"見本県見本市{i}番地", 電話番号=f"000-000-{i:04d}", 倉庫区分=soko, 出荷元区分=moto, 入庫フラグ=False, 受付時間=uke, 入庫区分=soko or code in (812, 824),
-        十二地区="北海道" if chiku == 1 else "本州", パレット積載許容数=3 if code == 343 else 0)
+        十二地区="北海道" if chiku == 1 else "本州", パレット積載許容数=3 if code == 343 else 0,
+        グループコード=400 if code in (164, 343, 826) else 0)
 
 # ---------------- 商品（作り物） ----------------
 商品 = [
@@ -172,6 +173,10 @@ for i, (code, short, name, kikaku, irisu, bunrui, pal) in enumerate(商品, 1):
         規格枚数=int("".join(ch for ch in kikaku.split("×")[1] if ch.isdigit())), 規格kg=round(irisu / int("".join(ch for ch in kikaku.split("×")[1] if ch.isdigit())), 2), 原料コード=1)
 商品名 = {c: (n, k, i) for c, _, n, k, i, _, _ in 商品}
 名前 = {c: n for c, n, *_ in 得意先}
+
+# ニチレイ入庫リストの冷蔵庫の選択肢（TM_週間予定表マスタ）
+for i, code in enumerate([164, 343, 826], 1):
+    ins("ws_fe.TM_週間予定表マスタ", ID=i, 届け先コード=code, 届け先名=名前[code], カウンター数=0, 使用不可=False)
 
 # ---------------- 運送会社（作り物） ----------------
 # 運送会社マスタは kyotsu に 1 つ（各スキーマの同じ名前はビュー）
