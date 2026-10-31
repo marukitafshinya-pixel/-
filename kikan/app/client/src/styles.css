@@ -2609,3 +2609,12 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .hz-hb-grid tr.biko td { height: 40mm; vertical-align: top; }
 .hz-hb-grid td.nob { border-top: none; }
 .hz-hb-foot { font-size: 6.5pt; margin: 4mm 0 0 6mm; }
+/* パレタイザー設定チェックリスト（R_パレタイザー設定チェックリスト） */
+.pzc-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2mm; font-size: 8pt; }
+.pzc-head .t { font-size: 14pt; font-weight: bold; }
+.pzc-grid { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+.pzc-grid th { border: 1px solid #000; background: #eee; font-weight: normal; padding: 0.5mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pzc-grid td { border: 1px solid #000; height: 5.6mm; padding: 0 1mm; }
+.pzc-grid td.c { text-align: center; }
+.pzc-grid .biko { font-size: 6pt; width: 28%; }
+.pzc-grid th.chk { width: 12mm; }

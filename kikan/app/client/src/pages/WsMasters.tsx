@@ -155,6 +155,8 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
   const nav = useNavigate();
   const [絞る, set絞る] = useState<number | string | null>(null);
   const [rows, setRows] = useState<Rec[]>([]);
+  // パレタイザー設定チェックリスト（ロボットハイ積みマスタの［印刷］。全部の行をプログラムNo の順に）
+  const [チェック表, setチェック表] = useState<Rec[] | null>(null);
   const [選択肢, set選択肢] = useState<Opt[]>([]);
   const [探す, set探す] = useState(false);
   const [合言葉, set合言葉] = useState<string | null>(null);
@@ -263,6 +265,21 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
           {s.合言葉 && <button onClick={修正} className={ro ? "" : "on"}>{ro ? "修正" : "修正中"}</button>}
           <button onClick={足す} disabled={ro || (s.kind === "pallet" && !絞る)}>新しい行</button>
           <button onClick={() => 読む()}>出し直す</button>
+          {s.kind === "robot" && (
+            <button
+              title="パレタイザー設定チェックリスト（Access の［印刷］）"
+              onClick={async () => {
+                try {
+                  const r = await api.get<{ rows: Rec[] }>(`/api/ws/mst/robot`, {});
+                  setチェック表([...r.rows].sort((a, b) => Number(a.ロボットプログラムNo ?? 0) - Number(b.ロボットプログラムNo ?? 0)));
+                } catch (e) {
+                  エラー(e);
+                }
+              }}
+            >
+              印刷
+            </button>
+          )}
           <PageClose />
         </div>
       </div>
@@ -315,6 +332,7 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
         </table>
       </div>
       <div className="kn-foot">{rows.length} 件　コードの欄はダブルクリックで探せます。</div>
+      {チェック表 && <パレタイザー設定チェックリスト rows={チェック表} onClose={() => setチェック表(null)} />}
       {探す && (
         <FindDialog
           kind="tokui"
@@ -325,6 +343,49 @@ export default function WsMaster(props: { kind: keyof typeof 設定一覧 }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/** パレタイザー設定チェックリスト（R_パレタイザー設定チェックリスト）。ロボット積み付けマスタの全部の行をプログラムNo の順に。A4 横、1 ページ 30 行、右に確認の欄 */
+function パレタイザー設定チェックリスト(props: { rows: Rec[]; onClose: () => void }) {
+  const pages: Rec[][] = [];
+  for (let i = 0; i < props.rows.length; i += 30) pages.push(props.rows.slice(i, i + 30));
+  const 今 = new Date();
+  const 印刷日 = `${今.getFullYear()}/${今.getMonth() + 1}/${今.getDate()}`;
+  const 列: [string, string][] = [
+    ["ロボットプログラムNo", "No"], ["パレット", "パレット"], ["品番", "品番"], ["段ボール品番", "段ボール"], ["一段積載数", "一段"], ["最大段数", "最大段"],
+    ["段数", "段数"], ["積み付け数", "積付数"], ["箱重量", "箱重量"], ["スピード", "速度"], ["高さ㎜", "高さ"], ["幅㎜", "幅"], ["長さ㎜", "長さ"],
+  ];
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>パレタイザー設定チェックリスト（{pages.length} 枚）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        {pages.map((p, i) => (
+          <div key={i} className="pv-page land pzc">
+            <div className="pzc-head"><span className="t">パレタイザー設定チェックリスト</span><span>{印刷日}　{i + 1} / {pages.length}</span></div>
+            <table className="pzc-grid">
+              <thead>
+                <tr>{列.map(([, h]) => <th key={h}>{h}</th>)}<th>低圧</th><th className="biko">備考</th><th className="chk">確認</th></tr>
+              </thead>
+              <tbody>
+                {p.map((r, j) => (
+                  <tr key={j}>
+                    {列.map(([k]) => <td key={k} className={k === "品番" || k === "段ボール品番" ? "" : "c"}>{r[k] ?? ""}</td>)}
+                    <td className="c">{r.低圧設定 ? "○" : ""}</td>
+                    <td className="biko">{r.備考 ?? ""}</td>
+                    <td />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
