@@ -759,3 +759,82 @@ export function 出荷予定明細票印刷(props: { y: Rec; onClose: () => void
     </div>
   );
 }
+
+/**
+ * 出荷予定明細票ver2（丸北商品推移の R_出荷予定明細票ver2）。出荷計画日ごとに、工場（倉庫 11）の在庫kg の見込み
+ * （繰越 ＋ 製造 ＝ 包装後、− 出荷 → 在庫）と、その日の便ごとの明細（滞留日数つき）。A4 横、1 ページ 26 行
+ */
+export function 出荷予定明細票ver2印刷(props: { y: Rec; onClose: () => void }) {
+  const y = props.y;
+  type 行 = { 種類: "日" | "便" | "品"; r: Rec; g?: Rec };
+  const 全部: 行[] = [];
+  for (const g of y.日 as Rec[]) {
+    全部.push({ 種類: "日", r: g });
+    for (const b of g.便) {
+      全部.push({ 種類: "便", r: b });
+      for (const r of b.行) 全部.push({ 種類: "品", r });
+    }
+  }
+  const pages: 行[][] = [];
+  for (let i = 0; i < 全部.length; i += 26) pages.push(全部.slice(i, i + 26));
+  if (!pages.length) pages.push([]);
+  const kg = (v: number | null) => (v === null || v === undefined ? "" : Number(v).toLocaleString("ja-JP"));
+  return (
+    <div className="pv">
+      <div className="pv-bar">
+        <span>出荷予定明細票（在庫の見込みつき）（{pages.length} 枚）</span>
+        <button onClick={() => window.print()}>印刷</button>
+        <button onClick={props.onClose}>閉じる</button>
+      </div>
+      <div className="pv-pages">
+        {pages.map((p, i) => (
+          <div key={i} className="pv-page land yt2">
+            <div className="yt2-head">
+              <span className="t">出荷予定明細票</span>
+              <span>{y.開始.replace(/-/g, "/")} から　{y.社名}</span>
+              <span>{y.作成時間}　{i + 1} / {pages.length}</span>
+            </div>
+            <table className="yt2-grid">
+              <colgroup>
+                <col style={{ width: "4%" }} /><col style={{ width: "11%" }} /><col style={{ width: "15%" }} /><col style={{ width: "3%" }} /><col style={{ width: "6%" }} />
+                <col style={{ width: "22%" }} /><col style={{ width: "8%" }} /><col style={{ width: "6%" }} /><col style={{ width: "8%" }} /><col style={{ width: "8%" }} />
+                <col style={{ width: "4%" }} /><col style={{ width: "5%" }} />
+              </colgroup>
+              <thead>
+                <tr><th>積順</th><th>出荷元</th><th>届け先</th><th>名義</th><th>コード</th><th>商品名</th><th>規格</th><th>ケース</th><th>kg</th><th>製造日</th><th>区分</th><th>滞留日数</th></tr>
+              </thead>
+              <tbody>
+                {p.map((x, j) =>
+                  x.種類 === "日" ? (
+                    <tr key={j} className="day">
+                      <td colSpan={12}>
+                        <b>{月日曜(x.r.日付)}</b>　工場の在庫の見込み：繰越 {kg(x.r.繰越kg)} kg ＋ 製造 {kg(x.r.製造kg)} kg ＝ 包装後 {kg(x.r.繰越kg + x.r.製造kg)} kg　－ 出荷 {kg(x.r.出荷kg ?? 0)} kg　→ 在庫 <b>{kg(x.r.在庫kg)}</b> kg
+                      </td>
+                    </tr>
+                  ) : x.種類 === "便" ? (
+                    <tr key={j} className="bin"><td colSpan={12}>{x.r.運送会社名}　{x.r.車番}</td></tr>
+                  ) : (
+                    <tr key={j}>
+                      <td className="c">{x.r.積順 || ""}</td>
+                      <td>{x.r.出荷元}</td>
+                      <td>{x.r.届け先}</td>
+                      <td className="c">{x.r.名義}</td>
+                      <td className="c">{x.r.商品コード}</td>
+                      <td>{x.r.商品名}</td>
+                      <td className="c">{x.r.規格}</td>
+                      <td className="r">{kg(x.r.ケース)}</td>
+                      <td className="r">{kg(x.r.kg)}</td>
+                      <td className="c">{期限(x.r.製造日)}</td>
+                      <td className="c">{x.r.区分}</td>
+                      <td className="r">{x.r.滞留日数 ?? ""}</td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

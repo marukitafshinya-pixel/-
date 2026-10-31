@@ -126,6 +126,7 @@ export default function ShohinSuii() {
           <input className="ssi-year" type="number" value={年度 || ""} onChange={(e) => set年度(Number(e.target.value) || 0)} title="7 月始まりの年（例 2026 は 2026/7〜2027/6）" />
         </label>
         <button className="ssi-zentai" onClick={() => nav("/suii/zaiko")} title="全体在庫（現在在庫表示）">全体在庫</button>
+        <button className="ssi-zentai" onClick={() => nav("/ws")} title="丸北出荷（出荷明細票。Access の FM_出荷明細票_丸北 は WorkStation の出荷明細票と同じもの）">丸北出荷</button>
         <PageClose fallback="/" />
       </div>
 

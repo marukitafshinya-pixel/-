@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, num } from "../api";
 import { CalendarDialog, Field, parseDate, PageClose } from "../formParts";
 import { KibouDialog, type 希望在庫 } from "./WsKibou";
-import { 輸送依頼書印刷, 出荷予定明細票印刷 } from "./Chohyo";
+import { 輸送依頼書印刷, 出荷予定明細票印刷, 出荷予定明細票ver2印刷 } from "./Chohyo";
 import { ZaikoSentaku } from "./WsZaikoSelect";
 
 type Rec = Record<string, any>;
@@ -48,6 +48,8 @@ export default function WsMain() {
   const [依頼書, set依頼書] = useState<Rec | null>(null);
   const [予定, set予定] = useState<{ 開始: string; 終了: string; 便だけ: boolean } | null>(null);
   const [予定票, set予定票] = useState<Rec | null>(null);
+  // 出荷予定明細票ver2（丸北商品推移の 丸北出荷 の［印刷］：工場の在庫の見込みつき）
+  const [予定票2, set予定票2] = useState<Rec | null>(null);
   const [在庫選択, set在庫選択] = useState<{ 出庫ID: number; 商品コード: number; 倉庫ID: number } | null>(null);
   const [版, set版] = useState(0); // 在庫選択をやめたとき、打った商品コードを元に戻すため
   const [備考選ぶ, set備考選ぶ] = useState<Rec | null>(null);
@@ -352,6 +354,19 @@ export default function WsMain() {
               <button className="red" onClick={削除} disabled={!輸送ID} title="この便を消し、明細を便からはずす">割付解除</button>
               <button disabled={!輸送ID} onClick={() => nav(`/ws/yomikomi?id=${輸送ID}`)} title="受注読込（FSD_受注選択）">配車割付</button>
               <button className="blue" onClick={() => set予定({ 開始: date, 終了: date, 便だけ: false })} title="出荷予定明細票（R_出荷予定明細票）">輸送印刷</button>
+              <button
+                className="blue"
+                onClick={async () => {
+                  try {
+                    set予定票2(await api.get<Rec>("/api/ws/yotei2", { date }));
+                  } catch (e) {
+                    alert(e instanceof ApiError ? e.message : String(e));
+                  }
+                }}
+                title="この出荷日から先の出荷予定明細票（工場の在庫の見込みつき。R_出荷予定明細票ver2）"
+              >
+                予定明細(在庫見込み)
+              </button>
               <PageClose fallback="/maruhoku" />
             </div>
           </div>
@@ -576,6 +591,7 @@ export default function WsMain() {
         </div>
       )}
       {予定票 && <出荷予定明細票印刷 y={予定票} onClose={() => set予定票(null)} />}
+      {予定票2 && <出荷予定明細票ver2印刷 y={予定票2} onClose={() => set予定票2(null)} />}
       {通知一覧 && (
         <NoticeDialog
           onClose={() => set通知一覧(false)}

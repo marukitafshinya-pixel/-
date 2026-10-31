@@ -2643,3 +2643,12 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .zz-pr-grid th { border: 1px solid #000; font-weight: normal; padding: 0.5mm; }
 .zz-pr-grid td { border: 1px solid #000; height: 5.6mm; padding: 0 1mm; }
 .zz-pr-grid td.r { text-align: right; }
+/* 出荷予定明細票ver2（在庫の見込みつき） */
+.yt2-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2mm; font-size: 8pt; }
+.yt2-head .t { font-size: 14pt; font-weight: bold; }
+.yt2-grid { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+.yt2-grid th { border: 1px solid #000; font-weight: normal; padding: 0.5mm; }
+.yt2-grid td { border: 1px solid #999; height: 5.4mm; padding: 0 1mm; }
+.yt2-grid td.c { text-align: center; } .yt2-grid td.r { text-align: right; }
+.yt2-grid tr.day td { background: #e8eef7; border-top: 2px solid #000; font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.yt2-grid tr.bin td { font-weight: bold; }
