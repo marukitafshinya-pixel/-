@@ -412,6 +412,53 @@ function サンプル在庫表(props: { x: Rec }) {
   );
 }
 
+// ---------------- ふらの製造パレット割り振り予定表（R_ふらのパレット確認表）。A4 縦 ----------------
+function ふらのパレット(props: { x: Rec }) {
+  const { x } = props;
+  const 行: Rec[] = x.行;
+  const 月日 = (v: string | null) => {
+    const y = d(v);
+    return y ? `${y.getMonth() + 1}月${y.getDate()}日(${"日月火水木金土"[y.getDay()]})` : "";
+  };
+  const 合計 = (k: string) => 行.reduce((a, r) => a + (r[k] ?? 0), 0);
+  return (
+    <div className="pv-page hz-fp">
+      <div className="hz-fp-head"><div className="t">ふらの製造パレット割り振り予定表</div><div className="dt">{月日(x.日)}</div></div>
+      <table className="hz-fp-grid">
+        <colgroup>
+          <col style={{ width: "13%" }} /><col style={{ width: "6%" }} /><col style={{ width: "28%" }} /><col style={{ width: "7%" }} /><col style={{ width: "7%" }} /><col style={{ width: "7%" }} />
+          <col style={{ width: "1.5%" }} /><col style={{ width: "7%" }} /><col style={{ width: "7%" }} /><col style={{ width: "12%" }} />
+        </colgroup>
+        <thead>
+          <tr><th>製造日</th><th>コード</th><th>商品名</th><th>予定数</th><th>大谷地</th><th>大谷地P</th><th className="gap" /><th>十勝</th><th>十勝P</th><th>備考</th></tr>
+        </thead>
+        <tbody>
+          {行.map((r, i) => (
+            <tr key={i}>
+              {/* 同じ製造日が続くときは日付を出さない（Access の重複データ非表示） */}
+              <td className="c">{i > 0 && 行[i - 1].製造日 === r.製造日 ? "" : 月日(r.製造日)}</td>
+              <td className="r">{r.コード}</td>
+              <td className="name">{r.品名}</td>
+              <td className="r">{r.予定数}</td>
+              <td className="r oy">{r.大谷地 || ""}</td>
+              <td className="c oy">{r.大谷地P ?? ""}</td>
+              <td className="gap" />
+              <td className="r tk">{r.十勝 || ""}</td>
+              <td className="c tk">{r.十勝P ?? ""}</td>
+              <td />
+            </tr>
+          ))}
+          <tr className="sum">
+            <td /><td /><td className="c">パレット使用合計</td><td />
+            <td className="c">大谷地</td><td className="c">{合計("大谷地P")}</td><td className="gap" />
+            <td className="c">十勝</td><td className="c">{合計("十勝P")}</td><td />
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** 帳票の一覧（Access の F_包装管理日誌・F_包装札作成 のボタン） */
 const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "yotei", 名: "包装予定表", 組: "包装管理日誌" },
@@ -419,6 +466,7 @@ const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "nisshi", 名: "包装日誌", 組: "包装管理日誌" },
   { k: "check", 名: "数量チェック表", 組: "包装管理日誌" },
   { k: "zaiko,sample", 名: "製品在庫表", 組: "包装管理日誌" },
+  { k: "furano", 名: "ふらのパレット使用予定", 組: "包装管理日誌" },
   { k: "renraku", 名: "包装連絡表", 組: "包装札作成" },
   { k: "robot", 名: "ロボットパレット引き出し確認表", 組: "包装札作成" },
   { k: "pallet", 名: "パレット票（包装札）", 組: "包装札作成" },
@@ -448,6 +496,7 @@ function ページたち(props: { k: string; x: Rec }) {
   if (k === "shikake") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-shikake">{[0, 1, 2, 3].map((j) => <仕掛札 key={j} r={r} />)}</div>)}</>;
   if (k === "robot") return <ロボット確認表 x={x} />;
   if (k === "zaiko") return <在庫確認表 x={x} />;
+  if (k === "furano") return <ふらのパレット x={x} />;
   if (k === "sample") return <サンプル在庫表 x={x} />;
   if (k === "renraku") return <包装連絡表 x={x} />;
   return null;

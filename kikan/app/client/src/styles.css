@@ -2572,3 +2572,18 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .hz-zc-foot { position: absolute; bottom: 7mm; left: 0; right: 0; text-align: center; font-size: 8pt; }
 .hz-sc-dt { text-align: right; font-size: 6.5pt; margin-right: 10mm; }
 .hz-sc-t { font-size: 13pt; margin: 2mm 0 3mm 35mm; }
+/* ふらの製造パレット割り振り予定表（R_ふらのパレット確認表） */
+.hz-fp { padding: 10mm 12mm; }
+.hz-fp-head { display: flex; align-items: flex-end; margin-bottom: 3mm; }
+.hz-fp-head .t { flex: 1; text-align: center; font-size: 15pt; font-weight: bold; font-style: italic; font-family: "MS PMincho", "Noto Serif JP", serif; }
+.hz-fp-head .dt { font-size: 9pt; font-weight: bold; margin-right: 4mm; }
+.hz-fp-grid { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+.hz-fp-grid th { border: 1px solid #000; font-weight: normal; padding: 0.3mm; }
+.hz-fp-grid td { border-left: 1px solid #000; border-right: 1px solid #000; border-bottom: 1px dotted #888; height: 5.6mm; padding: 0 1mm; }
+.hz-fp-grid td.c { text-align: center; } .hz-fp-grid td.r { text-align: right; }
+.hz-fp-grid td.name { font-size: 7pt; }
+.hz-fp-grid td.oy { color: #d00; font-style: italic; }
+.hz-fp-grid td.tk { color: #6a3fa0; font-style: italic; }
+.hz-fp-grid td.gap, .hz-fp-grid th.gap { border: none; }
+.hz-fp-grid tr.sum td { border: 1px solid #000; font-weight: bold; height: 6mm; }
+.hz-fp-grid tr.sum td.gap { border: none; }

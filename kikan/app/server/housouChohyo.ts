@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { t, 日本の今 } from "./db.js";
 import { requireUser } from "./auth.js";
 import { 一連で } from "./ws.js";
+import { cint } from "./hanmori.js";
 
 // 包装場管理System の帳票（いただいた見本〈2026/10/27〉の形）。
 // F_包装管理日誌：包装予定表（R_生産計画予定表ver2）・製造分割予定表（R_製造計画分割予定表）・包装日誌（R_包装日誌）・数量チェック表（R_包装数量チェック表）
@@ -345,6 +346,39 @@ async function サンプル在庫表(c: PoolClient, 日: string) {
 }
 
 /**
+ * ふらの製造パレット割り振り予定表（R_ふらのパレット確認表・C_ふらのパレット管理表作成）。
+ * ふらの工場（倉庫 191）の製造（商品 77 を除く）を、製造日が その日〜14 日後 の分だけ 1 行ずつ。予定数＝ケース。
+ * 大谷地・十勝は、同じ商品・製造日の出荷（届け先 164、十勝は 1221 と 1023）のケース。どちらも 0 のとき、商品 155・84 は全部を大谷地、17・1367 は全部を十勝にする。
+ * パレット＝行き先のケース ÷ 積み付け数（商品マスタのパレット単位2。Access の整数の欄なので .5 は偶数へ丸める）。
+ */
+async function ふらのパレット(c: PoolClient, 日: string) {
+  const rows = (
+    await c.query(
+      `SELECT i."製造日"::date::text AS "製造日", i."商品コード", i."商品名", i."ケース", COALESCE(m."パレット単位2", 0) AS "積み付け数",
+              (SELECT COALESCE(SUM(s."ケース"), 0) FROM ${出荷} s WHERE s."商品コード" = i."商品コード" AND s."届け先コード" = 164 AND s."製造日"::date = i."製造日"::date)::float8 AS "大谷地",
+              (SELECT COALESCE(SUM(s."ケース"), 0) FROM ${出荷} s WHERE s."商品コード" = i."商品コード" AND s."届け先コード" IN (1221, 1023) AND s."製造日"::date = i."製造日"::date)::float8 AS "十勝"
+       FROM ${入庫} i LEFT JOIN ${商品マスタ} m ON m."商品コード" = i."商品コード"
+       WHERE i."商品コード" <> 77 AND i."倉庫ID" = 191 AND i."製造日"::date BETWEEN $1::date AND $1::date + 14 AND i."入庫日"::date >= $1::date
+       ORDER BY i."製造日", i."入庫ID"`,
+      [日],
+    )
+  ).rows as Rec[];
+  const 行 = rows.map((r) => {
+    let 大谷地 = n(r.大谷地);
+    let 十勝 = n(r.十勝);
+    const code = n(r.商品コード);
+    if (!大谷地 && !十勝 && (code === 155 || code === 84)) 大谷地 = n(r.ケース);
+    else if (!大谷地 && !十勝 && (code === 17 || code === 1367)) 十勝 = n(r.ケース);
+    const 単位 = n(r.積み付け数);
+    return {
+      製造日: r.製造日, コード: code, 品名: r.商品名, 予定数: n(r.ケース), 大谷地, 十勝,
+      大谷地P: 単位 && 大谷地 ? cint(大谷地 / 単位) : null, 十勝P: 単位 && 十勝 ? cint(十勝 / 単位) : null,
+    };
+  });
+  return { 日, 行 };
+}
+
+/**
  * 大谷地回送用積み込み札（R_大谷地回送用積み込み札）。その日のパレットのうち、使用パレットが (N)（ニチレイ大谷地へ回送）のものに 1 枚ずつ。
  * 区分（タグ）・品名・製造日（区分表示と同じ形。2026/10/31 いただいた見本）。Access は (N) のパレットがあるときだけ出す。
  */
@@ -388,6 +422,7 @@ export function housouChohyoRoutes(app: FastifyInstance) {
     kubun: (c, d) => 区分表示(c, d),
     oyachi: (c, d) => 大谷地札(c, d),
     zaiko: (c, d) => 在庫確認表(c, d),
+    furano: (c, d) => ふらのパレット(c, d),
     sample: (c, d) => サンプル在庫表(c, d),
     shikake: (c, d, q) => 仕掛札(c, d, q.sagyo || undefined),
     robot: (c, d) => ロボット確認表(c, d),

@@ -304,7 +304,7 @@ export function HousouMenu() {
           <div className="hgm-gap" />
           {ボタン("Google連携用カレンダー出力(csv)", undefined, "sky")}
           {ボタン("包装予定表　印刷", 帳票("yotei"), "green")}
-          {ボタン("ふらのパレット使用予定", undefined, "green")}
+          {ボタン("ふらのパレット使用予定", 帳票("furano"), "green")}
         </div>
       </div>
       <div className="hgm-low">
