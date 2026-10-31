@@ -520,6 +520,52 @@ function HB日誌(props: { r: Rec; 社名: string }) {
   );
 }
 
+// ---------------- 出荷停止品 在庫報告（R_出荷停止在庫報告）。A4 縦、1 ページ 30 行 ----------------
+function 出荷停止報告(props: { x: Rec }) {
+  const { x } = props;
+  const 行: Rec[] = x.行;
+  const pages: Rec[][] = [];
+  for (let i = 0; i < 行.length; i += 30) pages.push(行.slice(i, i + 30));
+  if (!pages.length) pages.push([]);
+  return (
+    <>
+      {pages.map((p, i) => (
+        <div key={i} className="pv-page hz-ts">
+          <div className="hz-ts-top">
+            <div className="dt">{String(x.印刷日 ?? "").replace(/-/g, "/")}</div>
+          </div>
+          <div className="hz-ts-head">
+            <div>
+              <div className="t">出荷停止品　在庫報告</div>
+              <div className="kakunin">確認日　　　　　　年　　　月　　　日　　　曜日</div>
+            </div>
+            <table className="sign"><tbody><tr><th>確認者</th><th>確認者</th></tr><tr><td /><td /></tr></tbody></table>
+          </div>
+          <table className="hz-ts-grid">
+            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "33%" }} /><col style={{ width: "12%" }} /><col style={{ width: "8%" }} /><col style={{ width: "9%" }} /><col style={{ width: "16%" }} /><col style={{ width: "16%" }} /></colgroup>
+            <thead><tr><th>別紙<br />貼付</th><th>数量</th><th>製造日</th><th>区分</th><th>数量確認</th><th>備考</th><th>備考</th></tr></thead>
+            <tbody>
+              {p.map((r, j) => (
+                <tr key={j}>
+                  <td />
+                  <td className="name">{r.品名}</td>
+                  <td className="c">{点(r.製造日)}</td>
+                  <td className="c tag">{r.区分}</td>
+                  <td className="r">{r.ケース}</td>
+                  <td className="biko">{r.備考}</td>
+                  <td />
+                </tr>
+              ))}
+              <tr className="blank"><td /><td /><td /><td /><td /><td /><td /></tr>
+            </tbody>
+          </table>
+          <div className="hz-ts-foot">{x.社名}</div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /** 帳票の一覧（Access の F_包装管理日誌・F_包装札作成 のボタン） */
 const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "yotei", 名: "包装予定表", 組: "包装管理日誌" },
@@ -534,10 +580,11 @@ const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "pallet", 名: "パレット票（包装札）", 組: "包装札作成" },
   { k: "kubun", 名: "区分表示（在庫）", 組: "包装札作成" },
   { k: "shikake", 名: "仕掛原料管理札", 組: "包装札作成" },
+  { k: "teishi", 名: "出荷停止品 在庫報告", 組: "包装札作成" },
   { k: "oyachi", 名: "大谷地回送用積み込み札", 組: "包装札作成" },
 ];
 /** 包装札作成の［印刷］でまとめて出すもの（Access の cmd_印刷 の順） */
-const 札のまとめ = ["pallet", "kubun", "shikake", "robot", "renraku", "oyachi"];
+const 札のまとめ = ["pallet", "kubun", "teishi", "shikake", "robot", "renraku", "oyachi"];
 
 function ページたち(props: { k: string; x: Rec }) {
   const { k, x } = props;
@@ -558,6 +605,7 @@ function ページたち(props: { k: string; x: Rec }) {
   if (k === "shikake") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-shikake">{[0, 1, 2, 3].map((j) => <仕掛札 key={j} r={r} />)}</div>)}</>;
   if (k === "robot") return <ロボット確認表 x={x} />;
   if (k === "zaiko") return <在庫確認表 x={x} />;
+  if (k === "teishi") return <出荷停止報告 x={x} />;
   if (k === "hb") return <>{x.枚.map((r: Rec, i: number) => <HB日誌 key={i} r={r} 社名={x.社名} />)}</>;
   if (k === "furano") return <ふらのパレット x={x} />;
   if (k === "sample") return <サンプル在庫表 x={x} />;

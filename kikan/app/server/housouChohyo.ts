@@ -396,6 +396,22 @@ async function HB日誌(c: PoolClient, 日: string) {
 }
 
 /**
+ * 出荷停止品 在庫報告（R_出荷停止在庫報告）。包装札一式の区分表示のあと。商品区分 5（出荷停止）で入庫日が今日まで・在庫ケースがある在庫。
+ * 商品名・製造日・区分（タグ）・在庫ケース・管理備考（2026/10/31 いただいたデザインの画面と同じ並び）。
+ */
+async function 出荷停止報告(c: PoolClient, 日: string) {
+  const rows = (
+    await c.query(
+      `SELECT "商品名", "製造日"::date::text AS "製造日", "タグ", "在庫ケース", "管理備考" FROM ${在庫}
+       WHERE "商品区分" = 5 AND "入庫日"::date <= $1::date AND "在庫ケース" <> 0 ORDER BY "商品名", "製造日", "タグ", "在庫ID"`,
+      [日本の今().日付],
+    )
+  ).rows as Rec[];
+  const 社名 = (await c.query(`SELECT "社名" FROM app."帳票_差出人" WHERE "区分" = '丸北北海道'`)).rows[0]?.社名 ?? "";
+  return { 日, 印刷日: 日本の今().日付, 社名, 行: rows.map((r) => ({ 品名: r.商品名, 製造日: r.製造日, 区分: r.タグ ?? "", ケース: n(r.在庫ケース), 備考: r.管理備考 ?? "" })) };
+}
+
+/**
  * 大谷地回送用積み込み札（R_大谷地回送用積み込み札）。その日のパレットのうち、使用パレットが (N)（ニチレイ大谷地へ回送）のものに 1 枚ずつ。
  * 区分（タグ）・品名・製造日（区分表示と同じ形。2026/10/31 いただいた見本）。Access は (N) のパレットがあるときだけ出す。
  */
@@ -441,6 +457,7 @@ export function housouChohyoRoutes(app: FastifyInstance) {
     zaiko: (c, d) => 在庫確認表(c, d),
     furano: (c, d) => ふらのパレット(c, d),
     hb: (c, d) => HB日誌(c, d),
+    teishi: (c, d) => 出荷停止報告(c, d),
     sample: (c, d) => サンプル在庫表(c, d),
     shikake: (c, d, q) => 仕掛札(c, d, q.sagyo || undefined),
     robot: (c, d) => ロボット確認表(c, d),

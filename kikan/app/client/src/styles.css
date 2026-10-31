@@ -2618,3 +2618,18 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .pzc-grid td.c { text-align: center; }
 .pzc-grid .biko { font-size: 6pt; width: 28%; }
 .pzc-grid th.chk { width: 12mm; }
+/* 出荷停止品 在庫報告（R_出荷停止在庫報告） */
+.hz-ts { padding: 8mm 10mm; position: relative; }
+.hz-ts-top { text-align: right; } .hz-ts-top .dt { display: inline-block; border: 1px solid #000; padding: 0 2mm; min-width: 35mm; font-size: 9pt; }
+.hz-ts-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3mm; }
+.hz-ts-head .t { font-size: 16pt; font-weight: bold; border: 1px solid #000; padding: 1mm 20mm; margin: 0 0 3mm 45mm; display: inline-block; }
+.hz-ts-head .kakunin { border: 1px solid #000; padding: 2mm 3mm; font-size: 11pt; width: 105mm; }
+.hz-ts-head table.sign { border-collapse: collapse; }
+.hz-ts-head table.sign th { border: 1px solid #000; font-size: 7pt; font-weight: normal; width: 18mm; }
+.hz-ts-head table.sign td { border: 1px solid #000; height: 13mm; }
+.hz-ts-grid { width: 100%; border-collapse: collapse; }
+.hz-ts-grid th { border: 1px solid #000; font-size: 11pt; font-weight: normal; height: 11mm; line-height: 1.1; }
+.hz-ts-grid td { border: 1px solid #000; height: 9mm; padding: 0 1.5mm; font-size: 10pt; }
+.hz-ts-grid td.c { text-align: center; } .hz-ts-grid td.r { text-align: right; font-size: 12pt; }
+.hz-ts-grid td.tag { font-size: 13pt; } .hz-ts-grid td.biko { font-size: 7pt; vertical-align: top; white-space: pre-line; }
+.hz-ts-foot { position: absolute; bottom: 8mm; right: 20mm; border: 1px solid #000; padding: 0 3mm; min-width: 45mm; font-size: 9pt; }
