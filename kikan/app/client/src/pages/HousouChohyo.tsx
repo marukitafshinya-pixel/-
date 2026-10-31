@@ -459,12 +459,74 @@ function ふらのパレット(props: { x: Rec }) {
   );
 }
 
+// ---------------- HBミックスセット日誌（箱詰日誌。R_HBミックスセット日誌）。A4 縦 ----------------
+function HB日誌(props: { r: Rec; 社名: string }) {
+  const { r } = props;
+  const 年月日空き = (v: string) => (v ? `${v.slice(0, 4).split("").join(" ")}　年　${Number(v.slice(5, 7))}　月　${Number(v.slice(8, 10))}　日` : "");
+  const ロット = (n: number, 名: string) => (
+    <>
+      <tr>
+        {n === 1 && <td rowSpan={名 === "ハンバーグ\nスパイス" ? 4 : 6} className="c lbl pre">{名}</td>}
+        <td rowSpan={2} className="c">ロット{"①②③"[n - 1]}</td>
+        <td className="c lot">LOT</td>
+        <td rowSpan={2} className="tiny">ロット{"①②③"[n - 1]}使用数</td>
+        <td rowSpan={2} />
+        <td rowSpan={2} className="c sm">破損数</td>
+        <td rowSpan={2} />
+        <td rowSpan={2} className="c sm">残数</td>
+        <td rowSpan={2} />
+      </tr>
+      <tr><td className="sm">賞味期限</td></tr>
+    </>
+  );
+  return (
+    <div className="pv-page hz-hb">
+      <div className="hz-hb-top">
+        <table className="sign"><tbody><tr><th>工場長</th><th>品質管理</th><th>製造管理</th></tr><tr><td /><td /><td /></tr></tbody></table>
+        <div className="right">
+          <div className="dt">{年月日空き(r.入庫日)}</div>
+          <div className="u">記入者</div>
+        </div>
+      </div>
+      <div className="hz-hb-title"><span>箱詰日誌</span><span className="u">確認者</span></div>
+      <table className="hz-hb-grid">
+        <colgroup><col style={{ width: "13%" }} /><col style={{ width: "13%" }} /><col style={{ width: "22%" }} /><col style={{ width: "10%" }} /><col style={{ width: "10%" }} /><col style={{ width: "8%" }} /><col style={{ width: "8%" }} /><col style={{ width: "8%" }} /><col style={{ width: "8%" }} /></colgroup>
+        <tbody>
+          <tr><td colSpan={2}>商品名</td><td colSpan={7} className="c b">{r.商品名}</td></tr>
+          <tr><td colSpan={2}>箱詰作業日</td><td colSpan={7} className="c sp">{年月日空き(r.入庫日)}</td></tr>
+          <tr><td colSpan={2}>作業時間</td><td colSpan={2} className="c">～</td><td colSpan={2}>作業人数</td><td colSpan={3} className="r">人</td></tr>
+          <tr><td colSpan={2}>ダンボール箱詰数</td><td colSpan={2} className="r">ケース</td><td colSpan={2}>数量確認者</td><td colSpan={3} /></tr>
+          {ロット(1, "ハンバーグ\nスパイス")}
+          {ロット(2, "ハンバーグ\nスパイス")}
+          {ロット(1, "ソテー\nオニオン")}
+          {ロット(2, "ソテー\nオニオン")}
+          {ロット(3, "ソテー\nオニオン")}
+          <tr className="thick">
+            <td rowSpan={2}>ロット</td>
+            <td colSpan={3} className="b big">賞味期限　{点(r.賞味期限)}</td>
+            <td colSpan={2} className="sm">左記の印刷表示の確認者</td>
+            <td colSpan={3} />
+          </tr>
+          <tr><td colSpan={8} className="b sm">注：賞味期限は箱詰日より一年</td></tr>
+          <tr><td>ロット印字</td><td>印字調整者</td><td colSpan={2} /><td colSpan={2} className="sm">現物表示の確認者</td><td colSpan={3} /></tr>
+          <tr><td colSpan={2}>ダンボール番号</td><td colSpan={2} className="c">E－5</td><td className="c">破損DB</td><td className="r">枚</td><td colSpan={2} className="c">返品DB</td><td className="r">枚</td></tr>
+          <tr><td>封緘テープ</td><td colSpan={2}>上面　：　OPPテープ</td><td colSpan={2}>下面　：　OPPテープ</td><td colSpan={2}>資材確認者</td><td colSpan={2} /></tr>
+          <tr><td>荷姿</td><td colSpan={8} className="c">ハンバーグスパイス(250g)×10　ソテーオニオン(750g)×10</td></tr>
+          <tr className="biko"><td>備考欄</td><td colSpan={8} /></tr>
+        </tbody>
+      </table>
+      <div className="hz-hb-foot">{props.社名}　作成部署　品質管理室　作成日16.07.01　改定日17.01.27</div>
+    </div>
+  );
+}
+
 /** 帳票の一覧（Access の F_包装管理日誌・F_包装札作成 のボタン） */
 const 帳票: { k: string; 名: string; 組: string }[] = [
   { k: "yotei", 名: "包装予定表", 組: "包装管理日誌" },
   { k: "bunkatsu", 名: "製造分割予定表", 組: "包装管理日誌" },
   { k: "nisshi", 名: "包装日誌", 組: "包装管理日誌" },
   { k: "check", 名: "数量チェック表", 組: "包装管理日誌" },
+  { k: "hb", 名: "HBミックスセット日誌", 組: "包装管理日誌" },
   { k: "zaiko,sample", 名: "製品在庫表", 組: "包装管理日誌" },
   { k: "furano", 名: "ふらのパレット使用予定", 組: "包装管理日誌" },
   { k: "renraku", 名: "包装連絡表", 組: "包装札作成" },
@@ -496,6 +558,7 @@ function ページたち(props: { k: string; x: Rec }) {
   if (k === "shikake") return <>{x.札.map((r: Rec, i: number) => <div key={i} className="pv-page land hz-shikake">{[0, 1, 2, 3].map((j) => <仕掛札 key={j} r={r} />)}</div>)}</>;
   if (k === "robot") return <ロボット確認表 x={x} />;
   if (k === "zaiko") return <在庫確認表 x={x} />;
+  if (k === "hb") return <>{x.枚.map((r: Rec, i: number) => <HB日誌 key={i} r={r} 社名={x.社名} />)}</>;
   if (k === "furano") return <ふらのパレット x={x} />;
   if (k === "sample") return <サンプル在庫表 x={x} />;
   if (k === "renraku") return <包装連絡表 x={x} />;

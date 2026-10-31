@@ -314,7 +314,7 @@ export function HousouMenu() {
           {ボタン("Oxpa取込み(パレタイザー)", undefined, "navy")}
         </div>
         <div className="hgm-col">
-          {ボタン("包装日誌印刷", 帳票("check,nisshi,bunkatsu"), "green")}
+          {ボタン("包装日誌印刷", 帳票("check,nisshi,hb,bunkatsu"), "green")}
           {ボタン("製品在庫表　印刷", 帳票("zaiko,sample"), "green")}
           {ボタン("無地　包装札印刷", undefined, "green")}
           {ボタン("無地　仕掛札印刷", undefined, "green")}

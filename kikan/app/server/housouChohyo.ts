@@ -379,6 +379,23 @@ async function ふらのパレット(c: PoolClient, 日: string) {
 }
 
 /**
+ * HBミックスセット日誌（箱詰日誌。R_HBミックスセット日誌）。包装日誌印刷のとき、その日の入庫のうちグループ商品コード 746 の行ごとに 1 枚。
+ * 商品名・箱詰作業日（入庫日）・賞味期限（入庫の賞味期限。なければ箱詰日の 1 年後）。ほかの欄は手書き（見本 2026/10/31）。
+ */
+async function HB日誌(c: PoolClient, 日: string) {
+  const rows = (
+    await c.query(
+      `SELECT i."商品名", i."入庫日"::date::text AS "入庫日", COALESCE(i."賞味期限"::date, i."入庫日"::date + interval '1 year')::date::text AS "賞味期限"
+       FROM ${入庫} i LEFT JOIN ${商品マスタ} m ON m."商品コード" = i."商品コード"
+       WHERE m."グループ商品コード" = 746 AND i."入庫日"::date = $1::date ORDER BY i."入庫ID"`,
+      [日],
+    )
+  ).rows as Rec[];
+  const 社名 = (await c.query(`SELECT "社名" FROM app."帳票_差出人" WHERE "区分" = '丸北北海道'`)).rows[0]?.社名 ?? "";
+  return { 日, 社名, 枚: rows };
+}
+
+/**
  * 大谷地回送用積み込み札（R_大谷地回送用積み込み札）。その日のパレットのうち、使用パレットが (N)（ニチレイ大谷地へ回送）のものに 1 枚ずつ。
  * 区分（タグ）・品名・製造日（区分表示と同じ形。2026/10/31 いただいた見本）。Access は (N) のパレットがあるときだけ出す。
  */
@@ -423,6 +440,7 @@ export function housouChohyoRoutes(app: FastifyInstance) {
     oyachi: (c, d) => 大谷地札(c, d),
     zaiko: (c, d) => 在庫確認表(c, d),
     furano: (c, d) => ふらのパレット(c, d),
+    hb: (c, d) => HB日誌(c, d),
     sample: (c, d) => サンプル在庫表(c, d),
     shikake: (c, d, q) => 仕掛札(c, d, q.sagyo || undefined),
     robot: (c, d) => ロボット確認表(c, d),

@@ -2587,3 +2587,25 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .hz-fp-grid td.gap, .hz-fp-grid th.gap { border: none; }
 .hz-fp-grid tr.sum td { border: 1px solid #000; font-weight: bold; height: 6mm; }
 .hz-fp-grid tr.sum td.gap { border: none; }
+/* HBミックスセット日誌（箱詰日誌） */
+.hz-hb { padding: 8mm 12mm; font-family: "MS PGothic", "Noto Sans JP", sans-serif; position: relative; }
+.hz-hb-top { display: flex; justify-content: space-between; }
+.hz-hb-top table.sign { border-collapse: collapse; }
+.hz-hb-top table.sign th { border: 1px solid #000; font-size: 6.5pt; font-weight: normal; width: 17mm; }
+.hz-hb-top table.sign td { border: 1px solid #000; height: 12mm; }
+.hz-hb-top .right { text-align: right; }
+.hz-hb-top .dt { font-size: 8pt; letter-spacing: 2px; margin-top: 2mm; }
+.hz-hb-top .u, .hz-hb-title .u { font-size: 8pt; font-weight: bold; display: inline-block; width: 48mm; text-align: left; border-bottom: 1px solid #000; margin-top: 5mm; }
+.hz-hb-title { display: flex; justify-content: flex-end; gap: 12mm; align-items: flex-end; margin: 1mm 0 1mm; }
+.hz-hb-title span:first-child { font-size: 15pt; font-weight: bold; margin-right: 6mm; }
+.hz-hb-grid { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.hz-hb-grid td { border: 1px solid #000; height: 7mm; padding: 0 1.5mm; }
+.hz-hb-grid td.c { text-align: center; } .hz-hb-grid td.r { text-align: right; }
+.hz-hb-grid td.b { font-weight: bold; } .hz-hb-grid td.big { font-size: 10pt; letter-spacing: 1px; }
+.hz-hb-grid td.sp { letter-spacing: 3px; }
+.hz-hb-grid td.sm { font-size: 7pt; } .hz-hb-grid td.tiny { font-size: 5pt; vertical-align: top; }
+.hz-hb-grid td.lot { font-size: 7pt; height: 4.5mm; } .hz-hb-grid td.lbl { white-space: pre-line; }
+.hz-hb-grid tr.thick td { border-top: 2px solid #000; }
+.hz-hb-grid tr.biko td { height: 40mm; vertical-align: top; }
+.hz-hb-grid td.nob { border-top: none; }
+.hz-hb-foot { font-size: 6.5pt; margin: 4mm 0 0 6mm; }
