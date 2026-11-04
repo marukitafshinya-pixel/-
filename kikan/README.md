@@ -28,6 +28,20 @@ PGURL=postgresql://ユーザー@ホスト/データベース python3 accdb_to_pg
 - 必要なもの：mdbtools（`mdb-tables`・`mdb-schema`・`mdb-export`）、psql、Python 3。
 - 個人の住所録（`TM_専務専用住所録`）は移さない（`accdb_to_pg.py`・`csv_to_pg.py` で飛ばす）。
 
+## 試し用のデータベースを作る（load_test.sh）
+
+Access のファイルをまとめて置いたフォルダから、試し用のデータベース（はじめは `kikan_test`）を一度に作る。今使っているデータベースはさわらない。
+
+```
+cd kikan/migrate
+bash load_test.sh Access のファイルを置いたフォルダ [kikan_test] [ログインを写す元：kikan]
+cd ../app && PGURL=postgresql://postgres@127.0.0.1/kikan_test PORT=3001 npm start
+```
+
+- フォルダの中で `sources.json` に載っているファイルだけを入れる（名前の全角・半角・空白の違いは見ない）。ないファイルは飛ばして知らせる。
+- 取り込み（accdb_to_pg.py）→ マスタをまとめる（unify_masters.sql）→ パソコンごとの表を空にする（reset_per_pc.sql）→ Web 版だけの表（server/schema.sql）→ ログインの利用者を元のデータベースから写す、の順。
+- Web 版が使うのは次のファイル（2026/11/04 時点）：データ側 受注登録・丸北WorkStation・倉庫管理System・製造管理 丸北・製造計画・共有Accessテーブル・包装場管理System・転売品管理・原料管理2・Accessマスタ管理、画面側 受注登録FE・丸北WorkStationFE・倉庫管理SystemFE・製造管理 丸北FE・製造計画FE・包装場管理SystemFE・WEB連携FE・手配出力用カレンダー・Accessマスタ管理FE。仕掛原料管理・丸北商品推移・輸送管理は今は使っていない（入れても害はない）。
+
 ## 書き出した CSV からの取り込み（csv_to_pg）
 
 Access の画面側ファイルで `ExportTables`（表を CSV と fields.txt に書き出すプログラム）を動かして作ったフォルダを取り込む。
