@@ -86,7 +86,11 @@ def migrate(pgurl, src, keep_schema=False):
         try:
             ddl, serials, nontext = pg_ddl(db, t, schema)
             if keep_schema:
-                psql(pgurl, f'DROP TABLE IF EXISTS "{schema}"."{t}" CASCADE;')
+                # マスタをまとめたあとは同じ名前がビュー（kyotsu をのぞく窓）になっているので、表でもビューでも消す
+                kind = psql(pgurl, f"SELECT c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                                   f"WHERE n.nspname = '{schema}' AND c.relname = '{t}'").strip()
+                if kind:
+                    psql(pgurl, f'DROP {"VIEW" if kind == "v" else "TABLE"} "{schema}"."{t}" CASCADE;')
             psql(pgurl, ddl)
             data = run(["mdb-export", "-b", "strip", "-D", "%Y-%m-%d %H:%M:%S",
                         "-T", "%Y-%m-%d %H:%M:%S", db, t])
