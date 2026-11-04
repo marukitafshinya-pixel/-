@@ -70,17 +70,23 @@ def psql(pgurl, sql, stdin=None):
                           env=ENV, input=stdin, check=True, capture_output=True).stdout.decode()
 
 
-def migrate(pgurl, src):
+def migrate(pgurl, src, keep_schema=False):
     db, schema = src["file"], src["schema"]
     only = set(src.get("tables", []))
     print(f"== {schema} ← {db}", flush=True)
-    psql(pgurl, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; CREATE SCHEMA "{schema}";')
+    if keep_schema:
+        # スキーマはそのままにして、このファイルにある表だけを入れ替える（画面側の表など、ほかのファイルから入れた表を残す）
+        psql(pgurl, f'CREATE SCHEMA IF NOT EXISTS "{schema}";')
+    else:
+        psql(pgurl, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; CREATE SCHEMA "{schema}";')
     report = []
     for t in tables(db):
         if only and t not in only:
             continue
         try:
             ddl, serials, nontext = pg_ddl(db, t, schema)
+            if keep_schema:
+                psql(pgurl, f'DROP TABLE IF EXISTS "{schema}"."{t}" CASCADE;')
             psql(pgurl, ddl)
             data = run(["mdb-export", "-b", "strip", "-D", "%Y-%m-%d %H:%M:%S",
                         "-T", "%Y-%m-%d %H:%M:%S", db, t])
@@ -112,6 +118,7 @@ def main():
     ap.add_argument("sources")
     ap.add_argument("--only", help="このスキーマだけ移す")
     ap.add_argument("--report", default="移し替え結果.md")
+    ap.add_argument("--keep-schema", action="store_true", help="スキーマを作り直さず、ファイルにある表だけを入れ替える")
     a = ap.parse_args()
     pgurl = os.environ.get("PGURL")
     if not pgurl:
@@ -127,7 +134,7 @@ def main():
         if not os.path.exists(src["file"]):
             lines.append(f"| {src['schema']} | （ファイルなし） | | | 未実施 |")
             continue
-        for t, s, p, r in migrate(pgurl, src):
+        for t, s, p, r in migrate(pgurl, src, a.keep_schema):
             bad += r != "OK"
             lines.append(f"| {src['schema']} | {t} | {s} | {p} | {r} |")
     open(a.report, "w", encoding="utf-8").write("\n".join(lines) + "\n")
