@@ -108,6 +108,7 @@ PGURL=... npm start                # http://localhost:3000 で開く
 
 - 表は Access と同じ名前のものを使う（例：`juchu."TD_受注"`）。Web 版だけで使う表（利用者・ログイン・設定）は `app` スキーマに置く（`server/schema.sql`）。
 - 開発中は `npm run dev`（画面は http://localhost:5173）。
+- 社内の Windows 11 のパソコン 1 台に置く手順：[11_社内サーバーの置き方（Windows11）](../docs/access移行/11_社内サーバーの置き方（Windows11）.md)。ほかのパソコンから開けるよう `HOST=0.0.0.0` で動かす。
 - 受注の削除には、Access と同じく合言葉が要る。合言葉はプログラムに書かず、サーバーを動かすときに `JUCHU_DELETE_PASSWORD` で渡す（今の Access と同じものにする。2026/10/20 確認）。渡していないときは削除できない。
 - ほかの合言葉も同じく、サーバーを動かすときに渡す：`JUCHU_EDIT_PASSWORD`（訂正など）、`JUCHU_MASTER_PASSWORD`（受注のマスタ）、`MASTER_PASSWORD`（マスタ管理・古いデータの削除）、`SOKO_PASSWORD`（倉庫管理の倉庫商品一覧の修正・訂正。Access の倉庫管理の TD_USER のパスワードと同じものにする）。
 - WEB連携の相手先サイトのパスワードを暗号にする鍵 `WEB_RENKEI_KEY`（長めの好きな文字列。変えると保存したパスワードが読めなくなるので、変えたら入れ直す）。
