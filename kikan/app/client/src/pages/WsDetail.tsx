@@ -174,7 +174,6 @@ export default function WsDetail() {
           {欄("賞味期限", <span onClick={訂正する("賞味期限", "賞味期限", "date")}><Field value={r.賞味期限} kind="date" className="w1 redt" readOnly={ro || 訂正モード} onCommit={日("賞味期限")} /></span>)}
           {欄("区分", <span onClick={訂正する("タグ", "区分")}><Field value={r.タグ} className="w1 c" readOnly={ro || 訂正モード} onCommit={(v) => save({ タグ: v || null })} /></span>)}
           {欄("納品日", <span onClick={訂正する("納品日", "納品日", "date")}><Field value={r.納品日} kind="date" className="w1" readOnly={ro || 訂正モード} onCommit={日("納品日")} /></span>)}
-          {欄("しらい送り状No", <Field value={r.送り状No} className="w2" readOnly={ro} onCommit={(v) => save({ 送り状No: v || null })} />)}
           {欄("発注No", <Field value={r.ユーザー伝票No} className="w2" readOnly={ro} onCommit={(v) => save({ ユーザー伝票No: v || null })} />)}
         </div>
         <div className="wd-col">

@@ -297,6 +297,7 @@ export default function WsMain() {
             <span>外部運行No</span>
             <Field value={p.運行指令No} readOnly={!輸送ID} onCommit={(v) => save({ 運行指令No: v || null })} />
           </div>
+          <div className="ws-kensaku" title="在庫検索">
           <div className="ws-kv">
             <span>品名</span>
             <Field value={検索商品} kind="num" kyotsu="shohin" onCommit={(v) => set検索商品(n(v))} />
@@ -308,6 +309,7 @@ export default function WsMain() {
           <div className="ws-row">
             <button className="small" disabled={!輸送ID} onClick={検索実行}>検索実行</button>
             <button className="small" disabled={!輸送ID} onClick={() => nav(`/ws/import?id=${輸送ID}`)}>インポート処理</button>
+          </div>
           </div>
           {sel("運賃計算区分", "運賃区分")}
         </div>
@@ -503,18 +505,19 @@ export default function WsMain() {
                 </tr>
               ))}
             </tbody>
+            {rows.length > 0 && (
+              <tfoot>
+                <tr className="ws-sum">
+                  <td colSpan={10} className="k">件数 {rows.length}件　合計</td>
+                  <td className="r v" title="C/S計">{num(合計.ケース)}</td>
+                  <td className="r v" title="kg計">{num(合計.kg)}</td>
+                  <td colSpan={6} className="k" />
+                  <td className="r v" title="P計">{合計.P}</td>
+                </tr>
+              </tfoot>
+            )}
           </table>
           {!輸送ID && <p className="ws-empty">この出荷日の便はありません。［新規］で足せます。</p>}
-          <div className="ws-foot">
-            <span className="k">件数</span>
-            <span className="v">{rows.length}件</span>
-            <span className="k">C/s計</span>
-            <span className="v">{num(合計.ケース)}</span>
-            <span className="k">kg計</span>
-            <span className="v">{num(合計.kg)}</span>
-            <span className="k">P計</span>
-            <span className="v">{合計.P}</span>
-          </div>
         </div>
       </div>
       {cal && (
