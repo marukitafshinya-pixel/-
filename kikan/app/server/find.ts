@@ -31,6 +31,28 @@ const 商品の検索項目 = new Set(["商品名", "短縮名", "規格", "取�
 export function findRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireUser);
 
+  // コードの欄の ▼（一覧から選ぶ）。打った文字に合うものを 50 件まで返す。
+  // コードが打った数字で始まるもの → 名前に打った文字を含むもの の順。全角・半角（ｿﾃｰ と ソテー）は同じに扱う。
+  app.get<{ Querystring: { kind?: string; w?: string } }>("/api/find/suggest", async (req) => {
+    const 表 = {
+      tokui: { from: 得意先マスタ, code: `"短縮コード"`, name: `"短縮名"`, sub: `"得意先名"` },
+      shohin: { from: 商品マスタ, code: `"商品コード"`, name: `"商品名"`, sub: `"規格"` },
+      unso: { from: 運送会社マスタ, code: `"運送会社ID"`, name: `"短縮名"`, sub: `"運送会社名"` },
+    }[req.query.kind ?? ""];
+    if (!表) return [];
+    // ひらがなはカタカナにそろえる（名前の側も同じ）
+    const w = String(req.query.w ?? "").normalize("NFKC").trim().slice(0, 40).replace(/[\u3041-\u3096]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60)).toUpperCase();
+    const 名 = `upper(translate(normalize(COALESCE(${表.name}::text, '') || ' ' || COALESCE(${表.sub}::text, ''), NFKC), 'ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔゕゖ', 'ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ'))`;
+    return q(
+      `SELECT DISTINCT ON (${表.code}) ${表.code} AS "code", ${表.name} AS "name", ${表.sub} AS "sub",
+              CASE WHEN $1 = '' THEN 1 WHEN ${表.code}::text = $1 THEN 0 WHEN ${表.code}::text LIKE $1 || '%' THEN 1 ELSE 2 END AS "順"
+       FROM ${表.from}
+       WHERE ${表.code} IS NOT NULL AND ($1 = '' OR ${表.code}::text LIKE $1 || '%' OR ${名} LIKE '%' || $1 || '%')
+       ORDER BY ${表.code}`,
+      [w],
+    ).then((rows) => rows.sort((a, b) => a.順 - b.順 || Number(a.code) - Number(b.code)).slice(0, 50).map(({ 順, ...r }) => r));
+  });
+
   // 選ぶ欄の一覧（商品：分類・原料、得意先：地区・グループ・グループマスタ）
   app.get("/api/find/lists", async () => ({
     分類: await q(`SELECT "分類ID" AS "id", "分類名" AS "name" FROM ${商品分類} ORDER BY "分類ID"`),

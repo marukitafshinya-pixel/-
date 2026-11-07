@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api";
 
@@ -102,18 +103,27 @@ export function Field(props: {
   onDoubleClick?: () => void;
   list?: string;
   kyotsu?: "tokui" | "shohin" | "unso";
+  /** Combo の中で使うとき（Combo に自分の ▾ があるので、▼ を出さない） */
+  noDrop?: boolean;
 }) {
   const shown = props.kind === "date" ? showDate(props.value) : props.value ?? "";
   const [draft, setDraft] = useState<string>(String(shown));
   const [finding, setFinding] = useState(false);
   const [calendar, setCalendar] = useState(false);
+  const [drop, setDrop] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
   useEffect(() => setDraft(String(shown)), [shown]);
   const commit = () => {
     if (draft !== String(shown)) props.onCommit?.(draft);
   };
   const kyotsu = props.kyotsu && !props.readOnly;
-  return (
-    <>
+  const 名前 = props.kyotsu === "shohin" ? "商品" : props.kyotsu === "unso" ? "運送会社" : "得意先";
+  const 選んだ = (c: string) => {
+    setDrop(false);
+    setDraft(c);
+    props.onCommit?.(c);
+  };
+  const input = (
       <input
         ref={props.inputRef}
         className={(props.className ?? "") + (props.kind === "num" ? " r" : "") + (props.kyotsu ? " kyotsu" : "")}
@@ -121,7 +131,7 @@ export function Field(props: {
         readOnly={props.readOnly}
         tabIndex={props.readOnly ? -1 : undefined}
         list={props.list}
-        title={kyotsu ? `共通コード（ダブルクリックで${props.kyotsu === "shohin" ? "商品" : props.kyotsu === "unso" ? "運送会社" : "得意先"}を探せます）` : props.kind === "date" && !props.readOnly ? "ダブルクリックでカレンダーから選べます" : undefined}
+        title={kyotsu ? `${名前}のコード（▼で一覧から選べます。ダブルクリックで${名前}を探す画面）` : props.kind === "date" && !props.readOnly ? "ダブルクリックでカレンダーから選べます" : undefined}
         inputMode={props.kind === "num" ? "decimal" : undefined}
         onChange={(e) => setDraft(props.kind === "num" && !(e.nativeEvent as InputEvent).isComposing ? 数字だけ(e.target.value) : e.target.value)}
         onCompositionEnd={props.kind === "num" ? (e) => setDraft(数字だけ(e.currentTarget.value)) : undefined}
@@ -129,7 +139,20 @@ export function Field(props: {
         onDoubleClick={
           kyotsu ? () => setFinding(true) : props.kind === "date" && !props.readOnly && !props.onDoubleClick ? () => setCalendar(true) : props.onDoubleClick
         }
+        onKeyDown={kyotsu && !props.noDrop ? (e) => { if (e.altKey && e.key === "ArrowDown") { e.preventDefault(); setDrop(true); } } : undefined}
       />
+  );
+  return (
+    <>
+      {kyotsu && !props.noDrop ? (
+        <span className="ky-wrap" ref={wrapRef}>
+          {input}
+          <button type="button" className="ky-drop" tabIndex={-1} title={`一覧から${名前}を選ぶ`} onClick={() => setDrop(!drop)}>▼</button>
+          {drop && wrapRef.current && <コードの一覧 kind={props.kyotsu!} anchor={wrapRef.current} onClose={() => setDrop(false)} onPick={選んだ} />}
+        </span>
+      ) : (
+        input
+      )}
       {calendar && (
         <CalendarDialog
           value={props.value}
@@ -156,6 +179,68 @@ export function Field(props: {
     </>
   );
 }
+/**
+ * コードの欄の ▼ で出す一覧（2026/11/07 利用者：コードの欄にコンボボックスを）。
+ * 開いたときだけサーバーに聞き、打った文字（コードの頭・名前の一部）に合うものを 50 件まで出す。
+ * 画面を開いたときには何も読まない。窓は開いている 1 つだけ。
+ */
+function コードの一覧(props: { kind: "tokui" | "shohin" | "unso"; anchor: HTMLElement; onClose: () => void; onPick: (code: string) => void }) {
+  const [w, setW] = useState("");
+  const [rows, setRows] = useState<{ code: number; name: string | null; sub: string | null }[] | null>(null);
+  const [pos, setPos] = useState(0);
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let 止める = false;
+    const t = setTimeout(() => {
+      api.get<{ code: number; name: string | null; sub: string | null }[]>("/api/find/suggest", { kind: props.kind, w })
+        .then((r) => { if (!止める) { setRows(r); setPos(0); } })
+        .catch(() => !止める && setRows([]));
+    }, w ? 300 : 0);
+    return () => { 止める = true; clearTimeout(t); };
+  }, [w, props.kind]);
+  useEffect(() => {
+    const 外 = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node) && !props.anchor.contains(e.target as Node)) props.onClose();
+    };
+    document.addEventListener("mousedown", 外);
+    return () => document.removeEventListener("mousedown", 外);
+  }, []);
+  useEffect(() => boxRef.current?.querySelector(".on")?.scrollIntoView({ block: "nearest" }), [pos]);
+  const r = props.anchor.getBoundingClientRect();
+  const 下に入る = window.innerHeight - r.bottom > 300;
+  const style: React.CSSProperties = { left: Math.min(r.left, window.innerWidth - 420), ...(下に入る ? { top: r.bottom + 2 } : { bottom: window.innerHeight - r.top + 2 }) };
+  return createPortal(
+    <div className="ky-list" ref={boxRef} style={style}>
+      <input
+        autoFocus
+        className="ky-search"
+        placeholder="コードの頭の数字か、名前の一部"
+        value={w}
+        onChange={(e) => setW(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") props.onClose();
+          else if (e.key === "ArrowDown") { e.preventDefault(); setPos((p) => Math.min((rows?.length ?? 1) - 1, p + 1)); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); setPos((p) => Math.max(0, p - 1)); }
+          else if (e.key === "Enter" && rows?.[pos]) { e.preventDefault(); props.onPick(String(rows[pos].code)); }
+        }}
+      />
+      <div className="ky-rows">
+        {rows === null && <div className="ky-msg">読み込み中…</div>}
+        {rows?.length === 0 && <div className="ky-msg">当てはまるものがありません</div>}
+        {rows?.map((x, i) => (
+          <div key={x.code} className={"ky-row" + (i === pos ? " on" : "")} onMouseEnter={() => setPos(i)} onMouseDown={(e) => { e.preventDefault(); props.onPick(String(x.code)); }}>
+            <span className="c">{x.code}</span>
+            <span className="n">{x.name}</span>
+            <span className="s">{x.sub && x.sub !== x.name ? x.sub : ""}</span>
+          </div>
+        ))}
+        {rows?.length === 50 && <div className="ky-msg">50 件まで出しています。文字を足して絞り込んでください。</div>}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function Combo(props: {
   value: any;
   options: Opt[];
@@ -169,7 +254,7 @@ export function Combo(props: {
   const [open, setOpen] = useState(false);
   return (
     <div className={"combo " + (props.className ?? "")}>
-      <Field value={props.value} kind="num" onCommit={props.onCommit} onDoubleClick={props.onFind} inputRef={props.inputRef} kyotsu={props.kyotsu} />
+      <Field value={props.value} kind="num" onCommit={props.onCommit} onDoubleClick={props.onFind} inputRef={props.inputRef} kyotsu={props.kyotsu} noDrop />
       <button type="button" tabIndex={-1} onClick={() => setOpen(!open)} title="一覧から選ぶ">
         ▾
       </button>

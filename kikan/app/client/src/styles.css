@@ -315,12 +315,30 @@ input, select { font: inherit; }
 .jm-grid tr.new td { background: #ffffe0; }
 .jm-grid .del { font-size: 11px; color: #c00; }
 .jm-grid input { height: 20px; }
-/* 共通コード（得意先の短縮コード）が入る欄：色を変える。ダブルクリックで得意先を探せる */
-input.kyotsu, .combo input.kyotsu { background: #ffe8b8; border-color: #d08a00; }
-input.kyotsu:focus { background: #ffd98a; }
-input.kyotsu[readonly] { background: #f3e2c0; }
+/* コードの欄（得意先・商品・運送会社）：探せる欄は水色＋青い枠（2026/11/07 利用者：探せると見てわかる色に）。
+   ▼で一覧から選べる・ダブルクリックで探す画面。直せない欄（読むだけ）は探せないので、ふつうの色 */
+input.kyotsu, .combo input.kyotsu { background: #d4efff; border: 1px solid #1e78c8; }
+input.kyotsu:focus { background: #aee0ff; outline: 2px solid #1e78c8; outline-offset: -1px; }
+input.kyotsu[readonly] { background: #eef1f4; border-color: #aab4bd; outline: none; }
+.ky-wrap { position: relative; display: inline-flex; align-items: stretch; vertical-align: middle; }
+.ky-wrap > input.kyotsu { box-sizing: border-box; padding-right: 15px; }
+.ky-drop { position: absolute; right: 1px; top: 1px; bottom: 1px; width: 14px; padding: 0; border: none; border-left: 1px solid #1e78c8;
+  background: #1e78c8; color: #fff; font-size: 8px; line-height: 1; cursor: pointer; }
+.ky-drop:hover { background: #0b5aa3; }
+.ky-list { position: fixed; z-index: 2000; width: 410px; background: #fff; border: 2px solid #1e78c8; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  font-size: 13px; color: #000; text-align: left; font-weight: normal; }
+.ky-search { width: 100%; box-sizing: border-box; border: none; border-bottom: 1px solid #9cc; padding: 5px 8px; font-size: 14px; background: #f4fbff; }
+.ky-rows { max-height: 280px; overflow-y: auto; }
+.ky-row { display: flex; gap: 8px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+.ky-row.on { background: #1e78c8; color: #fff; }
+.ky-row .c { width: 52px; text-align: right; flex: none; }
+.ky-row .n { font-weight: bold; overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
+.ky-row .s { color: #666; overflow: hidden; text-overflow: ellipsis; }
+.ky-row.on .s { color: #dde; }
+.ky-msg { padding: 6px 8px; color: #666; font-size: 12px; }
 .search .shohin-combo { width: 90px; } .search .shohin-combo .combo-list { width: 320px; }
-.jf-row.big input.kyotsu, .jf-row.big input.kyotsu[readonly] { background: #ffe8b8; }
+.jf-row.big input.kyotsu { background: #d4efff; }
+.jf-row.big input.kyotsu[readonly] { background: #eef1f4; }
 /* 共通の探す画面（FSD_得意先選択・FSD_商品名選択） */
 .find.big { width: 860px; max-width: 96vw; }
 .find-head .cap { font-weight: normal; font-size: 12px; margin-right: auto; }
@@ -2654,3 +2672,5 @@ label.ssi-f { flex-direction: row; align-items: center; gap: 6px; flex-wrap: wra
 .yt2-grid td.c { text-align: center; } .yt2-grid td.r { text-align: right; }
 .yt2-grid tr.day td { background: #e8eef7; border-top: 2px solid #000; font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .yt2-grid tr.bin td { font-weight: bold; }
+/* 受注の画面などの Combo（自分の一覧を持つ欄）も、コードの欄なら ▾ を同じ青にそろえる */
+.combo:has(input.kyotsu:not([readonly])) > button { background: #1e78c8; color: #fff; border-color: #1e78c8; }
