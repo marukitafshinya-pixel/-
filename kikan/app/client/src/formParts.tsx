@@ -205,26 +205,41 @@ function コードの一覧(props: { kind: "tokui" | "shohin" | "unso"; anchor: 
     document.addEventListener("mousedown", 外);
     return () => document.removeEventListener("mousedown", 外);
   }, []);
-  useEffect(() => boxRef.current?.querySelector(".on")?.scrollIntoView({ block: "nearest" }), [pos]);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  // 入力の欄に移す（ページ全体が動かないように preventScroll。Artifacts の見本版では、ページが動くと白い画面になった）
+  useEffect(() => searchRef.current?.focus({ preventScroll: true }), []);
+  // ↑↓で選んだ行が見えるように、一覧の中だけを動かす（scrollIntoView はページ全体も動かすので使わない）
+  const 見えるように = (i: number) => {
+    const box = rowsRef.current;
+    const row = box?.children[i] as HTMLElement | undefined;
+    if (!box || !row) return;
+    if (row.offsetTop < box.scrollTop) box.scrollTop = row.offsetTop;
+    else if (row.offsetTop + row.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = row.offsetTop + row.offsetHeight - box.clientHeight;
+  };
   const r = props.anchor.getBoundingClientRect();
-  const 下に入る = window.innerHeight - r.bottom > 300;
-  const style: React.CSSProperties = { left: Math.min(r.left, window.innerWidth - 420), ...(下に入る ? { top: r.bottom + 2 } : { bottom: window.innerHeight - r.top + 2 }) };
+  // 欄の下と上の、広い方に出す。画面からはみ出さないよう、一覧の高さを空きに合わせる（見本版の小さい窓でも上が切れないように）
+  const 下の空き = window.innerHeight - r.bottom - 6;
+  const 上の空き = r.top - 6;
+  const 下に出す = 下の空き >= 220 || 下の空き >= 上の空き;
+  const 高さ = Math.max(80, Math.min(280, (下に出す ? 下の空き : 上の空き) - 40));
+  const style: React.CSSProperties = { left: Math.max(0, Math.min(r.left, window.innerWidth - 420)), ...(下に出す ? { top: r.bottom + 2 } : { bottom: window.innerHeight - r.top + 2 }) };
   return createPortal(
     <div className="ky-list" ref={boxRef} style={style}>
       <input
-        autoFocus
+        ref={searchRef}
         className="ky-search"
         placeholder="コードの頭の数字か、名前の一部"
         value={w}
         onChange={(e) => setW(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") props.onClose();
-          else if (e.key === "ArrowDown") { e.preventDefault(); setPos((p) => Math.min((rows?.length ?? 1) - 1, p + 1)); }
-          else if (e.key === "ArrowUp") { e.preventDefault(); setPos((p) => Math.max(0, p - 1)); }
+          else if (e.key === "ArrowDown") { e.preventDefault(); const i = Math.min((rows?.length ?? 1) - 1, pos + 1); setPos(i); 見えるように(i); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); const i = Math.max(0, pos - 1); setPos(i); 見えるように(i); }
           else if (e.key === "Enter" && rows?.[pos]) { e.preventDefault(); props.onPick(String(rows[pos].code)); }
         }}
       />
-      <div className="ky-rows">
+      <div className="ky-rows" ref={rowsRef} style={{ maxHeight: 高さ }}>
         {rows === null && <div className="ky-msg">読み込み中…</div>}
         {rows?.length === 0 && <div className="ky-msg">当てはまるものがありません</div>}
         {rows?.map((x, i) => (
