@@ -43,6 +43,17 @@ export default function WsMain() {
   // 検索実行の条件（Access の cmb_商品検索表示・cmb_抽出倉庫。保存しない欄）
   const [検索商品, set検索商品] = useState<number | null>(null);
   const [検索倉庫, set検索倉庫] = useState<number | null>(null);
+  // 在庫検索の欄の横に出す名前（2026/11/07 利用者：コードの横の枠に名前を）
+  const [検索商品名, set検索商品名] = useState("");
+  const [検索倉庫名, set検索倉庫名] = useState("");
+  const 名前を引く = (kind: "shohin" | "tokui", code: number | null, set: (v: string) => void) => {
+    if (!code) return set("");
+    api.get<{ code: number; name: string | null }[]>("/api/find/suggest", { kind, w: String(code) })
+      .then((r) => set(r.find((x) => Number(x.code) === code)?.name ?? "（ありません）"))
+      .catch(() => set(""));
+  };
+  useEffect(() => 名前を引く("shohin", 検索商品, set検索商品名), [検索商品]);
+  useEffect(() => 名前を引く("tokui", 検索倉庫, set検索倉庫名), [検索倉庫]);
   const [希望, set希望] = useState<希望在庫 | null>(null);
   const [通知一覧, set通知一覧] = useState(false);
   const [依頼書, set依頼書] = useState<Rec | null>(null);
@@ -301,10 +312,12 @@ export default function WsMain() {
           <div className="ws-kv">
             <span>品名</span>
             <Field value={検索商品} kind="num" kyotsu="shohin" onCommit={(v) => set検索商品(n(v))} />
+            <span className="ws-kn" title={検索商品名}>{検索商品名}</span>
           </div>
           <div className="ws-kv">
             <span>倉庫</span>
             <Field value={検索倉庫} kind="num" kyotsu="tokui" onCommit={(v) => set検索倉庫(n(v))} />
+            <span className="ws-kn" title={検索倉庫名}>{検索倉庫名}</span>
           </div>
           <div className="ws-row">
             <button className="small" disabled={!輸送ID} onClick={検索実行}>検索実行</button>
